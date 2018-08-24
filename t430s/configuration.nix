@@ -11,6 +11,7 @@
     isNormalUser = true;
     createHome = true;
     extraGroups = [ "wheel" ];
+    openssh.authorizedKeys.keyFiles = [ (builtins.fetchurl "https://github.com/arianvp.keys" )];
   };
   environment.gnome3.excludePackages = with pkgs.gnome3; [ gnome-software ];
   services.xserver =  {
@@ -20,5 +21,6 @@
     };
     displayManager.gdm.enable = true;
   };
+  services.sshd.enable = true;
   system.stateVersion = "18.03"; 
 }
