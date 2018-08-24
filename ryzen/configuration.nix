@@ -17,6 +17,7 @@ rec {
   hardware.u2f.enable = true;
   services.sshd.enable = true;
 
+  networking.hostName = "ryzen";
 
   time.timeZone = "Europe/Amsterdam";
 
@@ -33,6 +34,8 @@ rec {
   fonts.fonts = with pkgs; [ fira-code ];
 
   services.urxvtd.enable = true;
+
+  services.avahi.enable = true;
 
   services.xserver = {
     enable = true;

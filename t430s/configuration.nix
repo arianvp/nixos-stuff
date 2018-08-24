@@ -21,6 +21,8 @@
     };
     displayManager.gdm.enable = true;
   };
+
+  networking.hostName = "t430s";
   services.sshd.enable = true;
   system.stateVersion = "18.03"; 
 }
