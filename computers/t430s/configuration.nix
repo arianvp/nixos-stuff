@@ -7,6 +7,7 @@
   environment.systemPackages = with pkgs; [ vimHugeX firefox ];
   programs.bash.enableCompletion = true;
   hardware.pulseaudio.enable = true;
+  nix.trustedUsers = [ "@wheel" ];
   users.users.arian = {
     isNormalUser = true;
     createHome = true;
