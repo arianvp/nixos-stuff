@@ -3,6 +3,7 @@ with pkgs;
 rec {
   imports = [ 
     ./hardware-configuration.nix
+    ../../modules/yubikey
   ];
  
   boot.kernelModules = [ "kvm-intel" "kvm-amd" ];
@@ -35,7 +36,6 @@ rec {
 
   services.urxvtd.enable = true;
 
-  services.avahi.enable = true;
 
   services.xserver = {
     enable = true;
