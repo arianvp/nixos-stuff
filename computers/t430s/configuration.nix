@@ -1,7 +1,7 @@
 { config, pkgs, ... }: {
   imports = [
     ./hardware-configuration.nix 
-    .../../yubikey.nix
+   ../../modules/yubikey.nix
    ../../modules/ssh-tweaks.nix
   ];
   time.timeZone = "Europe/Amsterdam";
