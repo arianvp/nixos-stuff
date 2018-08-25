@@ -19,7 +19,9 @@ in
 {
   options = {
     arian.rootfs = {
-      device = mkOption { type = types.string; };
+      device = mkOption {
+        type = types.string;
+      };
     };
   };
   config = {
@@ -32,7 +34,6 @@ in
       "/home"        = mkfs ["subvol=@home"];
       "/nix"         = mkfs ["subvol=@nix"];
       "/var"         = mkfs ["subvol=@var"];
-      "/etc/nixos"   = mkfs ["subvol=@nixos"]; 
       "${fullMount}" = mkfs [];
     };
   };
