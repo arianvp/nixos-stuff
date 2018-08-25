@@ -2,6 +2,7 @@
   imports = [
     ./hardware-configuration.nix 
     ./yubikey.nix
+   ../../modules/ssh-tweaks.nix
   ];
   time.timeZone = "Europe/Amsterdam";
   environment.systemPackages = with pkgs; [ vimHugeX firefox ];
