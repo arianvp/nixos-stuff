@@ -1,4 +1,4 @@
-{ nixpkgs ? import <nixpkgs> }
+{ nixpkgs ? import <nixpkgs> }:
 let
   isDir = path: builtins.pathExists (path + "/.");
   overlays = path:
@@ -13,4 +13,4 @@ let
     else
       import path;
 in
-  import nixpkgs { overlays = overlays ./overlays; }
+  nixpkgs { overlays = overlays ./overlays; }
