@@ -5,7 +5,6 @@
    ../../modules/ssh-tweaks.nix
   ];
   time.timeZone = "Europe/Amsterdam";
-  environment.systemPackages = with pkgs; [ vimHugeX firefox ];
   programs.bash.enableCompletion = true;
   hardware.pulseaudio.enable = true;
   users.users.root = {
@@ -26,6 +25,7 @@
     displayManager.gdm.enable = true;
   };
 
+  services.netdata.enable = true;
   networking.hostName = "t430s";
   services.sshd.enable = true;
   system.stateVersion = "18.03"; 
