@@ -20,3 +20,12 @@ nixos-rebuild switch -I "nixos-config=./computers/$computer/configuration.nix" -
 ```
 TODO
 ```
+
+# Setting up user environment
+
+Note: Can not be used in conjunction with manual usage of `nix-env --install` as
+this will override the environment that this installs
+
+```
+$ ./setup-user-env.sh
+```
