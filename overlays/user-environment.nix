@@ -11,6 +11,10 @@ self: super: {
       ag
       fzf
       cabal2nix
+      asciinema
+      firefox
+      graphviz
+      tmux
     ];
   };
 }
