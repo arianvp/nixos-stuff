@@ -1,10 +1,13 @@
 { pkgs, config, ... }:
 with pkgs;
-rec {
+{
   imports = [ 
     ./hardware-configuration.nix
     ../../modules/yubikey
+    ../../modules/steam-support.nix
   ];
+
+  nixpkgs.config.allowUnfree = true;
  
   boot.kernelModules = [ "kvm-intel" "kvm-amd" ];
   boot.kernelParams = ["amdgpu.dc=1"];
@@ -30,14 +33,22 @@ rec {
   # This is needed for my Yubikey
   services.pcscd.enable = true;
 
-  services.ipfs.enable = true;
+  services.ipfs.enable = false;
 
   fonts.fonts = with pkgs; [ fira-code ];
 
   services.urxvtd.enable = true;
 
+  environment.gnome3.excludePackages = with pkgs.gnome3; optionalPackages;
+  services.xserver =  {
+    enable = true;
+    desktopManager.gnome3 = {
+      enable = true;
+    };
+    displayManager.gdm.enable = true;
+  };
 
-  services.xserver = {
+  /*services.xserver = {
     enable = true;
     windowManager = {
       xmonad = {
@@ -47,7 +58,7 @@ rec {
       default = "xmonad";
     };
     desktopManager = { default = "none"; xterm.enable = false; };
-  };
+  };*/
 
   users.extraUsers.arian = {
      isNormalUser = true;
