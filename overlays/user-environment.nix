@@ -15,6 +15,9 @@ self: super: {
       firefox
       graphviz
       tmux
+      steam
+      dzen2
+      dmenu
     ];
   };
 }
