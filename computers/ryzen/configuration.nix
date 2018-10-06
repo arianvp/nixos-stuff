@@ -27,7 +27,7 @@ with pkgs;
 
 
   environment.systemPackages = [ 
-    dmenu dzen2 arc-theme arc-icon-theme ntfs3g
+    arc-theme arc-icon-theme ntfs3g 
   ];
 
   # This is needed for my Yubikey
@@ -39,16 +39,7 @@ with pkgs;
 
   services.urxvtd.enable = true;
 
-  environment.gnome3.excludePackages = with pkgs.gnome3; optionalPackages;
-  services.xserver =  {
-    enable = true;
-    desktopManager.gnome3 = {
-      enable = true;
-    };
-    displayManager.gdm.enable = true;
-  };
-
-  /*services.xserver = {
+  services.xserver = {
     enable = true;
     windowManager = {
       xmonad = {
@@ -58,7 +49,7 @@ with pkgs;
       default = "xmonad";
     };
     desktopManager = { default = "none"; xterm.enable = false; };
-  };*/
+  };
 
   users.extraUsers.arian = {
      isNormalUser = true;
