@@ -18,11 +18,15 @@ let
     mkdir -pv -m 0700 "$HOME/.nix-defexpr"
     export NIX_REMOTE=daemon
     export USER=root
+    set -x
     . ${pkgs.nix}/etc/profile.d/nix.sh
+
     ${pkgs.nix}/bin/nix-env -i ${pkgs.nix}
     ${pkgs.nix}/bin/nix-env -i "${pkgs.cacert}"
+
     ${pkgs.nix}/bin/nix-channel --add https://nixos.org/channels/nixpkgs-unstable
     ${pkgs.nix}/bin/nix-channel --update nixpkgs
+
   '';
 in
   {
@@ -103,7 +107,13 @@ in
             --docker-volumes /nix/var/nix/db:/nix/var/nix/db:ro \
             --docker-volumes /nix/var/nix/daemon-socket:/nix/var/nix/daemon-socket:ro \
             --docker-disable-cache=true \
-            --pre-clone-script "${setupContainer}/bin/setup-container" \
+            --pre-build-script "${setupContainer}/bin/setup-container" \
+            --env "ENV=/etc/profile" \
+            --env "USER=root" \
+            --env "NIX_REMOTE=daemon" \
+            --env "PATH=/nix/var/nix/profiles/default/bin:/nix/var/nix/profiles/default/sbin:/bin:/sbin:/usr/bin:/usr/sbin" \
+            --env "NIX_SSL_CERT_FILE=/nix/var/nix/profiles/default/etc/ssl/certs/ca-bundle.crt" \
+            --env "NIX_PATH=nixpkgs=/root/.nix-defexpr/channels/nixpkgs"
           ''; 
           ExecStart = ''${cfg.package.bin}/bin/gitlab-runner run \
             --working-directory ${cfg.workDir} \
