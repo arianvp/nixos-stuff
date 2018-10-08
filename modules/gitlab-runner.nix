@@ -1,8 +1,29 @@
+/*
+ * An opinonated Gitlab-runner, that allows for nix builds (with caching)
+ * on NixOS build machines
+ */
 { config, pkgs, lib, ...}:
 with lib;
 let
   cfg = config.services.gitlab-runner2;
-  profile = pkgs.buildEnv { paths = [ pkgs.nix ]; };
+  setupContainer = pkgs.writeScriptBin "setup-container" ''
+    mkdir -pv -m 0755 /nix/var/log/nix/drvs
+    mkdir -pv -m 0755 /nix/var/nix/gcroots
+    mkdir -pv -m 0755 /nix/var/nix/profiles
+    mkdir -pv -m 0755 /nix/var/nix/temproots
+    mkdir -pv -m 0755 /nix/var/nix/userpool
+    mkdir -pv -m 1777 /nix/var/nix/gcroots/per-user
+    mkdir -pv -m 1777 /nix/var/nix/profiles/per-user
+    mkdir -pv -m 0755 /nix/var/nix/profiles/per-user/root
+    mkdir -pv -m 0700 "$HOME/.nix-defexpr"
+    export NIX_REMOTE=daemon
+    export USER=root
+    . ${pkgs.nix}/etc/profile.d/nix.sh
+    ${pkgs.nix}/bin/nix-env -i ${pkgs.nix}
+    ${pkgs.nix}/bin/nix-env -i "${pkgs.cacert}"
+    ${pkgs.nix}/bin/nix-channel --add https://nixos.org/channels/nixpkgs-unstable
+    ${pkgs.nix}/bin/nix-channel --update nixpkgs
+  '';
 in
   {
     options.services.gitlab-runner2 = {
@@ -17,7 +38,7 @@ in
 
           One that you probably want to set is
           CI_SERVER_URL=<CI server URL>
-          CI_SERVER_TOKEN=<registration secret>
+          REGISTRATION_TOKEN=<registration secret>
 
         '';
         type = lib.types.path;
@@ -77,13 +98,12 @@ in
             --non-interactive=true \
             --name gitlab-runner \
             --executor "docker" \
-            --docker-image "nixos/nix" \
+            --docker-image "alpine" \
             --docker-volumes /nix/store:/nix/store:ro \
             --docker-volumes /nix/var/nix/db:/nix/var/nix/db:ro \
             --docker-volumes /nix/var/nix/daemon-socket:/nix/var/nix/daemon-socket:ro \
             --docker-disable-cache=true \
-            --env "NIX_REMOTE=daemon" \
-            --pre-build-script "export PATH=${pkgs.nix}/bin:$PATH\n apk add ca-certificates" \
+            --pre-clone-script "${setupContainer}/bin/setup-container" \
           ''; 
           ExecStart = ''${cfg.package.bin}/bin/gitlab-runner run \
             --working-directory ${cfg.workDir} \
