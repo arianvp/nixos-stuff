@@ -5,33 +5,38 @@ with pkgs;
     ./hardware-configuration.nix
     ../../modules/yubikey
     ../../modules/steam-support.nix
+    ../../modules/gitlab-runner.nix
   ];
 
   nixpkgs.config.allowUnfree = true;
- 
+
+  boot.kernelPackages = pkgs.linuxPackages_4_18;
   boot.kernelModules = [ "kvm-intel" "kvm-amd" ];
   boot.kernelParams = ["amdgpu.dc=1"];
-
-  boot.kernelPackages = pkgs.linuxPackages_4_17;
+  networking.firewall.enable = false;
+  networking.firewall.allowedTCPPorts = [ 51413 27950 27952 27960 27965 ];
+  networking.firewall.allowedUDPPorts = [ 27950 27952 27960 27965 ];
 
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
   hardware.pulseaudio.enable = true;
-  hardware.u2f.enable = true;
-  services.sshd.enable = true;
 
   networking.hostName = "ryzen";
 
   time.timeZone = "Europe/Amsterdam";
 
+  services.fwupd.enable = true;
+
+  services.gitlab-runner2 = {
+    enable = true;
+    registrationConfigFile = "/home/arian/.gitlab-ci";
+  };
 
   environment.systemPackages = [ 
-    arc-theme arc-icon-theme ntfs3g 
+    arc-theme arc-icon-theme ntfs3g  rofi
   ];
 
-  # This is needed for my Yubikey
-  services.pcscd.enable = true;
 
   services.ipfs.enable = false;
 
@@ -55,8 +60,6 @@ with pkgs;
      isNormalUser = true;
      uid = 1000;
      extraGroups = ["wheel" "audio"];
-     # Root of trust is that we trust Github not to fuck this up :)
-     openssh.authorizedKeys.keyFiles = [ (builtins.fetchurl "https://github.com/arianvp.keys") ];
    };
 
   # Never change this value unless instructed to.
