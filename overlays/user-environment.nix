@@ -2,22 +2,26 @@ self: super: {
   user-environment = self.buildEnv {
     name = "my-user-environment";
     paths = with self; [
-      firefox
-      ctags
-      htop
-      git
-      neovim
-      jq
       ag
-      fzf
-      cabal2nix
       asciinema
-      firefox
-      graphviz
-      tmux
-      steam
-      dzen2
+      cabal2nix
+      ctags
       dmenu
+      dzen2
+      feh
+      feh.man
+      firefox
+      fzf
+      git
+      graphviz
+      htop
+      j4-dmenu-desktop
+      jq
+      neovim
+      compton
+      tmux
+      tmux.man
+      quake3
     ];
   };
 }
