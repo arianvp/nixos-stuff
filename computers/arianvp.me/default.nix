@@ -31,7 +31,7 @@
     passwordAuthentication = false;
   };
 
-  networking.firewall.allowedTCPPorts = [ 22 80 443 ];
+  networking.firewall.allowedTCPPorts = [ 22 80 443 4443 ];
 
 
   services.gitlab-runner2.enable = true;
@@ -54,6 +54,12 @@
       enableACME = true;
       locations."/".root = "/var/www/arianvp.me";
     };
+  };
+
+  # Makes sure that weechat has access to the key as well
+  security.acme.certs."arianvp.me" = {
+    group = "weechat";
+    allowKeysForGroup = true;
   };
 
 
