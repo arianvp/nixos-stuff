@@ -28,11 +28,6 @@ with pkgs;
 
   services.fwupd.enable = true;
 
-  services.gitlab-runner2 = {
-    enable = true;
-    registrationConfigFile = "/home/arian/.gitlab-ci";
-  };
-
   environment.systemPackages = [ 
     arc-theme arc-icon-theme ntfs3g  rofi
   ];
