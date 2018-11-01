@@ -5,15 +5,12 @@
 
 ### On the machine
 ```
-sudo nixos-rebuild switch -I "nixos-config=./computers/$computer/configuration.nix" 
+./deploy.sh
 ```
 
 ### Remotely from NixOS machine to NixOS machine
 ```
-computer=<computer>
-computerHost=<computer host>
-buildHost=<build host>
-nixos-rebuild switch -I "nixos-config=./computers/$computer/configuration.nix" --target-host="root@$computerHost" --build-host="root@$buildHost"
+./deploy-remote.sh
 ```
 
 ## Remotely from a nix computer to NixOS machine
