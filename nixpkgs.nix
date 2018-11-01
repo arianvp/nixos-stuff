@@ -1,5 +1,5 @@
-{ nixpkgs ? import <nixpkgs> }:
-let
+let 
+  nixpkgs = import <nixpkgs>; # TODO make this a reproducible version
   isDir = path: builtins.pathExists (path + "/.");
   overlays = path:
     if isDir path 
@@ -11,6 +11,5 @@ let
             (builtins.filter (n: builtins.match ".*\\.nix" n != null || builtins.pathExists (path + ("/" + n + "/default.nix")))
                     (builtins.attrNames content))
     else
-      import path;
-in
-  nixpkgs { overlays = overlays ./overlays; }
+    import path;
+in nixpkgs { overlays = overlays ./overlays; config = { allowUnfree = true; }; }
