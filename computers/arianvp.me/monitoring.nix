@@ -1,6 +1,11 @@
 { config, lib, pkgs, ... }:
   {
     config = {
+      /*services.nginx.virtualHosts."prometheus.arianvp.me" = {
+        forceSSL = true;
+        enableACME = true;
+        locations."/".proxyPass = config.services.prometheus.listenAddress;
+      };*/
       services.prometheus = {
         enable = true;
         scrapeConfigs = [
