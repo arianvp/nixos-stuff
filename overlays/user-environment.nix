@@ -22,6 +22,9 @@ self: super: {
       tmux
       tmux.man
       quake3
+      obs-studio
+      discord
+      multimc
     ];
   };
 }
