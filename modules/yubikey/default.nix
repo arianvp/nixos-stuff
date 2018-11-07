@@ -1,4 +1,4 @@
-{ pkgs, ... }: {
+{ pkgs, lib, ... }: {
   environment.systemPackages = [
     pkgs.yubico-piv-tool
     pkgs.yubioath-desktop
@@ -12,7 +12,7 @@
 
 
   # Allow for storing your SSH key on yubikey
-  programs.ssh.extraConfig = ''
+  programs.ssh.extraConfig = lib.mkBefore ''
   PKCS11Provider=${pkgs.yubico-piv-tool}/lib/libykcs11.so
   '';
 }
