@@ -25,6 +25,7 @@ self: super: {
       obs-studio
       discord
       multimc
+      scrot
     ];
   };
 }

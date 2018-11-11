@@ -9,7 +9,14 @@
 
   # Enable u2f over USB, for yubikey auth in browser
   hardware.u2f.enable = true;
+  
 
+  # programs.ssh.pkcs11Provider = "${pkgs.yubico-piv-tool}/lib/libykcs11.so";
+  programs.ssh.startAgent = true;
+  programs.ssh.agentPkcs11Whitelist = [
+    pkgs.yubico-piv-tool
+    pkgs.opensc
+  ];
 
   # Allow for storing your SSH key on yubikey
   programs.ssh.extraConfig = lib.mkBefore ''

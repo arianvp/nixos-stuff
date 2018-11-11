@@ -8,12 +8,13 @@ with pkgs;
     ../../modules/gitlab-runner.nix
   ];
 
+  programs.ssh.startAgent = true;
+
   nixpkgs.config.allowUnfree = true;
 
   boot.kernelPackages = pkgs.linuxPackages_4_18;
   boot.kernelModules = [ "kvm-intel" "kvm-amd" ];
-  boot.kernelParams = ["amdgpu.dc=1"];
-  networking.firewall.enable = false;
+  boot.kernelParams = ["amdgpu.dc=1"]; networking.firewall.enable = false;
   networking.firewall.allowedTCPPorts = [ 51413 27950 27952 27960 27965 ];
   networking.firewall.allowedUDPPorts = [ 27950 27952 27960 27965 ];
 
