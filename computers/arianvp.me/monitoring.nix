@@ -24,7 +24,7 @@
         rules = [
           ''
             ALERT DiskFullInTwoDays 
-            IF (predict_linear(node_filesystem_free[1d], 3600*24*2) < 0) 
+            IF (predict_linear(node_filesystem_free_bytes[1d], 3600*24*2) < 0) 
             FOR 5m
             ANNOTATIONS {
               summary = "Dun Goofed"

@@ -16,6 +16,7 @@
       enable = true;
       passwordAuthentication = false;
     };
+    networking.useNetworkd = true;
     networking.firewall.allowedTCPPorts = [
       22
       80
