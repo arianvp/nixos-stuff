@@ -19,7 +19,10 @@ profile=/nix/var/nix/profiles/system
 result=$(nix-build ./nixpkgs.nix --no-out-link -A "deployments.${target}.toplevel")
 # nix sign-paths --recursive --key-file "${keyFile}" "${result}"
 nix copy --no-check-sigs --to "ssh://root@$targetHost" "$result"
+echo "Setting profile"
 ssh "root@$targetHost" nix-env -p "$profile" --set "$result"
-ssh "root@$targetHost" "$result/bin/switch-to-configuration" switch
+
+echo "Staging boot"
+ssh "root@$targetHost" "$result/bin/switch-to-configuration" boot
 
 
