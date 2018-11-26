@@ -16,6 +16,7 @@
       enable = true;
       passwordAuthentication = false;
     };
+    # Experimental, lets see how it goes
     networking.useNetworkd = true;
     networking.firewall.allowedTCPPorts = [
       22

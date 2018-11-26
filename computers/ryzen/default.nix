@@ -12,6 +12,7 @@ with pkgs;
 
   nixpkgs.config.allowUnfree = true;
 
+
   boot.kernelPackages = pkgs.linuxPackages_4_18;
   boot.kernelModules = [ "kvm-intel" "kvm-amd" ];
   boot.kernelParams = ["amdgpu.dc=1"]; networking.firewall.enable = false;
@@ -24,6 +25,7 @@ with pkgs;
   hardware.pulseaudio.enable = true;
 
   networking.hostName = "ryzen";
+  networking.useNetworkd = true;
 
   time.timeZone = "Europe/Amsterdam";
 
