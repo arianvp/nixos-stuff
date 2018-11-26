@@ -38,7 +38,7 @@ with pkgs;
 
   systemd.targets."multi-user".wants = [ "machines.target" ];
 
-  containers-v2.arian = {
+  services.systemd-nspawn.machines.arian = {
     config = {...}: {
       services.nginx.enable = true;
     };

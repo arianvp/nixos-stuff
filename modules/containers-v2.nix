@@ -4,45 +4,58 @@ let
   system = config.nixpkgs.system;
 in
 {
-  options.containers-v2 = mkOption {
-    type = types.attrsOf (types.submodule (
-      { config, options, name, ... }: {
-        options = {
-          config = mkOption {
-            description = ''
-              A specification of the desired configuration of this
-              container, as a NixOS module.
-            '';
-            type = lib.mkOptionType {
-              name = "Toplevel NixOS config";
-              # TODO remove absolute path
-              merge = loc: defs: (import <nixpkgs/nixos/lib/eval-config.nix> {
-                inherit system;
-                modules =
-                  let extraConfig =
-                    { boot.isContainer = true;
-                      networking.hostName = mkDefault name;
-                      networking.useDHCP = false;
-                    };
-                  in [ extraConfig ] ++ (map (x: x.value) defs);
-                prefix = [ "containers" name ];
-              }).config;
+  options.services.systemd-nspawn =  {
+    machines =  mkOption {
+      description = ''
+        The machines to run
+      '';
+      type = types.attrsOf (types.submodule (
+        { config, options, name, ... }: {
+          options = {
+            config = mkOption {
+              description = ''
+                if null, then it is assumed that /var/lib/machines/<name> exists, and is a full machine image.
+                Systemd-nspawn will then start up this image as it would normally do.
+
+                Otherwise, provide a NixOS configuration. It will then, similarily to nixos-container,
+                create a machine directory on demand, and bind-mount the closure of the NixOS derivation
+                inside the container.
+              '';
+              default = null;
+              type = types.nullOr (lib.mkOptionType {
+                name = "Toplevel NixOS config";
+                # TODO remove absolute path
+                merge = loc: defs: (import <nixpkgs/nixos/lib/eval-config.nix> {
+                  inherit system;
+                  modules =
+                    let extraConfig =
+                      { boot.isContainer = true;
+                        networking.hostName = mkDefault name;
+                        networking.useDHCP = false;
+                      };
+                    in [ extraConfig ] ++ (map (x: x.value) defs);
+                  prefix = [ "containers" name ];
+                }).config;
+              });
+            };
+            path = mkOption {
+              type = types.path;
+              internal = true;
             };
           };
-          path = mkOption {
-            type = types.path;
-            internal = true;
+          config = {
+            path = config.config.system.build.toplevel;
           };
-        };
-        config = {
-          path = config.config.system.build.toplevel;
-        };
-      }
-    ));
+        }
+      ));
+    };
   };
   config = {
     systemd.services."systemd-nspawn@".serviceConfig = {
       # TODO make this better
+      # TODO Add conditionals to only do this if the directories don't exist yet
+      # TODO don't add the gcroot stuff is the container wasn't a NixOS container
+
       ExecStartPre =  [
         # Create a gcroot and a profile for the container, such that it doesn't get garbage-collected
         "${pkgs.coreutils}/bin/mkdir -p -m 0755 /nix/var/nix/profiles/per-machine/%i /nix/var/nix/gcroots/per-machine/%i"
@@ -54,10 +67,10 @@ in
       ];
     };
     systemd.targets."machines".wants = 
-      map (name:  "systemd-nspawn@${name}.service") (attrNames config.containers-v2);
+      map (name:  "systemd-nspawn@${name}.service") (attrNames config.services.systemd-nspawn.machines);
 
     systemd.nspawn =
-      flip mapAttrs config.containers-v2 (name: container: {
+      flip mapAttrs config.services.systemd-nspawn.machines (name: container: {
         execConfig = {
           Boot = false;
           Parameters = "${container.path}/init";
