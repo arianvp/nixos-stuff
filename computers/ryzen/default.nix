@@ -6,6 +6,7 @@ with pkgs;
     ../../modules/yubikey
     ../../modules/steam-support.nix
     ../../modules/gitlab-runner.nix
+    ../../modules/containers-v2.nix
   ];
 
   programs.ssh.startAgent = true;
@@ -35,6 +36,13 @@ with pkgs;
     arc-theme arc-icon-theme ntfs3g  rofi
   ];
 
+  systemd.targets."multi-user".wants = [ "machines.target" ];
+
+  containers-v2.arian = {
+    config = {...}: {
+      services.nginx.enable = true;
+    };
+  };
 
   services.ipfs.enable = false;
 
