@@ -26,6 +26,12 @@ self: super: {
       discord
       multimc
       scrot
+      vscode
+      cachix
+      ghc
+      cabal-install
+      (import (builtins.fetchTarball https://github.com/domenkozar/hie-nix/tarball/master ) {}).hies
+
     ];
   };
 }
