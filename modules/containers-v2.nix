@@ -25,7 +25,7 @@ in
               type = types.nullOr (lib.mkOptionType {
                 name = "Toplevel NixOS config";
                 # TODO remove absolute path
-                merge = loc: defs: (import <nixpkgs/nixos/lib/eval-config.nix> {
+                merge = loc: defs: (import ../../nixpkgs/nixos/lib/eval-config.nix {
                   inherit system;
                   modules =
                     let extraConfig =
@@ -51,20 +51,13 @@ in
     };
   };
   config = {
-    systemd.services."systemd-nspawn@".serviceConfig = {
-      # TODO make this better
-      # TODO Add conditionals to only do this if the directories don't exist yet
-      # TODO don't add the gcroot stuff is the container wasn't a NixOS container
-
-      ExecStartPre =  [
-        # Create a gcroot and a profile for the container, such that it doesn't get garbage-collected
-        "${pkgs.coreutils}/bin/mkdir -p -m 0755 /nix/var/nix/profiles/per-machine/%i /nix/var/nix/gcroots/per-machine/%i"
-
-        # Create a directory for the container state to live in.  And pre-populate it with some stuff, such
-        # that systemd doesn't get mad
-        "${pkgs.coreutils}/bin/mkdir -p -m 0755 /var/lib/machines/%i/etc /var/lib/machines/%i/var/lib"
-        "${pkgs.coreutils}/bin/mkdir -p -m 0700 /var/lib/machines/%i/var/lib/private /var/lib/machines/%i/root"
-      ];
+    systemd.services."systemd-nspawn@" = {
+      environment.MACHINE = "%i";
+      preStart = ''
+        mkdir -p -m 0755 "/nix/var/nix/profiles/per-machine/$MACHINE" "/nix/var/nix/gcroots/per-machine/$MACHINE"
+        mkdir -p -m 0755 "/var/lib/machines/$MACHINE/nix" "/var/lib/machines/$MACHINE/etc" "/var/lib/machines/$MACHINE/var/lib"
+        mkdir -p -m 0700 /var/lib/machines/$MACHINE/var/lib/private "/var/lib/machines/$MACHINE/root"
+      '';
     };
     systemd.targets."machines".wants = 
       map (name:  "systemd-nspawn@${name}.service") (attrNames config.services.systemd-nspawn.machines);
@@ -74,7 +67,10 @@ in
         execConfig = {
           Boot = false;
           Parameters = "${container.path}/init";
-          # LinkJournal = "try-guest"; we should fix upstream for this
+          # We want the container to have access to the mounted nix profiles and gcroots
+          # so we can not have private users own. This is a bit problematic. we'll have
+          # to figure out something better
+          PrivateUsers = "no";
         };
         filesConfig = {
           BindReadOnly = [ 
@@ -90,4 +86,3 @@ in
       });
   };
 }
-
