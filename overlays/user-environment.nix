@@ -3,12 +3,18 @@ self: super: {
     name = "my-user-environment";
     paths = with self; [
       ag
+      arandr
       asciinema
       cabal2nix
-      elm2nix
+      cabal-install
+      chromium
+      compton
       ctags
+      discord
       dmenu
       dzen2
+      elm2nix
+      evince
       feh
       feh.man
       firefox
@@ -17,27 +23,22 @@ self: super: {
       graphviz
       htop
       j4-dmenu-desktop
-      pavucontrol
-      arandr
-      transmission-gtk
       jq
+      libreoffice
+      multimc
       neovim
-      compton
+      obs-studio
+      pavucontrol
+      quake3
+      scrot
       tmux
       tmux.man
-      quake3
-      evince
-      obs-studio
-      discord
-      multimc
-      scrot
+      transmission-gtk
+      vlc
       vscode
-      cachix
-      haskell.compiler.ghc863
       wire-desktop
-      cabal-install
-      # (import (builtins.fetchTarball https://github.com/domenkozar/hie-nix/tarball/master ) {}).hies
-
+      (haskell.packages.ghc844.ghcWithPackages (p: [
+      ]))
     ];
   };
 }
