@@ -1,6 +1,6 @@
+{ nixpkgs ? import <nixpkgs> }:
 let 
   # nixpkgs = import <nixpkgs>; # TODO make this a reproducible version
-  nixpkgs = import ../nixpkgs;
   isDir = path: builtins.pathExists (path + "/.");
   overlays = path:
     if isDir path 
