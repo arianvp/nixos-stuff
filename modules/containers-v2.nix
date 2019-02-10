@@ -9,6 +9,7 @@ in
       description = ''
         The machines to run
       '';
+      default = {};
       type = types.attrsOf (types.submodule (
         { config, options, name, ... }: {
           options = {
@@ -54,7 +55,7 @@ in
     systemd.services."systemd-nspawn@" = {
       environment.MACHINE = "%i";
       preStart = ''
-        mkdir -p -m 0755 "/nix/var/nix/profiles/per-machine/$MACHINE" "/nix/var/nix/gcroots/per-machine/$MACHINE"
+        # mkdir -p -m 0755 "/nix/var/nix/profiles/per-machine/$MACHINE" "/nix/var/nix/gcroots/per-machine/$MACHINE"
         mkdir -p -m 0755 "/var/lib/machines/$MACHINE/nix" "/var/lib/machines/$MACHINE/etc" "/var/lib/machines/$MACHINE/var/lib"
         mkdir -p -m 0700 /var/lib/machines/$MACHINE/var/lib/private "/var/lib/machines/$MACHINE/root"
       '';
@@ -72,6 +73,9 @@ in
           # to figure out something better
           PrivateUsers = "no";
         };
+        networkConfig = {
+          Zone = "nixos";
+        };
         filesConfig = {
           BindReadOnly = [ 
             "/nix/store"
@@ -79,8 +83,8 @@ in
             "/nix/var/nix/daemon-socket"
           ];
           Bind = [ 
-            "/nix/var/nix/profiles/per-machine/${name}:/nix/var/nix/profiles" 
-            "/nix/var/nix/gcroots/per-machine/${name}:/nix/var/nix/gcroots"
+            # "/nix/var/nix/profiles/per-machine/${name}:/nix/var/nix/profiles" 
+            # "/nix/var/nix/gcroots/per-machine/${name}:/nix/var/nix/gcroots"
           ];
         };
       });
