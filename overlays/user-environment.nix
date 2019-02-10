@@ -5,6 +5,7 @@ self: super: {
       ag
       asciinema
       cabal2nix
+      elm2nix
       ctags
       dmenu
       dzen2
@@ -16,21 +17,26 @@ self: super: {
       graphviz
       htop
       j4-dmenu-desktop
+      pavucontrol
+      arandr
+      transmission-gtk
       jq
       neovim
       compton
       tmux
       tmux.man
       quake3
+      evince
       obs-studio
       discord
       multimc
       scrot
       vscode
       cachix
-      ghc
+      haskell.compiler.ghc863
+      wire-desktop
       cabal-install
-      (import (builtins.fetchTarball https://github.com/domenkozar/hie-nix/tarball/master ) {}).hies
+      # (import (builtins.fetchTarball https://github.com/domenkozar/hie-nix/tarball/master ) {}).hies
 
     ];
   };
