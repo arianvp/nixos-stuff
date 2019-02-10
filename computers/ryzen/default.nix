@@ -38,11 +38,19 @@ with pkgs;
 
   systemd.targets."multi-user".wants = [ "machines.target" ];
 
+  /*
+  containers.arianisverycool = {
+    privateNetwork = true;
+    config = {
+      services.nginx.enable = true;
+    };
+  };
+
   services.systemd-nspawn.machines.arian = {
     config = {...}: {
       services.nginx.enable = true;
     };
-  };
+  };*/
 
   services.ipfs.enable = false;
 
