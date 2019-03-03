@@ -14,7 +14,7 @@ with pkgs;
   nixpkgs.config.allowUnfree = true;
 
 
-  boot.kernelPackages = pkgs.linuxPackages_4_18;
+  boot.kernelPackages = pkgs.linuxPackages_4_19;
   boot.kernelModules = [ "kvm-intel" "kvm-amd" ];
   boot.kernelParams = ["amdgpu.dc=1"]; networking.firewall.enable = false;
   networking.firewall.allowedTCPPorts = [ 51413 27950 27952 27960 27965 ];
