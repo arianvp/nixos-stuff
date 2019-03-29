@@ -1,12 +1,19 @@
-{ config, pkgs, ... }: 
-{
+{ config, pkgs, ... }: {
   imports = [
     ./hardware-configuration.nix 
-   ../../modules/yubikey
-   ../../modules/ssh-tweaks.nix
-   ../../modules/env.nix
- ];
+    ../../modules/yubikey
+    ../../modules/ssh-tweaks.nix
+    ../../modules/env.nix
+    ../../modules/containers-v2.nix
+  ];
   config = {
+
+    services.systemd-nspawn.machines = {
+      "nginx".config = {...}: {
+        services.nginx.enable = true;
+      };
+    };
+
     time.timeZone = "Europe/Amsterdam";
     programs.bash.enableCompletion = true;
     hardware.pulseaudio.enable = true;
@@ -23,6 +30,11 @@
       };
       displayManager.gdm.enable = true;
     };
+    environment.interactiveShellInit = ''
+      if [[ "$VTE_VERSION" > 3405 ]]; then
+        source "${pkgs.gnome3.vte}/etc/profile.d/vte.sh"
+      fi
+    '';
     services.netdata.enable = true;
     networking.hostName = "t430s";
     services.sshd.enable = true;
