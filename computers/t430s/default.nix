@@ -14,6 +14,12 @@
       };
     };
 
+    networking.extraHosts = ''
+      0.0.0.0 twitter.com
+      0.0.0.0 reddit.com
+      0.0.0.0 facebook.com
+    '';
+
     time.timeZone = "Europe/Amsterdam";
     programs.bash.enableCompletion = true;
     hardware.pulseaudio.enable = true;
