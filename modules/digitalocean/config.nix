@@ -20,7 +20,6 @@ with lib;
       grub.configurationLimit = 0;
     };
   };
-  users.mutableUsers = false;
   services.openssh = {
     enable = true;
     permitRootLogin = "prohibit-password";
@@ -38,7 +37,7 @@ with lib;
     wantedBy = [ "multi-user.target" ];
     script = ''
       set -e
-      DIGITALOCEAN_HOSTNAME=$(curl --retry-connrefused http://169.254.169.264/metadata/v1/hostname)
+      DIGITALOCEAN_HOSTNAME=$(curl --retry-connrefused http://169.254.169.254/metadata/v1/hostname)
       hostname $DIGITALOCEAN_HOSTNAME
     '';
     unitConfig = {
