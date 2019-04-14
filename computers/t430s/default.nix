@@ -5,6 +5,7 @@
     ../../modules/ssh-tweaks.nix
     ../../modules/env.nix
     ../../modules/containers-v2.nix
+    ../../modules/direnv.nix
   ];
   config = {
 
@@ -18,6 +19,8 @@
       0.0.0.0 twitter.com
       0.0.0.0 reddit.com
       0.0.0.0 facebook.com
+      0.0.0.0 news.ycombinator.com
+      0.0.0.0 tweakers.net
     '';
 
     time.timeZone = "Europe/Amsterdam";
