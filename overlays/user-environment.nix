@@ -29,7 +29,6 @@ self: super: {
       neovim
       obs-studio
       pavucontrol
-      quake3
       scrot
       tmux
       tmux.man
