@@ -4,8 +4,9 @@
       ./hardware-configuration.nix
       ./irc.nix
       ../../modules/gitlab-runner.nix
+      ../../modules/k8s
       ./monitoring.nix
-      ./minecraft.nix
+      # ./minecraft.nix
     ];
     boot.loader.grub = {
       enable = true;
@@ -24,8 +25,8 @@
       443
       4443
     ];
-    services.gitlab-runner2.enable = true;
-    services.gitlab-runner2.registrationConfigFile = "/var/lib/gitlab-runner/secret";
+    # services.gitlab-runner2.enable = true;
+    # services.gitlab-runner2.registrationConfigFile = "/var/lib/gitlab-runner/secret";
     users.users.root.openssh.authorizedKeys.keyFiles = [
       (pkgs.fetchurl {
         url = "https://github.com/arianvp.keys";
