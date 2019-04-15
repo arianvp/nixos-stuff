@@ -32,7 +32,8 @@ remoteOrLocal() {
 
 
 echo "Building closure"
-result=$(nix-build -A "${target}.toplevel")
+result=$(nix-build --no-out-link -A "\"${target}\".toplevel")
+echo "Built $result"
 
 # todo copy if remote
 if [ "$remote" != "localhost" ]; then
@@ -45,7 +46,7 @@ remoteOrLocal sudo nix-env -p "$profile" --set "$result"
 
 echo "Switching to configuration"
 if [ "$action" == "kexec" ]; then
-  action2="switch"
+  action2="boot"
 else
   action2=$action
 fi
@@ -54,6 +55,6 @@ remoteOrLocal sudo "${profile}/bin/switch-to-configuration" "$action2"
 
 if [ "$action" == "kexec" ]; then
   echo "Performing kexec"
-  remoteOrLocal sudo kexec -l /run/current-system/kernel --initrd /run/current-system/initrd --reuse-cmdline
-  remoteOrLocal sudo systemctl kexec
+  remoteOrLocal sudo systemctl start prepare-kexec
+  remoteOrLocal sudo systemctl kexec --force
 fi
