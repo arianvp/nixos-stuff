@@ -1,8 +1,8 @@
-{ config, pkgs, lib, ... }:
+{ config, pkgs, lib, modulesPath, ... }:
 with lib;
 {
   imports = [
-    <nixos-19.03/nixos/modules/profiles/qemu-guest.nix>
+    (modulesPath + "/profiles/qemu-guest.nix")
   ];
   fileSystems."/" = {
     device = "/dev/disk/by-label/nixos";
