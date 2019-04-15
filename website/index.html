@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+
+    
+    <title>foldr ::</title>
+    <meta name="description" content="(α → β → β) → β → [α] → b  -- folding my life together piece by piece" />
+
+    <meta name="HandheldFriendly" content="True" />
+    <meta name="MobileOptimized" content="320" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    
+    <link rel="stylesheet" type="text/css" href="/assets/css/screen.css" />
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic|Open+Sans:700,400" />
+
+    
+    <meta name="generator" content="Ghost 0.3" />
+<link rel="alternate" type="application/rss+xml" title="RSS" href="/rss/">
+</head>
+<body class="home-template">
+
+    
+    
+
+
+
+
+<header id="site-head" style="background-image: url(/content/images/2015/Mar/index.png)">
+    
+    <div class="vertical">
+        <div id="site-head-content" class="inner">
+
+            <a id="blog-logo" href="http://arianvp.me"><img src="/content/images/2013/Oct/200px_Haskell_Logo_svg.png" alt="Blog Logo" /></a>
+            <h1 class="blog-title">foldr ::</h1>
+            <h2 class="blog-description">(α → β → β) → β → [α] → b  -- folding my life together piece by piece
+</h2>
+       
+        </div>
+    </div>
+</header>
+
+
+<main class="content" role="main">
+
+    
+    
+
+    <article class="post tag-ansible tag-devops tag-lxd tag-lxc tag-containers">
+        <header class="post-header">
+            <span class="post-meta"><time datetime="2016-01-26">26 Jan 2016</time> on ansible, devops, lxd, lxc, containers</span>
+            <h2 class="post-title"><a href="/lxd-and-ansible-for-staging-and-development/">LXD and Ansible for staging and development</a></h2>
+
+        </header>
+        <section class="post-excerpt">
+            <p>Today I'll discuss a technique I use at my current gig to simulate our production environment using LXD.
+
+LXD is a container hypervisor by Cannonical. It's a bit experimental, but feels a lot more attractive than Docker. It's a system based on LXC, which allows users to run unprivileged containers&hellip;</p>
+        </section>
+    </article>
+
+    
+
+    <article class="post">
+        <header class="post-header">
+            <span class="post-meta"><time datetime="2015-07-23">23 Jul 2015</time> </span>
+            <h2 class="post-title"><a href="/the-functional-programming-mantra/">Why functional programming?</a></h2>
+
+        </header>
+        <section class="post-excerpt">
+            <p>As developers we want to write robust and correct code. This is our ultimate goal.
+
+To reach this goal, we write tests that assure us of the correct behaviour of our code.
+
+To make code testable, we define code in isolated units, that are also tested in isolation.
+
+Dependencies between&hellip;</p>
+        </section>
+    </article>
+
+    
+
+    <article class="post">
+        <header class="post-header">
+            <span class="post-meta"><time datetime="2015-06-12">12 Jun 2015</time> </span>
+            <h2 class="post-title"><a href="/joylent-day-1/">Joylent - Day 1</a></h2>
+
+        </header>
+        <section class="post-excerpt">
+            <p>So I've decided to not eat anything for a week. And live soley on Joylent.
+
+Day one was heavy.  I had major headaches and felt fatigued, but that might had more to do with the party I had the day before.
+
+Anyhow.  I decided to take the strawberry shake today&hellip;</p>
+        </section>
+    </article>
+
+    
+
+    <article class="post tag-haskell tag-algebra tag-compiler tag-interpreter tag-catamorphism tag-folds tag-fold">
+        <header class="post-header">
+            <span class="post-meta"><time datetime="2015-05-04">04 May 2015</time> on haskell, algebra, compiler, interpreter, catamorphism, folds, fold</span>
+            <h2 class="post-title"><a href="/writing-interpreters-and-compilers-an-introduction-to-folds-and-algebras/">Writing interpreters and compilers - An introduction to folds and algebras</a></h2>
+
+        </header>
+        <section class="post-excerpt">
+            <p>So lets say we are building our own programming language because we're cool
+ like that.
+
+For now our language will support simple arithmatic.
+
+So lets define an abstract syntax tree for it.
+
+data Expr = Val Int -- an expression is a value
+          | Expr :+: Expr -- Or two expressions added together&hellip;</p>
+        </section>
+    </article>
+
+    
+
+    <article class="post tag-haskell tag-hom tag-lens">
+        <header class="post-header">
+            <span class="post-meta"><time datetime="2015-02-22">22 Feb 2015</time> on haskell, Hom, lens</span>
+            <h2 class="post-title"><a href="/lenses-and-prisms-for-modular-clientside-apps/">Lenses and prisms for modular clientside apps</a></h2>
+
+        </header>
+        <section class="post-excerpt">
+            <p>Warning: This is just a mind dump. It's not a coherent story and it's mostly for me to read back on my thought. I'm publishing it in the hope that other people can learn from my thought process. 
+
+To recap for the ones who aren't aware. Hom is a (hypothetical&hellip;</p>
+        </section>
+    </article>
+
+    
+
+    <article class="post">
+        <header class="post-header">
+            <span class="post-meta"><time datetime="2014-12-22">22 Dec 2014</time> </span>
+            <h2 class="post-title"><a href="/hacking-together-ghcjs-support-for-servant/">Hacking together GHCJS support for Servant</a></h2>
+
+        </header>
+        <section class="post-excerpt">
+            <p>Source
+Demo
+
+So tonight I wanted to hack something together in 3 hours and I did!
+
+I wanted servant to work in the browser.
+
+Servant allows you to define routes at the typelevel and it automagically creates a whole freakin rest api from that. Yay for haskell.
+
+Anyhow. Having type-safe&hellip;</p>
+        </section>
+    </article>
+
+    
+
+    
+    <nav class="pagination" role="pagination">
+    
+    <span class="page-number">Page 1 of 2</span>
+    
+        <a class="older-posts" href="/page/2/">Older Posts &rarr;</a>
+    
+</nav>
+
+</main>
+
+
+    <footer class="site-footer">
+        <a class="subscribe icon-feed" href="http://arianvp.me/rss/"><span class="tooltip">Subscribe!</span></a>
+        <div class="inner">
+             <section class="copyright">All content copyright <a href="/">foldr ::</a> &copy; 2013 &bull; All rights reserved.</section>
+             <section class="poweredby">Proudly published with <a class="icon-ghost" href="//ghost.org">Ghost</a></section>
+        </div>
+    </footer>
+
+    
+    <script src="/shared/vendor/jquery/jquery.js"></script>
+
+    
+    <script type="text/javascript" src="/assets/js/index.js"></script>
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {inlineMath:[['$','$'], ['\\(','\\)']]}
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>

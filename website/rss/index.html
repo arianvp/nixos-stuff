@@ -1,0 +1,967 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[foldr ::]]></title><description><![CDATA[(α → β → β) → β → [α] → b  -- folding my life together piece by piece
+]]></description><link>http://arianvp.me</link><generator>NodeJS RSS Module</generator><lastBuildDate>Sun, 06 Nov 2016 15:39:09 GMT</lastBuildDate><atom:link href="http://arianvp.me/rss/" rel="self" type="application/rss+xml"/><author><![CDATA[Arian van Putten]]></author><ttl>60</ttl><item><title><![CDATA[LXD and Ansible for staging and development]]></title><description><![CDATA[<p>Today I'll discuss a technique I use at my current gig to simulate our production environment using LXD.</p>
+
+<p>LXD is a container hypervisor by Cannonical. It's a bit experimental, but feels a lot more attractive than Docker. It's a system based on LXC, which allows users to run unprivileged containers. Unlike docker, the LXC philosohpy is that an entire OS should be able to run in it, including init system. This is similar to the systemd-nspawn philosophy, which we also evaluated, but because we are on ubuntu LTS, we still use upstart so that was not an option.</p>
+
+<p>LXC is a bit raw, you can simply run rootfs's as containers and that's all it gives.  Furthermore, it creates a bridged network and allows you assign IPs and domain names to containers with dnsmasq. Either using DHCP, or fixed IPs.</p>
+
+<p>Because we wanted to create a private network for our containers that simulate our production environment, we didn't opt for docker because we couldn't find a way to easily configure the network like with LXC, which is just writing some dnsmasq config files which most sysadmins are already familiar with.</p>
+
+<p>Because the containers in LXD are just simple ubuntu cloud instances (with upstart and everything), we can just easily provision them with Ansible, which we already use for our production environment. It's a simple case of just creating a new inventory file in Ansible and we're all set.</p>
+
+<h2 id="importinganimage">Importing an image</h2>
+
+<p>Before we start, we should make sure the user on your system is in the lxdgroup:  </p>
+
+<pre><code>$ newgrp lxd
+</code></pre>
+
+<p>Lets start with some basics, how do we create a container? We can download images from the image repository using the <code>lxd-images</code> command. Or we can import an existing base image into LXD using <code>lxc image import</code>. </p>
+
+<p>At work we use a predefined <code>base</code> image which is simply a tarball with a rootfs and some <code>cloud-config</code> template files. The cloud-config template files are used for setting the <code>hostname</code> of the container for example.</p>
+
+<pre><code>templates/  
+├── cloud-init-meta.tpl
+├── cloud-init-user.tpl
+├── cloud-init-vendor.tpl
+└── upstart-override.tpl
+rootfs/  
+├── bin
+├── boot
+├── dev
+├── etc
+├── home
+├── lib
+├── lib64
+├── lost+found
+├── media
+├── mnt
+├── opt
+├── proc
+├── root
+├── run
+├── sbin
+├── srv
+├── sys
+├── tmp
+├── usr
+└── var
+</code></pre>
+
+<p>To import a base image we simply do:  </p>
+
+<pre><code> $ lxc image import base.tar.gz --alias=base
+</code></pre>
+
+<p>Or if you don't have a base image at hand, you can download one:</p>
+
+<pre><code>$ lxd-images import ubuntu --alias=base
+</code></pre>
+
+<h2 id="creatingacontainer">Creating a container</h2>
+
+<p>Well that's super easy!  </p>
+
+<pre><code>$ lxc launch base my-container
+</code></pre>
+
+<p>And we're in!  </p>
+
+<pre><code>$ lxc exec my-container bash
+</code></pre>
+
+<p>You should have networking connectivity now and be able to install packages using <code>apt-get</code>. You can set up users, and add ssh keys or whatever. But of course, we want to automate this. This is where Ansible gets into play. But before we come to that, we need to do some network configuration.</p>
+
+<h2 id="networking">Networking</h2>
+
+<p>Make sure that both <code>dnsmasq</code> and <code>lxc-net</code> services are running:</p>
+
+<pre><code># service dnsmasq restart
+# service lxc-net restart
+</code></pre>
+
+<p>Now edit <code>/etc/default/lxc-net</code>.</p>
+
+<p>Make sure that the following line is uncommented. Then the <code>lxc-net</code> daemon will automatically created a bridged network for your containers  </p>
+
+<pre><code>USE\_LXC\_BRIDGE="true"  
+</code></pre>
+
+<p>Next in the file is the configuration of the private network for your containers. You can leave them as is or change the network. We decided to use the <code>192.168.2.0/24</code> subnet for our containers, which is the following config:</p>
+
+<pre><code>LXC_BRIDGE="lxcbr0"  
+LXC_ADDR="192.168.2.1"  
+LXC_NETMASK="255.255.255.0"  
+LXC_NETWORK="192.168.2.0/24"  
+LXC\_DHCP\_RANGE="192.168.2.2,192.168.2.254"  
+LXC\_DHCP\_MAX="253"  
+</code></pre>
+
+<p>Furthermore make sure that  <code>LXC_DOMAIN="lxc"</code> is uncommented. It signals dnsmasq to assign containers <code>&lt;containername&gt;.lxc</code> domain names.</p>
+
+<p>To actually make sure that dnsmasq does this, we'll have to edit the dnsmasq config in <code>/etc/dnsmasq.d/lxc</code>.  Set the <code>server</code> to whatever you set in <code>LXC_ADDR</code>. In our case <code>192.168.2.1</code></p>
+
+<pre><code>bind-interfaces  
+except-interface=lxcbr0  
+server=/lxc/192.168.2.1  
+</code></pre>
+
+<p>Also make sure that whenever you edit <code>dnsmasq</code> or <code>lxc-net</code> configs that you restart the services to register the changes. </p>
+
+<pre><code>$ service lxc-net restart
+$ service dnsmasq restart
+</code></pre>
+
+<p>Now if we restart our container, we should be able to connect to it!  </p>
+
+<pre><code>$ lxc restart my-container
+</code></pre>
+
+<pre><code>$ ping my-container.lxc
+</code></pre>
+
+<p>Also, if you installed <code>ssh</code> on the container with <code>apt-get</code> and added your ssh key to a user, you should be able to ssh into it aswell. (Which is pre-installed on the ubuntu base image, and ssh keys of all our developers are in the base image already)</p>
+
+<pre><code>$ ssh dev@my-container.lxc
+</code></pre>
+
+<h3 id="nitpickwithlaunchingnewcontainers">Nitpick with launching new containers</h3>
+
+<p>Currently, there is a little bug in lxd, that causes containers not to register with dnsmasq on first launch. So if you launch a new container, make sure to restart it immediatelly to make it register a dns name.</p>
+
+<pre><code>$ lxc launch base new-container &amp;&amp; lxc restart new-container
+</code></pre>
+
+<h2 id="provisioningwithansible">Provisioning with Ansible</h2>
+
+<p>Ansible provisioning is reall easy now. Create a container for each server your want to run in your development environment:</p>
+
+<pre><code>$ lxc launch base frontend &amp;&amp; lxc restart frontend
+$ lxc launch base postgres &amp;&amp; lxc restart postgres
+$ lxc launch base workers  &amp;&amp; lxc restart workers
+</code></pre>
+
+<p>And make a new inventory file, for example named <code>dev</code>:</p>
+
+<pre><code>[frontend]
+frontend.lxc  
+[postgres]
+postgres.lxc  
+[workers]
+workers.lxc  
+</code></pre>
+
+<p>Now simply run your ansible playbook:  </p>
+
+<pre><code>$ ansible-playbook --ask-sudo-pass ./provision.yml -i ./inventory/dev -e development=true
+</code></pre>
+
+<p>Your containers should be provisioned now!</p>
+
+<h2 id="stagingserver">Staging server</h2>
+
+<p>At work we also use this technique to run our staging server.  We have a staging server running at <code>staging.internal</code> which has ansible and lxc installed.  If we log into it with SSH Agent Forwarding. The base image has the public keys of our development machines, so with agent forwarding, we can provision the servers from the staging server.</p>
+
+<pre><code>ssh -A dev@staging.internal  
+</code></pre>
+
+<p>Once we're in, we can simply start new containers and provision them with ansible as shown above.</p>
+
+<h2 id="troubleshooting">Troubleshooting</h2>
+
+<p>Sometimes lxd can be a bit grumpy (it's not fully stable yet). It might not always succeed in claiming a domain name. In that case I usually first try to restart the container <code>lxc restart containername</code> and if that doesn't work I restart both <code>dnsmasq</code> and <code>lxc-net</code> just to be sure.</p>]]></description><link>http://arianvp.me/lxd-and-ansible-for-staging-and-development/</link><guid isPermaLink="false">da90392d-7a45-47b6-8665-8ae23243bd26</guid><dc:creator><![CDATA[Arian van Putten]]></dc:creator><pubDate>Tue, 26 Jan 2016 09:31:57 GMT</pubDate></item><item><title><![CDATA[Why functional programming?]]></title><description><![CDATA[<p>As developers we want to write robust and correct code. This is our ultimate goal.</p>
+
+<p>To reach this goal, we write tests that assure us of the correct behaviour of our code.</p>
+
+<p>To make code testable, we define code in isolated units, that are also tested in isolation.</p>
+
+<p>Dependencies between units should soley be described through dependency injection.  A unit describes on what units it depends.   If unit C depends on unit A and B, and A and B are tested to function correctly, then if we test unit C then we can be assured that A and B won't cause tests to fail suddenly as we know how A and B behave.  This way of thinking is what we call unit testing and is one of the most important parts of Test Driven Development.</p>
+
+<p>So what if we would limit a language to only be able to define units that can only depend on behaviour of well-functioning other units? So that it's output (its behaviour) is soley dependend on its input?</p>
+
+<p>Well in mathematics we have a concept called functions. Here have one $ f(x) = 3x$. I'm sure you've used them in high school. Behaviour of functions is fully dependent on its input..  $f(5)$ will always yield $15$.  No matter how many times you call it.  If we compose functions, then one function is dependent on the behaviour of another function.  Say we have $g(x) = x+2$ then  $f(g(x))$ is $f$ with as input the behaviour of $g$. and because we know the behaviour of $g$ is well-defined, we know that $f$ well defned as well.  $f(g(5))$ will always yield $21$, not matter how much you call it.</p>
+
+<blockquote>
+  <p>In mathematics, a function is a relation between a set of inputs and a set of permissible outputs with the property that each input is related to exactly one output. </p>
+</blockquote>
+
+<p>So basically a function is exactly the definition of a unit and nothing more. It encapsulates exactly what we expect a unit to be. And this forms the basis of functional programming.</p>
+
+<p>In functional programming, our programs are soley composed of functions, and nothing else.  And this has a very powerful consequence. It means our code is unit-testable by default, because functions are exactly what makes a unit a unit.</p>
+
+<p>Well-testable and well-tested software is easier to refactor, extend, and to trace back bugs in. This makes functional languages a great tool for robust software with an easy development cycle.</p>]]></description><link>http://arianvp.me/the-functional-programming-mantra/</link><guid isPermaLink="false">d2d70ccc-18e8-4c93-9120-fbea3e12ac59</guid><dc:creator><![CDATA[Arian van Putten]]></dc:creator><pubDate>Thu, 23 Jul 2015 18:36:43 GMT</pubDate></item><item><title><![CDATA[Joylent - Day 1]]></title><description><![CDATA[<p>So I've decided to not eat anything for a week. And live soley on Joylent.</p>
+
+<p>Day one was heavy.  I had major headaches and felt fatigued, but that might had more to do with the party I had the day before.</p>
+
+<p>Anyhow.  I decided to take the strawberry shake today.  The flavour was subtle and nice.  The shake tastes like pancake batter with a slight strawberry touch. The structure is soft but thick, and always feels warm, even if you cool it in the fridge, which is really weird... I gues it's the structure that your body doesn't associate with 'cold'.</p>
+
+<p>I took a bottle with me and drank it over an hour or two. Don't do this. You just end up being hungry all the time. In the afternoon I just ad-fundumed the next batch and it was a lot more pleasant.</p>
+
+<p>Around 3 I got a real craving for food, So I ate a slice of bread. It was really good.</p>
+
+<p>In the evening I stole one slice of pizza of my friend.  I really love diner, and it's hard to not have diner..  That was a real struggle.  </p>
+
+<p>Later that night I went out. And I noticed I would get tipsy very quickly. After 2 drinks I already felt light-headed and had some headaches. So I quit drinking more.   </p>
+
+<p>Later the night I had a great Durum Doner.  I just craved for food.</p>
+
+<p>So yeah. Day one was okay, but a bit of a failure. I'm not sure I can do without food. But Soylent is great for in the morning, as usually I don't have time to make breakfast. So it's a quick way to get something into my system to get the engine running.</p>]]></description><link>http://arianvp.me/joylent-day-1/</link><guid isPermaLink="false">6ec6c186-1833-4ef1-a577-29922e0ea653</guid><dc:creator><![CDATA[Arian van Putten]]></dc:creator><pubDate>Fri, 12 Jun 2015 13:30:01 GMT</pubDate></item><item><title><![CDATA[Writing interpreters and compilers - An introduction to folds and algebras]]></title><description><![CDATA[<p>So lets say we are building our own programming language because we're cool
+ like that.</p>
+
+<p>For now our language will support simple arithmatic.</p>
+
+<p>So lets define an abstract syntax tree for it.</p>
+
+<pre><code>data Expr = Val Int -- an expression is a value
+          | Expr :+: Expr -- Or two expressions added together
+          | Expr :-: Expr -- Or two expressions subtracted
+</code></pre>
+
+<p>We can now formulate abstract syntax trees:</p>
+
+<pre><code>expr = Val 3 :+: Val 4
+expr2 = expr :-: Val 2
+expr3 = Val 3 :+: (Val 2 :-: val 4)
+</code></pre>
+
+<p>Now we can create an interpreter that evaluates our abstract syntax trees <br />
+using direct recursion:</p>
+
+<pre><code>interpret :: Expr -&gt; Int
+
+-- interpreting a value is simply interpreting the value itself
+
+interpret (Val x) = x
+
+-- interpreting addition is interpreting the left and righthand side and
+-- adding them together
+interpret (x :+: y) = interpret x + interpret y
+
+-- similarary for subtraction
+interpret (x :-: y) = interpet x - interpret y
+</code></pre>
+
+<p>ghci:</p>
+
+<pre><code>&gt; interpret expr
+7
+&gt; interpret expr2
+5
+&gt; interpret expr3
+1
+</code></pre>
+
+<p>Interpreters are cool and all. but I heard compilers are way cooler <br />
+Say we have a simple stack machine that supports the following operators:</p>
+
+<pre><code>data Instr   = PUSH Int -- pushes an integer to the stack
+            | ADD      -- pops two integers from the stack, adds them and pushes
+                        -- the result
+            | SUB      -- similrary but subtracts
+</code></pre>
+
+<p>Then a compiler is simply:</p>
+
+<pre><code>compile :: Expr -&gt; [Instr]
+
+compile (Val x) = PUSH x
+compile (x :+: y) = compile x ++ compile y ++ [ADD]
+compile (x :-: y) = compile x ++ compile y ++ [SUB]
+</code></pre>
+
+<p>ghci:</p>
+
+<pre><code>&gt; compile expr
+[PUSH 3, PUSH 4, ADD]
+&gt; compile expr2
+[PUSH 3, PUSH 4, ADD, PUSH 2, SUB]
+&gt; compile expr3
+[PUSH 3, PUSH 2, PUSH 4, SUB, ADD]
+</code></pre>
+
+<p>Someone who has worked with lists before knows that we tend to avoid explicit <br />
+recursion and favor   maps and folds because we can easily reason about resuable blocks</p>
+
+<p>The question that arrises is, if we can abstract recursion on lists, can we abstract recursion on our custom  abstract syntax tree?</p>
+
+<p>The answer is yes.</p>
+
+<p>We begin by defining a corresponding Algebra for our AST</p>
+
+<pre><code>data ExprAlgebra  e= ExprAlgebra
+  { val :: Int -&gt; e
+  , add :: e -&gt; e -&gt; e
+  , sub :: e -&gt; e -&gt; e
+  }
+</code></pre>
+
+<p>What an algebra does is encapsulate the evaluation strategies of each component of our AST in a datatype.</p>
+
+<p>For example. An interpreter would look like this:</p>
+
+<pre><code>interpreter :: ExprAlgebra Int
+interpreter = ExprAlegbra
+  { val = id
+  , add = (+)
+  , sub = (-)
+  }
+</code></pre>
+
+<p>An algebra by itself isn't very useful. But once you recurse over <br />
+your Abstract syntax tree, you can apply the algebra on it. You're recursing over your abstract syntax tree with a provided evaluation strategy.</p>
+
+<pre><code>foldExpr :: ExprAlgebra a -&gt; Expr -&gt; a
+foldExpr alg (Val i)     = (val alg) i
+foldExpr alg (e1 :+: e2) = (add alg) (foldExpr e1) (foldExpr e2)
+foldExpr alg (e1 :-: e2) = (sub alg) (foldExpr e1) (foldExpr e2)
+</code></pre>
+
+<p>The result is that if you feed our algebra/ evaluation strategy to this recursion scheme, you get back <br />
+an interpreter!</p>
+
+<pre><code>interpret' :: Expr -&gt; Int
+interpret' = foldExpr interpreter
+</code></pre>
+
+<p>ghci:    </p>
+
+<pre><code>&gt; interpret' expr1
+7
+&gt; interpret' expr2
+5
+&gt; interpret' expr3
+1
+</code></pre>
+
+<p>So what did we gain by splitting up our recurive function into <br />
+an evaluation strategy and a recursive part?</p>
+
+<p>Well! we can now write a compiler without writing another recursive function! Just define a new evaluation strategy!</p>
+
+<pre><code>compiler :: ExprAlgebra [Instr]
+compiler = ExprAlgebra
+  { val = [PUSH]
+  , add = \x y -&gt; x++y++[ADD]
+  , sub = \x y -&gt; x++y++[ADD]
+  }
+</code></pre>
+
+<p>See how we can define the function compile by reusing foldExpr? <br />
+We have eliminated quite some code duplication!</p>
+
+<pre><code>compile' :: Expr -&gt; [Instr]
+compile' = foldExpr compiler
+</code></pre>
+
+<p>ghci:</p>
+
+<pre><code>&gt; compile' expr
+[PUSH 3, PUSH 4, ADD]
+&gt; compile' expr2
+[PUSH 3, PUSH 4, ADD, PUSH 2, SUB]
+&gt; compile' expr3
+[PUSH 3, PUSH 2, PUSH 4, SUB, ADD]
+</code></pre>
+
+<p>Of course we've made a tradeoff. Now we don't have duplicate recursion for operations on the same datatype. But say we now want to build a new language  with different features and thus a different abstract syntax tree. Do we have to write a new fold for that? Can we automatically deduce folds for abstract syntax trees?</p>
+
+<p>The answer is: for simple languages, Yes!  For less-toy-examply-languages (lets say C#) the answer is (as far as I know), no.</p>
+
+<p>But that's something for next time. I will then introduce F-algebras and catamorphisms to make our live even easier. They basically formalize the steps we have taken to transform explicit recursion into a fold. Allowing us to easily deduce folds on any datatype. <br />
+They're really interesting but as stated have their limitations, which I will also cover.</p>]]></description><link>http://arianvp.me/writing-interpreters-and-compilers-an-introduction-to-folds-and-algebras/</link><guid isPermaLink="false">ceee010c-508f-4a14-a133-aa249e006de1</guid><dc:creator><![CDATA[Arian van Putten]]></dc:creator><pubDate>Mon, 04 May 2015 10:15:57 GMT</pubDate></item><item><title><![CDATA[Lenses and prisms for modular clientside apps]]></title><description><![CDATA[<p>Warning: This is just a mind dump. It's not a coherent story and it's mostly for me to read back on my thought. I'm publishing it in the hope that other people can learn from my thought process. </p>
+
+<p>To recap for the ones who aren't aware. <a href='http://arianvp.me/hom-react-js-for-haskell/' >Hom</a> is a (hypothetical) library for writing (hopefully) blazingly fast clientside web applications using GHCJS. Its inspired by ReactJS which uses DOM diffing to calculate the optimal way to execute view changes. It basically turns your app into <code>State -&gt; Html</code> . A great fit for the functional paradigm.  Because I hate JS as much as you guys I decided to bring this lovely goodness to haskell.  Luite and I made a start with the <a href='https://github.com/ghcjs/ghcjs-vdom' >ghcjs-vdom</a> library which is a thin wrapper around the js dom diffing algorithm. I was really enthousiastic but the project somehow ended up on my shel of "I'll start working on this project again when I feel like it"-projects.</p>
+
+<p>Currently <code>Hom</code> is in the "showerthought" phase when every once in a while during a shower I come up with ways to improve my library.</p>
+
+<p>This week I had to quickly create a dashboard for a TV at my university. I decided to use Elm.  Development ended up being a joy and shipped the project after a day of elm-hacking.</p>
+
+<p>The joy of working with <code>elm-html</code> was awesome.  <code>elm-html</code> has similar goals to Hom though elm is a lot less powerful language than haskell.</p>
+
+<p>I suggest reading up on <a href='https://github.com/evancz/elm-architecture-tutorial' >Elm architecture tutorial</a> before continuing.</p>
+
+<p>One of the things that annoyed me during the project is that there is a lot of code duplication. Especially a lot of the same pattern matches to delegate actions down to sub-components etc.</p>
+
+<p>Last night I was reading some lens stuff (one of those things I am trying to grock at this moment) and I started reading about prisms.  "First class patterns"  they're supposed to be.  Well that sounds like something I could use right?  I see that I keep doing the same kind of pattern matches for different scenarios. A 'pattern' seems to emerge  (pun intended).  Maybe I can abstract it with prisms? This was the shower thought.</p>
+
+<p>So this morning I started type-hacking and I ended up with some awesome stuff.</p>
+
+<p>I'm gonna assume for now that all elm's APIs are accessible in my hypothetical <code>Hom</code> library.  All the following code is haskell.</p>
+
+<p>We're gonna build an app that combines two apps into one. Namely it includes a Facebook and a Twitter widget.</p>
+
+<p>The facebook and twitter widgets are defined as follow:</p>
+
+<pre><code>module Facebook where
+import Control.Lens
+import VirtualDom
+import Signal
+
+data Model = Model
+ { _likes :: Int
+ , _comments :: [String]
+ }
+
+
+data Action = Like
+            | Comment String
+            deriving Show
+
+
+update :: Action -&gt; Model -&gt; Model
+update Like = ...
+upate (Comment s) = ...
+
+
+action :: Signal Action
+action =  -- facebookAPISource  + input events etc
+
+
+view :: Model -&gt; Html
+view m = ... code that renders the facebook widget ...
+</code></pre>
+
+<p>And Twitter:</p>
+
+<pre><code>module Twitter where
+import VirtualDom
+import Signal
+
+data Model = Model
+ { _status :: String
+ }
+
+data Action = Tweet String
+            | Favorite
+            deriving Show
+update :: Action -&gt; Model -&gt; Model
+update (Tweet s)  = ...
+update (Favorite) =  ...
+
+action :: Signal Action
+action = -- twitter api and input events etc.
+
+view :: Model -&gt; Html
+view m = -- code that renders the widget --
+</code></pre>
+
+<p>Now we want to combine these widgets. So our new model is going to be the union of those two widgets:</p>
+
+<pre><code>data Model = Model
+  { _facebook :: Facebook.Model
+  , _twitter  :: Twitter.Model
+  }
+</code></pre>
+
+<p>And the actions is going to be the union of the two widgets</p>
+
+<pre><code>data Action = FBAction Facebook.Action
+            | TAction Twitter.Action
+            | Close -- our own action for our own component
+</code></pre>
+
+<p>And our update function would be lame pattern matches. Every time we add a new subcomponent...</p>
+
+<pre><code>update :: Action -&gt; Model -&gt; Model
+update Close m =  ... change the state so the app is closed ...
+update (FBAction a) m = m { _facebook = Facebook.update a (_facebook m) }
+update (TAction a) m = m { _twitter = Twitter.update a (_twitter m) }
+</code></pre>
+
+<p>Render the views...</p>
+
+<pre><code>view :: Model -&gt; Html
+view m =
+    div []
+        [ Facebook.view (m^.facebook)
+        , Twitter.view  (m^.twitter)
+        ]
+</code></pre>
+
+<p>And run the app ...</p>
+
+<pre><code>app :: Signal Html
+app = Signal.foldp update initialState action
+</code></pre>
+
+<p>I don't know why but I wanted to hack this into something more nice with lenses and prisms.</p>
+
+<p>Now we do:</p>
+
+<pre><code>makePrisms ''Action
+makeLenses ''Model
+</code></pre>
+
+<p>and we can start doing magic!</p>
+
+<p>After reading the Prism documentation and stack overflow ( <a href='http://stackoverflow.com/questions/20774475/use-a-parameter-as-pattern-in-haskell' >http://stackoverflow.com/questions/20774475/use-a-parameter-as-pattern-in-haskell</a>) I found a way to easily <code>extend</code> your action handler.</p>
+
+<p>say we have:</p>
+
+<pre><code>update' :: Action -&gt; Model -&gt; Model
+update' Close =  .. state to close the app ..
+</code></pre>
+
+<p>and we want to add the facebook widget to that. We end up doing this:</p>
+
+<pre><code>update :: Action -&gt; Model -&gt; Model
+update = update' &amp; outside _FBAction .~ over facebook
+                    . Facebook.update
+</code></pre>
+
+<p>If we want to add a twitter widget to that we can just add it to the chain:</p>
+
+<pre><code>update = update' &amp; outside _FBAction .~ over facebook
+                    . Facebook.update
+                 &amp; outside _TAction  .~ over twitter 
+                     . Twitter.update
+</code></pre>
+
+<p>We can extract this pattern into a utility function:</p>
+
+<p>You should see it as:  If we have a prism that given an action might give us a local action apply the local action to the global state by lensing into the global state to a part that is our local state and update that.</p>
+
+<p>( I simplified the types a lot. Apparently this works for any Profunctor. not just (->) . Though I'm not sure what that means. Heck I don't even know what a Profunctor is. This lens library thing sure is complex.)</p>
+
+<pre><code>updateWith :: APrism' action localAction
+           -&gt; Setting' (-&gt;) model localModel
+           -&gt; (localAction -&gt; localModel -&gt; localModel)
+           -&gt; (action -&gt; model -&gt; model)
+           -&gt; (action -&gt; model -&gt; model)
+updateWith action lens update =
+    outside action .~ over lens . update
+</code></pre>
+
+<p>So our code becomes:</p>
+
+<pre><code>withWidgets :: (Action -&gt; Model -&gt; Model) -&gt; (Action -&gt; Model -&gt; Model)
+withWidgets = updateWith _FBAction facebook Facebook.update
+            . updateWith _TAction  twitter  Twitter.update
+
+update = withWidgets update'
+</code></pre>
+
+<p>So now we can easily add as many widgets as we want using function composition! Nice! Because the local states of widgets don't overlap, the order in which we compose these <code>updateWiths</code> doesn't matter. widgets actions are commutative.</p>
+
+<p>Okay so we got state updating covered.  How do we delegate signals from the main component to subcomponents?  Lets see how we used to do it in elm.</p>
+
+<pre><code>action_ :: Signal Action
+action = FBAction &lt;$&gt; Facebook.action
+      &lt;|&gt; TAction &lt;$&gt; Twitter.action
+</code></pre>
+
+<p>Actually this is quite elegant. But I want to do it with prisms because heck why not.</p>
+
+<p>With prisms we end up with the following code:</p>
+
+<pre><code>action :: Signal Action
+action =  review _FBAction &lt;$&gt; Facebook.action
+      &lt;|&gt; review _TAction  &lt;$&gt; Twitter.action
+</code></pre>
+
+<p>We can extract a utility function:</p>
+
+<pre><code>mountAction :: Functor f =&gt; AReview t a -&gt; f a -&gt; f t
+mountAction r = (review r &lt;$&gt;)
+
+action =  mountAction _FBAction Facebook.action
+      &lt;|&gt; mountAction _TAction Twitter.action
+</code></pre>
+
+<p>This type is super general! I am going to dub it <code>liftReview</code>. It's simply review lifted into a functor.</p>
+
+<p>Anyhow. Here my type-hacking endevaours stop. It was nice and I learned a lot about lenses.  Haskell on the clientside web is awesome. I need to build this hypothetical library. It's gonna be sick.</p>
+
+<p>peace.</p>]]></description><link>http://arianvp.me/lenses-and-prisms-for-modular-clientside-apps/</link><guid isPermaLink="false">3cf632f1-a1e4-4c53-ab47-d51f0a3ac569</guid><dc:creator><![CDATA[Arian van Putten]]></dc:creator><pubDate>Sun, 22 Feb 2015 18:51:47 GMT</pubDate></item><item><title><![CDATA[Hacking together GHCJS support for Servant]]></title><description><![CDATA[<p><a href='http://github.com/arianvp/ghcjs-servant-client' >Source</a>
+<a href='http://test.arianvp.me/static/index.html' >Demo</a></p>
+
+<p>So tonight I wanted to hack something together in 3 hours and I did!</p>
+
+<p>I wanted servant to work in the browser.</p>
+
+<p><a href='http://haskell-servant.github.io/' >Servant</a> allows you to define routes at the typelevel and it automagically creates a whole freakin rest api from that. Yay for haskell.</p>
+
+<p>Anyhow. Having type-safe communication between server and browser just sounded awesome. So I had to hack some prototype together.</p>
+
+<h2 id="hackingit">Hacking it</h2>
+
+<p>Luckily the library maintainers did a lot of work for me already. They split up  the servant package in <code>servant</code> and <code>servant-server</code> on my request. With <code>servant-server</code> containing all the server specific stuff.</p>
+
+<p><code>servant</code> compiled perfectly under GHCJS. Neat.</p>
+
+<p>Okay so now we need not only a way to create serverside code. We also need clientside functions. <code>servant-client</code> to the rescue! Lets try compile that.</p>
+
+<p>Darnit. the <code>http-client</code> dependency can't be compiled by ghcjs. Probably due to it being dependent on <code>network</code>.  Okay so lets add a conditional to the Cabalfile that <code>http-client</code> should only be loaded when  ghcjs is not used at the compiler.</p>
+
+<pre><code>if !impl(ghcjs)
+    build-depends:http-client
+</code></pre>
+
+<p>Ok nice. that works. Now we got a bunch of errors because of HTTP.Client not being in scope. Kinda makes sense. Okay so lets <br />
+just use the C Preprocessor to check if the GHCJS compiler is present. and if so, dont import  that module anywhere its used. Do the same for any code that uses the module.</p>
+
+<p>so now only one function is complaining it lacks an accompanying binding. Neat! One function should be doable to implement.</p>
+
+<p>instead of using http-client we use the JavaScriptFFI to use the XMLHTTPRequest API to make HTTP calls.  A little bit of hacking and marshalling later I discover I can't marshal  Lazy bytestrings from and to javascript....  No time left, I need to go to bed!  Okay lets just add another CPP #ifdef  and just import the strict version if we use GHCJS... That seems to work!  Except that some external function expects a Lazy bytestring. Okay lets just convert the strict bytestring to a lazy bytestring for that specific function call. Super hack.</p>
+
+<p>Okay so now everything compiles. It's super hacky. but it compiles...</p>
+
+<p>So I set up a little test environment ... and.... IT WORKS! WOOHOO :)</p>
+
+<p>I've only tested the GET HTTP method. But I dont see why others wouldn't work. Also I haven't done <em>any</em> form of exception handling but that's something for later as I need to go sleep now. I'm glad this works!</p>
+
+<p>Check out the source and the demo: <br />
+<a href='http://github.com/arianvp/ghcjs-servant-client' >Source</a>
+<a href='http://test.arianvp.me/static/index.html' >Demo</a></p>
+
+<p>And the test setup!</p>
+
+<h2 id="commonhs">Common.hs</h2>
+
+<pre><code>data Book = Book { title :: String
+                 , author :: String
+                 } deriving (Generic,Show)
+instance FromJSON Book
+instance ToJSON Book
+type MyApi =  "books" :&gt; Get [Book] :&lt;|&gt; "static" :&gt; Raw
+data Book = Book { title :: String
+                 , author :: String
+                 } deriving (Generic,Show)
+   instance FromJSON Book
+instance ToJSON Book
+type MyApi =  "books" :&gt; Get [Book] :&lt;|&gt; "static" :&gt; Raw
+</code></pre>
+
+<h1 id="serverhs">Server.hs</h1>
+
+<pre><code>getBooks :: EitherT (Int, String) IO [Book]
+getBooks  = return [Book "yo" "yo"]
+server = getBooks :&lt;|&gt; serveDirectory "static"
+main = Network.Wai.Handler.Warp.run 3000 (serve bookApi $ server)
+</code></pre>
+
+<h1 id="clienths">Client.hs</h1>
+
+<pre><code>getAllBooks :: BaseUrl -&gt; EitherT String IO [Book]
+(getAllBooks :&lt;|&gt; raw) = client myApi
+
+
+
+main = runEitherT $ do
+  case parseBaseUrl "http://test.arianvp.me" of
+    Left s -&gt; liftIO $ print s
+    Right u -&gt; do
+      books &lt;- getAllBooks u
+      liftIO . appendToBody . fromString . show $ books
+</code></pre>]]></description><link>http://arianvp.me/hacking-together-ghcjs-support-for-servant/</link><guid isPermaLink="false">32457281-601a-4868-9dcb-2debd318b3b7</guid><dc:creator><![CDATA[Arian van Putten]]></dc:creator><pubDate>Tue, 23 Dec 2014 01:00:37 GMT</pubDate></item><item><title><![CDATA[Hom - React.JS for Haskell!]]></title><description><![CDATA[<p><a href='http://www.reddit.com/r/haskell/comments/260z7z/hom_reactjs_for_haskell/' >Reddit discussion</a></p>
+
+<p><a href='https://github.com/arianvp/Hom' >Github repo</a></p>
+
+<p>I've recently discovered <a href='https://github.com/swannodette/om' >Om</a> which I think is a beautiful example of why FP matters in modern day computing.</p>
+
+<p>Basically what Om showed was that by using immutable data for state in <a href='http://facebook.github.io/react/' >React.js</a> one could easily outperform similar apps written in OOP style. The reason why it is so much faster is that component should update only has to check for referential equality instead of deep equality. This is a much more efficient way to trigger updates.</p>
+
+<p>Om uses constructs similar to lenses and zippers to easily modify state (they call them cursors)  which is extremely cool.</p>
+
+<p>Haskell has a strong lens implementation (we kinda coined that term, didn't we? ;-)) and that's why I started wondering wether I could port Om (or React) to Haskell.</p>
+
+<p>That way I can use my favorite language to build robust and super fast web applications. A dream come true.</p>
+
+<p>So yeah. Here we go. it's time to build Hom!  A haskell version of Om! (I'm kind of excited :-))</p>
+
+<p>I'm  Considering several options for Haskell->JS conversion. The following Pros and Cons are constructed from first impressions I got from skimming documentations so they might be incorrect. Please correct me when one of the pros or cons is wrong!</p>
+
+<h4 id="ghcjs">GHCJS</h4>
+
+<h5 id="pros">Pros</h5>
+
+<ul>
+<li>Fully compactible with all GHC packages</li>
+<li>straightforward FFI</li>
+</ul>
+
+<h5 id="cons">Cons</h5>
+
+<ul>
+<li><em>very</em> large runtime system</li>
+<li>packages draw in a lot of dependencies,
+creating <em>huge</em> generated code</li>
+</ul>
+
+<h4 id="fay">Fay</h4>
+
+<h5 id="pros">Pros</h5>
+
+<ul>
+<li>Small runtime system</li>
+<li>Small generated code</li>
+<li>Pretty darn fast</li>
+<li>Great FFI. </li>
+</ul>
+
+<h5 id="cons">Cons</h5>
+
+<ul>
+<li>No typeclasses so no Lenses. Kinda defeats the purpose of choosing haskell in the first place</li>
+</ul>
+
+<h4 id="haste">Haste</h4>
+
+<h5 id="pros">Pros</h5>
+
+<ul>
+<li>Compactible with <em>most</em> GHC-Compactible packages</li>
+<li>Smaller runtime system than GHCJS</li>
+<li>Good concurrency constructs</li>
+</ul>
+
+<h5 id="cons">Cons</h5>
+
+<ul>
+<li>Not sure how good the FFI is. What I've seen so far looked a bit clunky compared to UHCJS but maybe I need to get a bit more familiar with it.</li>
+</ul>
+
+<h4 id="uhcjs">UHCJS</h4>
+
+<h5 id="pros">Pros</h5>
+
+<ul>
+<li>Very extensive javascript FFI. probably the best I've seen.</li>
+<li>Maintained by my university (Not really a pro. just exciting)</li>
+</ul>
+
+<h5 id="cons">Cons</h5>
+
+<ul>
+<li>Doesn't support GHC. UHC is a different standard. I think it supports upto haskell2010 though</li>
+</ul>
+
+<p>I think I will go for Haste for now. Though UHCJS sounds really attractive as well to be honest. Fay is just a no-go because I want the sexy lens library!</p>
+
+<p>Next time I'm gonna work out some API design decisions etc. The problem is I really don't have a lot of time to start coding yet because of university work.   I really want to start building this library because I want it so bad!</p>
+
+<p>Any feedback is appreciated. Also if someone is already working on something similar to this, let me know.</p>]]></description><link>http://arianvp.me/hom-react-js-for-haskell/</link><guid isPermaLink="false">a6e98bac-eece-419c-ae0b-774a39cac70f</guid><dc:creator><![CDATA[Arian van Putten]]></dc:creator><pubDate>Tue, 20 May 2014 13:01:13 GMT</pubDate></item><item><title><![CDATA[Fun with the halting problem.]]></title><description><![CDATA[<p>Lets start by proving the following result.</p>
+
+<h2 id="result1">Result 1</h2>
+
+<blockquote>
+  <p>There is no program <code>bool isDeadCode(Code j, Code c)</code> that can check whether a program <em>j</em> contains dead code <em>c</em>. </p>
+</blockquote>
+
+<p>What we mean by dead code is the following:</p>
+
+<pre><code>...
+helloWorld();
+if (true) { Console.WriteLine("Hey there") }
+return;
+Console.WriteLine("I will never be reached. I am dead code");
+...
+</code></pre>
+
+<p>Anyhow, back to the proof...</p>
+
+<p>Suppose there does exist a program <code>bool isCodeDead(Code j, Code c)</code> that can check whether a program <em>j</em> contains dead code <em>c</em>.</p>
+
+<p>In other words. Something like this:</p>
+
+<pre><code>bool isCodeDead(Code j, Code c)
+{
+    ... // some magic here that tells if  c is dead in j
+}
+</code></pre>
+
+<p>Now let <em>k/0</em> be an arbitirary program for which we want to know whether it halts or not.  We start by getting rid of all occurrences of <em>c</em> in <em>k</em>, producing <em>k'</em>. We can be sure that <em>c</em> isn' t dead code in <em>k'</em> because <em>c</em> is absent in <em>k'</em>.</p>
+
+<p>Now lets consider the following pseudocode:</p>
+
+<pre><code>proc g:
+    k'
+    c
+</code></pre>
+
+<p>It should be clear that <em>c</em> will only be reached when <em>k'</em> halts. Since we assumed that we have a program <code>bool isCodeDead(Code j, Code c)</code> that checks whether a program contains dead code, we can tell whether <em>g</em> has dead code. But that also means we can tell whether <em>k'</em> halts. That leads to a contradiction because <a href='http://en.wikipedia.org/wiki/Halting_problem' >the halting problem</a> tells us we cannot tell whether an arbitirary program halts or not.</p>
+
+<p>Thus now we know our assumption was wrong and that the original result must hold by <em>reductio ad absurdum</em>. $\blacksquare$</p>
+
+<p>Now lets use this result to proof an interesting Corollary.</p>
+
+<h2 id="corollary1">Corollary 1</h2>
+
+<blockquote>
+  <p>There is no program <code>List&lt;Code&gt; markDeadCode(Code c)</code> that can mark dead code in an arbitrary program.</p>
+</blockquote>
+
+<p>The following proof is very similar to the previous one. Lets asume the contrary, that there <em>is</em> a  program <code>List&lt;Code&gt; markDeadCode(Code c)</code> that <em>can</em> mark dead code in an arbitrary program.</p>
+
+<p>The source code of such a program would be as follows:</p>
+
+<pre><code>// returns a list of codes that are dead in c.
+List&lt;Code&gt; markDeadCode(Code c)
+{
+    ... // extreme Coding skills that can mark dead code 
+}
+</code></pre>
+
+<p>Now we can write the following program:</p>
+
+<pre><code>bool isCodeDead(Code j, Code c)
+{
+    List&lt;Code&gt; deadCodes = markDeadCode(j);
+    foreach (Code deadCode in deadCodes)
+    {
+        if (deadCode == c)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+</code></pre>
+
+<p>Wait hold on a second!? Hadn't we proven in Result 1 that no program <code>bool isCodeDead(Code j, Code c)</code> could ever exist? Exactly. we have found a contradiction, and thus there is no way a program <code>List&lt;Code&gt; markDeadCode(Code c)</code> could ever exist  by <code>reductio ad absurdum</code>.</p>
+
+<p>$\blacksquare$</p>
+
+<p>I found these proofs rather beautiful and wanted to share them with you :-)</p>]]></description><link>http://arianvp.me/fun-with-the-halting-problem/</link><guid isPermaLink="false">2a69cec5-90dc-4793-a423-0ab5a6016232</guid><dc:creator><![CDATA[Arian van Putten]]></dc:creator><pubDate>Sun, 19 Jan 2014 23:20:50 GMT</pubDate></item><item><title><![CDATA[Every boy loves a girl]]></title><description><![CDATA[<p>Every boy loves a girl can actually mean two things:</p>
+
+<ul>
+<li>Every boy has a girl that he loves</li>
+<li>There is a girl which every boy loves</li>
+</ul>
+
+<p>We can use predicate logic to remove disambiguity:</p>
+
+<ul>
+<li><em>B</em> is the unary predicate letter that determines wether one is a boy.</li>
+<li><em>G</em> is the unary predicate letter that determines whether one is a girl.</li>
+<li><em>L</em> is the binary predicate letter that determines whether one loves another.</li>
+</ul>
+
+<p>Now when we want to say "Every boy has a girl that he loves", we say <br />
+$$ \forall x (Bx \Rightarrow \exists y (Gy \land Lxy))$$.</p>
+
+<p>And if we want to say "There is a girl which every boy loves", we say <br />
+$$ \exists x (Mx \land \forall y (By \Rightarrow Lyx))$$.</p>
+
+<p>By using predicate logic, we have removed every form of ambiguity.</p>]]></description><link>http://arianvp.me/every-boy-loves-a-girl/</link><guid isPermaLink="false">1be73e74-ff0b-4612-8541-93fb223c7d83</guid><dc:creator><![CDATA[Arian van Putten]]></dc:creator><pubDate>Sat, 16 Nov 2013 17:11:22 GMT</pubDate></item><item><title><![CDATA[Proofs about infinite series]]></title><description><![CDATA[<p>Today we will discuss a proof about infinite series.  </p>
+
+<h2 id="resulttoprove">Result to prove</h2>
+
+<blockquote>
+  <p>The infinite series $$\sum^{\infty}_{k=1}\dfrac{1}{k\left(k+1\right)}$$ converges to 1.</p>
+</blockquote>
+
+<p>First, we consider the sequence $\left\lbrace s_{n } \right\rbrace$ of partial sums for this series. Since <br />
+$\sum^{\infty}_{k=1}\dfrac{1}{k\left(k+1\right)} = \dfrac{1}{1\cdot 2} + \dfrac{1}{2\cdot 3} + \dfrac{1}{3\cdot 4} \ldots$, it follows that $s_1 = \dfrac{1}{1\cdot 2} = \dfrac{1}{2}, s_2 = \dfrac{1}{1\cdot 2} + \dfrac{1}{2\cdot 3} = \dfrac{1}{2} + \dfrac{1}{6} = \dfrac{2}{3},$ and $s_3 = \dfrac{1}{1\cdot 2} + \dfrac{1}{2\cdot 3} + \dfrac{1}{3\cdot 4} = \dfrac{1}{2} + \dfrac{1}{6} + \dfrac{1}{12} = \dfrac{3}{4}$.</p>
+
+<p>Based on these three terms, it <em>appears</em> that $s_n = \dfrac{n}{n+1}$ for every positive integer $n$. We prove that this is indeed the case.</p>
+
+<p>$\diamondsuit$</p>
+
+<h2 id="lemma1">Lemma 1</h2>
+
+<blockquote>
+  <p><em>For every positive integer $n$</em></p>
+  
+  <p>$$s_n  = \dfrac{1}{1\cdot 2} + \dfrac{1}{2\cdot 3} + \dfrac{1}{3\cdot 4} + \ldots + \dfrac{1}{n\left( n + 1 \right)} = \dfrac{n}{n+1} $$</p>
+</blockquote>
+
+<h2 id="proofoflemma1">Proof of Lemma 1</h2>
+
+<p>We proceed by induction. For $n=1$ we have $s_1 = \dfrac{1}{1\cdot 2} = \dfrac{1}{1+1}$ and the result holds.</p>
+
+<p>Assume that $s_k  = \dfrac{1}{1\cdot 2} + \dfrac{1}{2\cdot 3} + \dfrac{1}{3\cdot 4} + \ldots + \dfrac{1}{k\left( k + 1 \right)} = \dfrac{k}{k+1} $, where $k$ is a positive integer. We show that <br />
+$s_{k+1}  = \dfrac{1}{1\cdot 2} + \dfrac{1}{2\cdot 3} + \dfrac{1}{3\cdot 4} + \ldots + \dfrac{1}{\left(k+1 \right)\left( k + 2 \right)} = \dfrac{k+1}{k+2} $</p>
+
+<p>Observe that $s_{k+1} = \left[  \dfrac{1}{1\cdot 2} + \dfrac{1}{2\cdot 3} + \dfrac{1}{3\cdot 4} + \ldots + \dfrac{1}{k\left( k + 1 \right)} \right] + \dfrac{1}{\left(k+1 \right)\left( k + 2 \right)}$ <br />
+$= \dfrac{k}{k+1}+\dfrac{1}{\left(k+1 \right)\left( k + 2 \right)} $
+$= \dfrac{k(k+2)+1}{(k+1)(k+2)}=\dfrac{k^2+2k+1}{(k+1)(k+2)}$
+$= \dfrac{(k+1)^2}{(k+1)(k+2)} = \dfrac{k+1}{k+2}$</p>
+
+<p>By the Principle of Mathematical Induction, $s_n = \dfrac{n}{n+1}$ for every positive integer $n$.</p>
+
+<p>$\blacksquare$.</p>
+
+<h2 id="lemma2">Lemma 2</h2>
+
+<blockquote>
+  <p>$$lim_{n\rightarrow \infty} \dfrac{n}{n+1} = 1$$</p>
+</blockquote>
+
+<p>Recall that $lim_{n\to \infty} s_n = L \equiv (\forall \epsilon > 0)(\exists N \in \mathbb{N})(\forall n > N) : \left|S_n -L \right| &lt; \epsilon$</p>
+
+<p>Thus for a given $\epsilon > 0$ we are required to find a positive integer $N$ such that if $n > N$, then $\left|\dfrac{n}{n+1}-1\right| &lt; \epsilon$.Now $\left|\dfrac{n}{n+1}-1\right|=\left|\dfrac{n-n-1}{n+1}\right|=\left|\dfrac{-1}{n+1}\right|=\dfrac{1}{n+1}$.</p>
+
+<p>The inequality $\dfrac{1}{n+1} &lt; \epsilon$ is equivalent to $n+1 > \dfrac{1}{\epsilon}$, which in turn is equivalent to $n > \dfrac{1}{\epsilon} - 1$. If $n > \dfrac{1}{\epsilon}$ then $n > \dfrac{1}{\epsilon} - 1$. We can now present a proof of this lemma.</p>
+
+<p>$\diamondsuit$.</p>
+
+<h2 id="proofoflemma2">Proof of Lemma 2</h2>
+
+<p>Let $\epsilon > 0$. Choose $N=\left\lceil\dfrac{1}{\epsilon}\right\rceil$ and let $n>N$. Then $n > \dfrac{1}{\epsilon} > \dfrac{1}{\epsilon} - 1$. So $n > \dfrac{1}{\epsilon} - 1$. Thus $n+1 > \dfrac{1}{\epsilon}$ and $\dfrac{1}{1+n} &lt; \epsilon$. Hence $\left|\dfrac{n}{n+1}-1\right| = \left|\dfrac{-1}{n+1}\right| = \dfrac{1}{n+1} &lt; \epsilon$.</p>
+
+<p>$\blacksquare$.</p>
+
+<p>Recall our original result to prove.  </p>
+
+<blockquote>
+  <p>The infinite series $$\sum^{\infty}_{k=1}\dfrac{1}{k\left(k+1\right)}$$ converges to 1.</p>
+</blockquote>
+
+<h2 id="proofoftheresult">Proof of the result</h2>
+
+<p>The $n\mathrm{th}$ term of the sequence $\left\lbrace{s_n}\right\rbrace$ of partial sums of the series $\sum^{\infty}_{k=1}\dfrac{1}{k\left(k+1\right)}$ is $s_n = \dfrac{1}{1\cdot 2} + \dfrac{1}{2\cdot 3} + \dfrac{1}{3\cdot 4} \ldots + \dfrac{1}{n(n+1)}$.</p>
+
+<p>By Lemma 1 $s_n = \dfrac{1}{1\cdot 2} + \dfrac{1}{2\cdot 3} + \dfrac{1}{3\cdot 4} \ldots + \dfrac{1}{n(n+1)} = \dfrac{n}{n+1}$ and so $s_n = \dfrac{n}{n+1}$. By Lemma 2,  $lim_{n\to \infty} \dfrac{n}{n+1} = 1$. Since $lim_{n\to \infty} s_n= 1$, it follows that $\sum^{\infty}_{k=1}\dfrac{1}{k\left(k+1\right)} = 1$.</p>
+
+<p>$\blacksquare$</p>]]></description><link>http://arianvp.me/proofs-about-infinite-series/</link><guid isPermaLink="false">99a16f87-bd08-40da-8e9a-ef0a355e05fb</guid><dc:creator><![CDATA[Arian van Putten]]></dc:creator><pubDate>Sun, 03 Nov 2013 12:38:48 GMT</pubDate></item><item><title><![CDATA[A Journey in learning haskell]]></title><description><![CDATA[<h2 id="introduction">Introduction</h2>
+
+<p>Hey there. In these ongoing blog series I will document my journey is progessively building a LISP interpreter as a case study for a 'larger'  haskell program.  I'm a beginner haskell programmer who is looking to learn a bit more.  Follow along as you'll (hopefully) see me evolve into a haskell pro</p>
+
+<p>I'm not sure what functionality the LISP will have, but I'm going to add more and more as time progresses. </p>
+
+<p>I hope that the issues I run into, and the ways I will solve them, will be educational for you.</p>
+
+<h2 id="day1">Day 1</h2>
+
+<h3 id="cabalsandboxes">Cabal sandboxes</h3>
+
+<p>Today I'm going to set up the project.  Cabal 1.8 has just been released and it introduces sanboxing.. So our project environment will be a cabal sandbox to escape <a href='http://todo.com/' >Dependency hell</a>.  In the past we'd use <a href='http://hackage.haskell.org/package/cabal-dev' >cabal-dev</a> for this, but this package has become obsulete with the introduction of sandboxes.</p>
+
+<p>I've never worked with cabal 1.8 sandboxes before, so it will be fun to experiment with it.</p>
+
+<p>P.s. I will post a link to the github repository soon once I' ve got my development environment all set up..  </p>
+
+<h3 id="designideas">Design ideas</h3>
+
+<p>I've got some ideas lying around from previous failed LISP toy projects. I also want to see this project as an opportunity to learn about new technologies that I haven't worked with before. Here follows a list of things that I might use in the project</p>
+
+<ul>
+<li>Lexical scoping and variable binding with the <a href='http://hackage.haskell.org/package/bound' >bound</a> library by Edward Kmett.</li>
+<li>For parsing we'll use <a href='http://hackage.haskell.org/package/parsec' >parsec</a>. Most grammars of scheme/lisps are in Backus-Nauer Form. This means the grammar of a lisp is context-free. Context free means we can restrict ourselves to Applicative code and can avoid monads.</li>
+<li>I might want to do something with F-algebras and typed lambda-calculus as intermediate form. But I only half know what I'm even saying. So I will have to read into that first.</li>
+<li>Once I'm there, I want to look at tail-call optimisation. But this seems like premature optimisation for now <em>*padum tsss*</em></li>
+<li>I want to use monad transformers in some way (I've never really used them before) to learn more about them. Not sure what that goal means yet, but I just want to learn about monad transformers in this journey.</li>
+<li>While we're at it. Learn a thing about proper error handling. As haskell exceptions seem to be <a href='http://www.randomhacks.net/articles/2007/03/10/haskell-8-ways-to-report-errors' >a big mess</a>.</li>
+</ul>
+
+<h3 id="thedangers">The Dangers</h3>
+
+<p>I'm kind of chaotic and impulsive. This means I have a hard time finishing projects and get bored quickly. So this series might turn into  a " How to slay a dragon" tutorial half way through. You've been warned.</p>
+
+<h3 id="thereward">The reward</h3>
+
+<p>a better insight into building haskell applications.</p>]]></description><link>http://arianvp.me/haskell-journey/</link><guid isPermaLink="false">4618a2c6-e295-4040-9885-50ef5cfab560</guid><dc:creator><![CDATA[Arian van Putten]]></dc:creator><pubDate>Mon, 21 Oct 2013 17:39:32 GMT</pubDate></item><item><title><![CDATA[Internet: een bron van kennis]]></title><description><![CDATA[<p>Ik heb mijn passie, mijn hobby en mijn toekomstige studie te danken aan het internet. Geert-Jan Bogaerts vraagt in zijn artikel "<a href='http://www.raker.nl/2010/10/het-internet-maakt-ons-slimmer-dan-ooit/' >Het internet maakt ons slimmer dan ooit</a>" of het internet ons dom maakt. Ik zeg nee! Op een dag, toen ik een computerspel aan het spelen was, vroeg ik mij opeens af hoe computerspellen eigenlijk gemaakt worden. Ik zocht het op op het internet en ik ontdekte de bruisende wereld van het programmeren. Ik was betoverd door het idee dat je een computer alles kon laten doen wat je maar wilde. Via Google ging ik op zoek naar allerlei websites over programmeren, want ik wilde het leren. Het is nu vier jaar later en ik programmeer nu op hoog niveau en ik heb ontzettend veel plezier. Zoveel zelfs dat ik heb besloten informatica te gaan studeren om mij nog verder te verdiepen in dit vakgebied.</p>
+
+<p>Maar ik ben geen uitzondering. Ik heb veel mensen leren kennen op het internet die de zelfde passies delen als ik. Ook zij hebben meestal hun kennis te danken aan het internet. Het internet biedt ontwikkelingskansen voor de nieuwsgierige surfer. Als hij eenmaal op een onderwerp is gefixeerd, heeft hij alle informatie tot zijn beschikking. Mensen kunnen werkelijk alles leren op het internet.</p>
+
+<p>Toch is de hoeveelheid informatie op het internet redelijk intimiderend. Men raakt snel de weg kwijt op het wereld wijde web. Hoe moeten mensen erachter komen wat van belang is en wat niet? Er is een grote kans dat mensen veel van hun tijd verdoen aan zoeken van goede informatie, of zelfs het lezen van verkeerde informatie! Je moet redelijk gestructureerd te werk gaan, wil je efficiënt met zoveel informatie kunnen omgaan en dat kan niet iedereen.</p>
+
+<p>Ik ken waarschijnlijk meer mensen die het niet voor elkaar krijgen om goed te leren programmeren dan mensen die dat wel voor elkaar krijgen, gewoon door het feit dat ze niet weten waar ze moeten beginnen. Mensen hebben vaak de instelling dat ze nooit mogen aannemen dat wat op het internet staat ook klopt. men moet er juist vanuit gaan dat alles op het internet klopt, want dan zal men zien dat bepaalde zaken op meerdere websites terugkomen terwijl andere zaken slechts op een website worden genoemd. Je kunt veel beter besluiten wat onzin is; als je aanneemt dat alles wat op het internet staat klopt.</p>
+
+<p>Maar het internet is niet alleen een medium voor informatie, het internet biedt ook communicatie met andere gebruikers en dit speelt een essentiële rol in het vergaren van kennis. Het idee is dat je mensen opzoekt die de zelfde passie delen als jij, maar die er meer vanaf weten. Men leert als het ware van de meester. De meester weet welke informatie educatief is en welke niet. Wat te moeilijk voor je is en wat te makkelijk. Je moet dus een soort gidsen vinden die je zullen begeleiden in de wirwar van het web.</p>
+
+<p>Alles is te vinden op het internet. En het internet zit vol met mensen die je kunnen helpen met leren. Als deze twee feiten worden gecombineerd, dan wordt het internet een ware bron van kennis die iedereen in staat stelt zichzelf te kunnen verrijken.</p>
+
+<p>Zowat alle informatie is beschikbaar gesteld op het internet. Men moet leren met die grote hoeveelheid informatie om te gaan voordat je pas wat van het internet kan leren. Dit hoef je echter niet te doen zonder hulp. Er zijn genoeg mensen op het internet met meer kennis, die graag andere mensen willen helpen met het leren op het web. Kortom, het internet is een ware bron van kennis voor iedereen die leert hoe hij het moet gebruiken.</p>]]></description><link>http://arianvp.me/bron-kennis/</link><guid isPermaLink="false">12c3810a-ae23-4ea5-99a7-f0ce3f23341f</guid><dc:creator><![CDATA[Arian van Putten]]></dc:creator><pubDate>Tue, 15 Oct 2013 10:00:00 GMT</pubDate></item></channel></rss>

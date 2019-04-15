@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+
+    
+    <title>Why functional programming?</title>
+    <meta name="description" content="" />
+
+    <meta name="HandheldFriendly" content="True" />
+    <meta name="MobileOptimized" content="320" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    
+    <link rel="stylesheet" type="text/css" href="/assets/css/screen.css" />
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic|Open+Sans:700,400" />
+
+    
+    <meta name="generator" content="Ghost 0.3" />
+<link rel="alternate" type="application/rss+xml" title="RSS" href="/rss/">
+</head>
+<body class="post-template">
+
+    
+    
+
+
+
+<main class="content" role="main">
+
+    <article class="post">
+
+        
+        <header class="post-header">
+            <a id="blog-logo" href="http://arianvp.me">
+                
+                    <img src="/content/images/2013/Oct/200px_Haskell_Logo_svg.png" alt="Blog Logo" />
+                
+            </a>
+        </header>
+
+        
+        
+
+        
+        <span class="post-meta"><time datetime="2015-07-23">23 Jul 2015</time> </span>
+
+        <h1 class="post-title">Why functional programming?</h1>
+
+        <section class="post-content">
+            <p>As developers we want to write robust and correct code. This is our ultimate goal.</p>
+
+<p>To reach this goal, we write tests that assure us of the correct behaviour of our code.</p>
+
+<p>To make code testable, we define code in isolated units, that are also tested in isolation.</p>
+
+<p>Dependencies between units should soley be described through dependency injection.  A unit describes on what units it depends.   If unit C depends on unit A and B, and A and B are tested to function correctly, then if we test unit C then we can be assured that A and B won't cause tests to fail suddenly as we know how A and B behave.  This way of thinking is what we call unit testing and is one of the most important parts of Test Driven Development.</p>
+
+<p>So what if we would limit a language to only be able to define units that can only depend on behaviour of well-functioning other units? So that it's output (its behaviour) is soley dependend on its input?</p>
+
+<p>Well in mathematics we have a concept called functions. Here have one $ f(x) = 3x$. I'm sure you've used them in high school. Behaviour of functions is fully dependent on its input..  $f(5)$ will always yield $15$.  No matter how many times you call it.  If we compose functions, then one function is dependent on the behaviour of another function.  Say we have $g(x) = x+2$ then  $f(g(x))$ is $f$ with as input the behaviour of $g$. and because we know the behaviour of $g$ is well-defined, we know that $f$ well defned as well.  $f(g(5))$ will always yield $21$, not matter how much you call it.</p>
+
+<blockquote>
+  <p>In mathematics, a function is a relation between a set of inputs and a set of permissible outputs with the property that each input is related to exactly one output. </p>
+</blockquote>
+
+<p>So basically a function is exactly the definition of a unit and nothing more. It encapsulates exactly what we expect a unit to be. And this forms the basis of functional programming.</p>
+
+<p>In functional programming, our programs are soley composed of functions, and nothing else.  And this has a very powerful consequence. It means our code is unit-testable by default, because functions are exactly what makes a unit a unit.</p>
+
+<p>Well-testable and well-tested software is easier to refactor, extend, and to trace back bugs in. This makes functional languages a great tool for robust software with an easy development cycle.</p>
+        </section>
+
+        <footer class="post-footer">
+
+            
+                <section class="author">
+                    <h4>Arian van Putten</h4>
+                    <p></p>
+                </section>
+            
+
+            <section class="share">
+                <h4>Share this post</h4>
+                <a class="icon-twitter" href="http://twitter.com/share?text=Why functional programming?&url=http://arianvp.me/the-functional-programming-mantra/"
+                    onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                    <span class="hidden">Twitter</span>
+                </a>
+                <a class="icon-facebook" href="https://www.facebook.com/sharer/sharer.php?u=http://arianvp.me/the-functional-programming-mantra/"
+                    onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+                    <span class="hidden">Facebook</span>
+                </a>
+                <a class="icon-google-plus" href="https://plus.google.com/share?url=http://arianvp.me/the-functional-programming-mantra/"
+                   onclick="window.open(this.href, 'google-plus-share', 'width=490,height=530');return false;">
+                    <span class="hidden">Google+</span>
+                </a>
+            </section>
+
+        </footer>
+
+        
+
+    </article>
+
+</main>
+
+    <footer class="site-footer">
+        <a class="subscribe icon-feed" href="http://arianvp.me/rss/"><span class="tooltip">Subscribe!</span></a>
+        <div class="inner">
+             <section class="copyright">All content copyright <a href="/">foldr ::</a> &copy; 2013 &bull; All rights reserved.</section>
+             <section class="poweredby">Proudly published with <a class="icon-ghost" href="//ghost.org">Ghost</a></section>
+        </div>
+    </footer>
+
+    
+    <script src="/shared/vendor/jquery/jquery.js"></script>
+
+    
+    <script type="text/javascript" src="/assets/js/index.js"></script>
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {inlineMath:[['$','$'], ['\\(','\\)']]}
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>

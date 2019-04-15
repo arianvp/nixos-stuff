@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+
+    
+    <title>LXD and Ansible for staging and development</title>
+    <meta name="description" content="" />
+
+    <meta name="HandheldFriendly" content="True" />
+    <meta name="MobileOptimized" content="320" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    
+    <link rel="stylesheet" type="text/css" href="/assets/css/screen.css" />
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic|Open+Sans:700,400" />
+
+    
+    <meta name="generator" content="Ghost 0.3" />
+<link rel="alternate" type="application/rss+xml" title="RSS" href="/rss/">
+</head>
+<body class="post-template tag-ansible tag-devops tag-lxd tag-lxc tag-containers">
+
+    
+    
+
+
+
+<main class="content" role="main">
+
+    <article class="post tag-ansible tag-devops tag-lxd tag-lxc tag-containers">
+
+        
+        <header class="post-header">
+            <a id="blog-logo" href="http://arianvp.me">
+                
+                    <img src="/content/images/2013/Oct/200px_Haskell_Logo_svg.png" alt="Blog Logo" />
+                
+            </a>
+        </header>
+
+        
+        
+
+        
+        <span class="post-meta"><time datetime="2016-01-26">26 Jan 2016</time> on ansible | devops | lxd | lxc | containers</span>
+
+        <h1 class="post-title">LXD and Ansible for staging and development</h1>
+
+        <section class="post-content">
+            <p>Today I'll discuss a technique I use at my current gig to simulate our production environment using LXD.</p>
+
+<p>LXD is a container hypervisor by Cannonical. It's a bit experimental, but feels a lot more attractive than Docker. It's a system based on LXC, which allows users to run unprivileged containers. Unlike docker, the LXC philosohpy is that an entire OS should be able to run in it, including init system. This is similar to the systemd-nspawn philosophy, which we also evaluated, but because we are on ubuntu LTS, we still use upstart so that was not an option.</p>
+
+<p>LXC is a bit raw, you can simply run rootfs's as containers and that's all it gives.  Furthermore, it creates a bridged network and allows you assign IPs and domain names to containers with dnsmasq. Either using DHCP, or fixed IPs.</p>
+
+<p>Because we wanted to create a private network for our containers that simulate our production environment, we didn't opt for docker because we couldn't find a way to easily configure the network like with LXC, which is just writing some dnsmasq config files which most sysadmins are already familiar with.</p>
+
+<p>Because the containers in LXD are just simple ubuntu cloud instances (with upstart and everything), we can just easily provision them with Ansible, which we already use for our production environment. It's a simple case of just creating a new inventory file in Ansible and we're all set.</p>
+
+<h2 id="importinganimage">Importing an image</h2>
+
+<p>Before we start, we should make sure the user on your system is in the lxdgroup:  </p>
+
+<pre><code>$ newgrp lxd
+</code></pre>
+
+<p>Lets start with some basics, how do we create a container? We can download images from the image repository using the <code>lxd-images</code> command. Or we can import an existing base image into LXD using <code>lxc image import</code>. </p>
+
+<p>At work we use a predefined <code>base</code> image which is simply a tarball with a rootfs and some <code>cloud-config</code> template files. The cloud-config template files are used for setting the <code>hostname</code> of the container for example.</p>
+
+<pre><code>templates/  
+├── cloud-init-meta.tpl
+├── cloud-init-user.tpl
+├── cloud-init-vendor.tpl
+└── upstart-override.tpl
+rootfs/  
+├── bin
+├── boot
+├── dev
+├── etc
+├── home
+├── lib
+├── lib64
+├── lost+found
+├── media
+├── mnt
+├── opt
+├── proc
+├── root
+├── run
+├── sbin
+├── srv
+├── sys
+├── tmp
+├── usr
+└── var
+</code></pre>
+
+<p>To import a base image we simply do:  </p>
+
+<pre><code> $ lxc image import base.tar.gz --alias=base
+</code></pre>
+
+<p>Or if you don't have a base image at hand, you can download one:</p>
+
+<pre><code>$ lxd-images import ubuntu --alias=base
+</code></pre>
+
+<h2 id="creatingacontainer">Creating a container</h2>
+
+<p>Well that's super easy!  </p>
+
+<pre><code>$ lxc launch base my-container
+</code></pre>
+
+<p>And we're in!  </p>
+
+<pre><code>$ lxc exec my-container bash
+</code></pre>
+
+<p>You should have networking connectivity now and be able to install packages using <code>apt-get</code>. You can set up users, and add ssh keys or whatever. But of course, we want to automate this. This is where Ansible gets into play. But before we come to that, we need to do some network configuration.</p>
+
+<h2 id="networking">Networking</h2>
+
+<p>Make sure that both <code>dnsmasq</code> and <code>lxc-net</code> services are running:</p>
+
+<pre><code># service dnsmasq restart
+# service lxc-net restart
+</code></pre>
+
+<p>Now edit <code>/etc/default/lxc-net</code>.</p>
+
+<p>Make sure that the following line is uncommented. Then the <code>lxc-net</code> daemon will automatically created a bridged network for your containers  </p>
+
+<pre><code>USE\_LXC\_BRIDGE="true"  
+</code></pre>
+
+<p>Next in the file is the configuration of the private network for your containers. You can leave them as is or change the network. We decided to use the <code>192.168.2.0/24</code> subnet for our containers, which is the following config:</p>
+
+<pre><code>LXC_BRIDGE="lxcbr0"  
+LXC_ADDR="192.168.2.1"  
+LXC_NETMASK="255.255.255.0"  
+LXC_NETWORK="192.168.2.0/24"  
+LXC\_DHCP\_RANGE="192.168.2.2,192.168.2.254"  
+LXC\_DHCP\_MAX="253"  
+</code></pre>
+
+<p>Furthermore make sure that  <code>LXC_DOMAIN="lxc"</code> is uncommented. It signals dnsmasq to assign containers <code>&lt;containername&gt;.lxc</code> domain names.</p>
+
+<p>To actually make sure that dnsmasq does this, we'll have to edit the dnsmasq config in <code>/etc/dnsmasq.d/lxc</code>.  Set the <code>server</code> to whatever you set in <code>LXC_ADDR</code>. In our case <code>192.168.2.1</code></p>
+
+<pre><code>bind-interfaces  
+except-interface=lxcbr0  
+server=/lxc/192.168.2.1  
+</code></pre>
+
+<p>Also make sure that whenever you edit <code>dnsmasq</code> or <code>lxc-net</code> configs that you restart the services to register the changes. </p>
+
+<pre><code>$ service lxc-net restart
+$ service dnsmasq restart
+</code></pre>
+
+<p>Now if we restart our container, we should be able to connect to it!  </p>
+
+<pre><code>$ lxc restart my-container
+</code></pre>
+
+<pre><code>$ ping my-container.lxc
+</code></pre>
+
+<p>Also, if you installed <code>ssh</code> on the container with <code>apt-get</code> and added your ssh key to a user, you should be able to ssh into it aswell. (Which is pre-installed on the ubuntu base image, and ssh keys of all our developers are in the base image already)</p>
+
+<pre><code>$ ssh dev@my-container.lxc
+</code></pre>
+
+<h3 id="nitpickwithlaunchingnewcontainers">Nitpick with launching new containers</h3>
+
+<p>Currently, there is a little bug in lxd, that causes containers not to register with dnsmasq on first launch. So if you launch a new container, make sure to restart it immediatelly to make it register a dns name.</p>
+
+<pre><code>$ lxc launch base new-container &amp;&amp; lxc restart new-container
+</code></pre>
+
+<h2 id="provisioningwithansible">Provisioning with Ansible</h2>
+
+<p>Ansible provisioning is reall easy now. Create a container for each server your want to run in your development environment:</p>
+
+<pre><code>$ lxc launch base frontend &amp;&amp; lxc restart frontend
+$ lxc launch base postgres &amp;&amp; lxc restart postgres
+$ lxc launch base workers  &amp;&amp; lxc restart workers
+</code></pre>
+
+<p>And make a new inventory file, for example named <code>dev</code>:</p>
+
+<pre><code>[frontend]
+frontend.lxc  
+[postgres]
+postgres.lxc  
+[workers]
+workers.lxc  
+</code></pre>
+
+<p>Now simply run your ansible playbook:  </p>
+
+<pre><code>$ ansible-playbook --ask-sudo-pass ./provision.yml -i ./inventory/dev -e development=true
+</code></pre>
+
+<p>Your containers should be provisioned now!</p>
+
+<h2 id="stagingserver">Staging server</h2>
+
+<p>At work we also use this technique to run our staging server.  We have a staging server running at <code>staging.internal</code> which has ansible and lxc installed.  If we log into it with SSH Agent Forwarding. The base image has the public keys of our development machines, so with agent forwarding, we can provision the servers from the staging server.</p>
+
+<pre><code>ssh -A dev@staging.internal  
+</code></pre>
+
+<p>Once we're in, we can simply start new containers and provision them with ansible as shown above.</p>
+
+<h2 id="troubleshooting">Troubleshooting</h2>
+
+<p>Sometimes lxd can be a bit grumpy (it's not fully stable yet). It might not always succeed in claiming a domain name. In that case I usually first try to restart the container <code>lxc restart containername</code> and if that doesn't work I restart both <code>dnsmasq</code> and <code>lxc-net</code> just to be sure.</p>
+        </section>
+
+        <footer class="post-footer">
+
+            
+                <section class="author">
+                    <h4>Arian van Putten</h4>
+                    <p></p>
+                </section>
+            
+
+            <section class="share">
+                <h4>Share this post</h4>
+                <a class="icon-twitter" href="http://twitter.com/share?text=LXD and Ansible for staging and development&url=http://arianvp.me/lxd-and-ansible-for-staging-and-development/"
+                    onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                    <span class="hidden">Twitter</span>
+                </a>
+                <a class="icon-facebook" href="https://www.facebook.com/sharer/sharer.php?u=http://arianvp.me/lxd-and-ansible-for-staging-and-development/"
+                    onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+                    <span class="hidden">Facebook</span>
+                </a>
+                <a class="icon-google-plus" href="https://plus.google.com/share?url=http://arianvp.me/lxd-and-ansible-for-staging-and-development/"
+                   onclick="window.open(this.href, 'google-plus-share', 'width=490,height=530');return false;">
+                    <span class="hidden">Google+</span>
+                </a>
+            </section>
+
+        </footer>
+
+        
+
+    </article>
+
+</main>
+
+    <footer class="site-footer">
+        <a class="subscribe icon-feed" href="http://arianvp.me/rss/"><span class="tooltip">Subscribe!</span></a>
+        <div class="inner">
+             <section class="copyright">All content copyright <a href="/">foldr ::</a> &copy; 2013 &bull; All rights reserved.</section>
+             <section class="poweredby">Proudly published with <a class="icon-ghost" href="//ghost.org">Ghost</a></section>
+        </div>
+    </footer>
+
+    
+    <script src="/shared/vendor/jquery/jquery.js"></script>
+
+    
+    <script type="text/javascript" src="/assets/js/index.js"></script>
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {inlineMath:[['$','$'], ['\\(','\\)']]}
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>

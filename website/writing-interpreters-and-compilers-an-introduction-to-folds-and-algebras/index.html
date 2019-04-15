@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+
+    
+    <title>Writing interpreters and compilers - An introduction to folds and algebras</title>
+    <meta name="description" content="" />
+
+    <meta name="HandheldFriendly" content="True" />
+    <meta name="MobileOptimized" content="320" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    
+    <link rel="stylesheet" type="text/css" href="/assets/css/screen.css" />
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic|Open+Sans:700,400" />
+
+    
+    <meta name="generator" content="Ghost 0.3" />
+<link rel="alternate" type="application/rss+xml" title="RSS" href="/rss/">
+</head>
+<body class="post-template tag-haskell tag-algebra tag-compiler tag-interpreter tag-catamorphism tag-folds tag-fold">
+
+    
+    
+
+
+
+<main class="content" role="main">
+
+    <article class="post tag-haskell tag-algebra tag-compiler tag-interpreter tag-catamorphism tag-folds tag-fold">
+
+        
+        <header class="post-header">
+            <a id="blog-logo" href="http://arianvp.me">
+                
+                    <img src="/content/images/2013/Oct/200px_Haskell_Logo_svg.png" alt="Blog Logo" />
+                
+            </a>
+        </header>
+
+        
+        
+
+        
+        <span class="post-meta"><time datetime="2015-05-04">04 May 2015</time> on haskell | algebra | compiler | interpreter | catamorphism | folds | fold</span>
+
+        <h1 class="post-title">Writing interpreters and compilers - An introduction to folds and algebras</h1>
+
+        <section class="post-content">
+            <p>So lets say we are building our own programming language because we're cool
+ like that.</p>
+
+<p>For now our language will support simple arithmatic.</p>
+
+<p>So lets define an abstract syntax tree for it.</p>
+
+<pre><code>data Expr = Val Int -- an expression is a value
+          | Expr :+: Expr -- Or two expressions added together
+          | Expr :-: Expr -- Or two expressions subtracted
+</code></pre>
+
+<p>We can now formulate abstract syntax trees:</p>
+
+<pre><code>expr = Val 3 :+: Val 4
+expr2 = expr :-: Val 2
+expr3 = Val 3 :+: (Val 2 :-: val 4)
+</code></pre>
+
+<p>Now we can create an interpreter that evaluates our abstract syntax trees <br />
+using direct recursion:</p>
+
+<pre><code>interpret :: Expr -&gt; Int
+
+-- interpreting a value is simply interpreting the value itself
+
+interpret (Val x) = x
+
+-- interpreting addition is interpreting the left and righthand side and
+-- adding them together
+interpret (x :+: y) = interpret x + interpret y
+
+-- similarary for subtraction
+interpret (x :-: y) = interpet x - interpret y
+</code></pre>
+
+<p>ghci:</p>
+
+<pre><code>&gt; interpret expr
+7
+&gt; interpret expr2
+5
+&gt; interpret expr3
+1
+</code></pre>
+
+<p>Interpreters are cool and all. but I heard compilers are way cooler <br />
+Say we have a simple stack machine that supports the following operators:</p>
+
+<pre><code>data Instr   = PUSH Int -- pushes an integer to the stack
+            | ADD      -- pops two integers from the stack, adds them and pushes
+                        -- the result
+            | SUB      -- similrary but subtracts
+</code></pre>
+
+<p>Then a compiler is simply:</p>
+
+<pre><code>compile :: Expr -&gt; [Instr]
+
+compile (Val x) = PUSH x
+compile (x :+: y) = compile x ++ compile y ++ [ADD]
+compile (x :-: y) = compile x ++ compile y ++ [SUB]
+</code></pre>
+
+<p>ghci:</p>
+
+<pre><code>&gt; compile expr
+[PUSH 3, PUSH 4, ADD]
+&gt; compile expr2
+[PUSH 3, PUSH 4, ADD, PUSH 2, SUB]
+&gt; compile expr3
+[PUSH 3, PUSH 2, PUSH 4, SUB, ADD]
+</code></pre>
+
+<p>Someone who has worked with lists before knows that we tend to avoid explicit <br />
+recursion and favor   maps and folds because we can easily reason about resuable blocks</p>
+
+<p>The question that arrises is, if we can abstract recursion on lists, can we abstract recursion on our custom  abstract syntax tree?</p>
+
+<p>The answer is yes.</p>
+
+<p>We begin by defining a corresponding Algebra for our AST</p>
+
+<pre><code>data ExprAlgebra  e= ExprAlgebra
+  { val :: Int -&gt; e
+  , add :: e -&gt; e -&gt; e
+  , sub :: e -&gt; e -&gt; e
+  }
+</code></pre>
+
+<p>What an algebra does is encapsulate the evaluation strategies of each component of our AST in a datatype.</p>
+
+<p>For example. An interpreter would look like this:</p>
+
+<pre><code>interpreter :: ExprAlgebra Int
+interpreter = ExprAlegbra
+  { val = id
+  , add = (+)
+  , sub = (-)
+  }
+</code></pre>
+
+<p>An algebra by itself isn't very useful. But once you recurse over <br />
+your Abstract syntax tree, you can apply the algebra on it. You're recursing over your abstract syntax tree with a provided evaluation strategy.</p>
+
+<pre><code>foldExpr :: ExprAlgebra a -&gt; Expr -&gt; a
+foldExpr alg (Val i)     = (val alg) i
+foldExpr alg (e1 :+: e2) = (add alg) (foldExpr e1) (foldExpr e2)
+foldExpr alg (e1 :-: e2) = (sub alg) (foldExpr e1) (foldExpr e2)
+</code></pre>
+
+<p>The result is that if you feed our algebra/ evaluation strategy to this recursion scheme, you get back <br />
+an interpreter!</p>
+
+<pre><code>interpret' :: Expr -&gt; Int
+interpret' = foldExpr interpreter
+</code></pre>
+
+<p>ghci:    </p>
+
+<pre><code>&gt; interpret' expr1
+7
+&gt; interpret' expr2
+5
+&gt; interpret' expr3
+1
+</code></pre>
+
+<p>So what did we gain by splitting up our recurive function into <br />
+an evaluation strategy and a recursive part?</p>
+
+<p>Well! we can now write a compiler without writing another recursive function! Just define a new evaluation strategy!</p>
+
+<pre><code>compiler :: ExprAlgebra [Instr]
+compiler = ExprAlgebra
+  { val = [PUSH]
+  , add = \x y -&gt; x++y++[ADD]
+  , sub = \x y -&gt; x++y++[ADD]
+  }
+</code></pre>
+
+<p>See how we can define the function compile by reusing foldExpr? <br />
+We have eliminated quite some code duplication!</p>
+
+<pre><code>compile' :: Expr -&gt; [Instr]
+compile' = foldExpr compiler
+</code></pre>
+
+<p>ghci:</p>
+
+<pre><code>&gt; compile' expr
+[PUSH 3, PUSH 4, ADD]
+&gt; compile' expr2
+[PUSH 3, PUSH 4, ADD, PUSH 2, SUB]
+&gt; compile' expr3
+[PUSH 3, PUSH 2, PUSH 4, SUB, ADD]
+</code></pre>
+
+<p>Of course we've made a tradeoff. Now we don't have duplicate recursion for operations on the same datatype. But say we now want to build a new language  with different features and thus a different abstract syntax tree. Do we have to write a new fold for that? Can we automatically deduce folds for abstract syntax trees?</p>
+
+<p>The answer is: for simple languages, Yes!  For less-toy-examply-languages (lets say C#) the answer is (as far as I know), no.</p>
+
+<p>But that's something for next time. I will then introduce F-algebras and catamorphisms to make our live even easier. They basically formalize the steps we have taken to transform explicit recursion into a fold. Allowing us to easily deduce folds on any datatype. <br />
+They're really interesting but as stated have their limitations, which I will also cover.</p>
+        </section>
+
+        <footer class="post-footer">
+
+            
+                <section class="author">
+                    <h4>Arian van Putten</h4>
+                    <p></p>
+                </section>
+            
+
+            <section class="share">
+                <h4>Share this post</h4>
+                <a class="icon-twitter" href="http://twitter.com/share?text=Writing interpreters and compilers - An introduction to folds and algebras&url=http://arianvp.me/writing-interpreters-and-compilers-an-introduction-to-folds-and-algebras/"
+                    onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                    <span class="hidden">Twitter</span>
+                </a>
+                <a class="icon-facebook" href="https://www.facebook.com/sharer/sharer.php?u=http://arianvp.me/writing-interpreters-and-compilers-an-introduction-to-folds-and-algebras/"
+                    onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+                    <span class="hidden">Facebook</span>
+                </a>
+                <a class="icon-google-plus" href="https://plus.google.com/share?url=http://arianvp.me/writing-interpreters-and-compilers-an-introduction-to-folds-and-algebras/"
+                   onclick="window.open(this.href, 'google-plus-share', 'width=490,height=530');return false;">
+                    <span class="hidden">Google+</span>
+                </a>
+            </section>
+
+        </footer>
+
+        
+
+    </article>
+
+</main>
+
+    <footer class="site-footer">
+        <a class="subscribe icon-feed" href="http://arianvp.me/rss/"><span class="tooltip">Subscribe!</span></a>
+        <div class="inner">
+             <section class="copyright">All content copyright <a href="/">foldr ::</a> &copy; 2013 &bull; All rights reserved.</section>
+             <section class="poweredby">Proudly published with <a class="icon-ghost" href="//ghost.org">Ghost</a></section>
+        </div>
+    </footer>
+
+    
+    <script src="/shared/vendor/jquery/jquery.js"></script>
+
+    
+    <script type="text/javascript" src="/assets/js/index.js"></script>
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {inlineMath:[['$','$'], ['\\(','\\)']]}
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+
+    
+    <title>Hom - React.JS for Haskell!</title>
+    <meta name="description" content="" />
+
+    <meta name="HandheldFriendly" content="True" />
+    <meta name="MobileOptimized" content="320" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    
+    <link rel="stylesheet" type="text/css" href="/assets/css/screen.css" />
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic|Open+Sans:700,400" />
+
+    
+    <meta name="generator" content="Ghost 0.3" />
+<link rel="alternate" type="application/rss+xml" title="RSS" href="/rss/">
+</head>
+<body class="post-template tag-haskell tag-om tag-hom tag-react-js tag-fay tag-uhc tag-ghc tag-haste tag-web">
+
+    
+    
+
+
+
+<main class="content" role="main">
+
+    <article class="post tag-haskell tag-om tag-hom tag-react-js tag-fay tag-uhc tag-ghc tag-haste tag-web">
+
+        
+        <header class="post-header">
+            <a id="blog-logo" href="http://arianvp.me">
+                
+                    <img src="/content/images/2013/Oct/200px_Haskell_Logo_svg.png" alt="Blog Logo" />
+                
+            </a>
+        </header>
+
+        
+        
+
+        
+        <span class="post-meta"><time datetime="2014-05-20">20 May 2014</time> on haskell | Om | Hom | React.JS | Fay | UHC | GHC | Haste | Web</span>
+
+        <h1 class="post-title">Hom - React.JS for Haskell!</h1>
+
+        <section class="post-content">
+            <p><a href="http://www.reddit.com/r/haskell/comments/260z7z/hom_reactjs_for_haskell/">Reddit discussion</a></p>
+
+<p><a href="https://github.com/arianvp/Hom">Github repo</a></p>
+
+<p>I've recently discovered <a href="https://github.com/swannodette/om">Om</a> which I think is a beautiful example of why FP matters in modern day computing.</p>
+
+<p>Basically what Om showed was that by using immutable data for state in <a href="http://facebook.github.io/react/">React.js</a> one could easily outperform similar apps written in OOP style. The reason why it is so much faster is that component should update only has to check for referential equality instead of deep equality. This is a much more efficient way to trigger updates.</p>
+
+<p>Om uses constructs similar to lenses and zippers to easily modify state (they call them cursors)  which is extremely cool.</p>
+
+<p>Haskell has a strong lens implementation (we kinda coined that term, didn't we? ;-)) and that's why I started wondering wether I could port Om (or React) to Haskell.</p>
+
+<p>That way I can use my favorite language to build robust and super fast web applications. A dream come true.</p>
+
+<p>So yeah. Here we go. it's time to build Hom!  A haskell version of Om! (I'm kind of excited :-))</p>
+
+<p>I'm  Considering several options for Haskell->JS conversion. The following Pros and Cons are constructed from first impressions I got from skimming documentations so they might be incorrect. Please correct me when one of the pros or cons is wrong!</p>
+
+<h4 id="ghcjs">GHCJS</h4>
+
+<h5 id="pros">Pros</h5>
+
+<ul>
+<li>Fully compactible with all GHC packages</li>
+<li>straightforward FFI</li>
+</ul>
+
+<h5 id="cons">Cons</h5>
+
+<ul>
+<li><em>very</em> large runtime system</li>
+<li>packages draw in a lot of dependencies,
+creating <em>huge</em> generated code</li>
+</ul>
+
+<h4 id="fay">Fay</h4>
+
+<h5 id="pros">Pros</h5>
+
+<ul>
+<li>Small runtime system</li>
+<li>Small generated code</li>
+<li>Pretty darn fast</li>
+<li>Great FFI. </li>
+</ul>
+
+<h5 id="cons">Cons</h5>
+
+<ul>
+<li>No typeclasses so no Lenses. Kinda defeats the purpose of choosing haskell in the first place</li>
+</ul>
+
+<h4 id="haste">Haste</h4>
+
+<h5 id="pros">Pros</h5>
+
+<ul>
+<li>Compactible with <em>most</em> GHC-Compactible packages</li>
+<li>Smaller runtime system than GHCJS</li>
+<li>Good concurrency constructs</li>
+</ul>
+
+<h5 id="cons">Cons</h5>
+
+<ul>
+<li>Not sure how good the FFI is. What I've seen so far looked a bit clunky compared to UHCJS but maybe I need to get a bit more familiar with it.</li>
+</ul>
+
+<h4 id="uhcjs">UHCJS</h4>
+
+<h5 id="pros">Pros</h5>
+
+<ul>
+<li>Very extensive javascript FFI. probably the best I've seen.</li>
+<li>Maintained by my university (Not really a pro. just exciting)</li>
+</ul>
+
+<h5 id="cons">Cons</h5>
+
+<ul>
+<li>Doesn't support GHC. UHC is a different standard. I think it supports upto haskell2010 though</li>
+</ul>
+
+<p>I think I will go for Haste for now. Though UHCJS sounds really attractive as well to be honest. Fay is just a no-go because I want the sexy lens library!</p>
+
+<p>Next time I'm gonna work out some API design decisions etc. The problem is I really don't have a lot of time to start coding yet because of university work.   I really want to start building this library because I want it so bad!</p>
+
+<p>Any feedback is appreciated. Also if someone is already working on something similar to this, let me know.</p>
+        </section>
+
+        <footer class="post-footer">
+
+            
+                <section class="author">
+                    <h4>Arian van Putten</h4>
+                    <p></p>
+                </section>
+            
+
+            <section class="share">
+                <h4>Share this post</h4>
+                <a class="icon-twitter" href="http://twitter.com/share?text=Hom - React.JS for Haskell!&url=http://arianvp.me/hom-react-js-for-haskell/"
+                    onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                    <span class="hidden">Twitter</span>
+                </a>
+                <a class="icon-facebook" href="https://www.facebook.com/sharer/sharer.php?u=http://arianvp.me/hom-react-js-for-haskell/"
+                    onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+                    <span class="hidden">Facebook</span>
+                </a>
+                <a class="icon-google-plus" href="https://plus.google.com/share?url=http://arianvp.me/hom-react-js-for-haskell/"
+                   onclick="window.open(this.href, 'google-plus-share', 'width=490,height=530');return false;">
+                    <span class="hidden">Google+</span>
+                </a>
+            </section>
+
+        </footer>
+
+        
+
+    </article>
+
+</main>
+
+    <footer class="site-footer">
+        <a class="subscribe icon-feed" href="http://arianvp.me/rss/"><span class="tooltip">Subscribe!</span></a>
+        <div class="inner">
+             <section class="copyright">All content copyright <a href="/">foldr ::</a> &copy; 2013 &bull; All rights reserved.</section>
+             <section class="poweredby">Proudly published with <a class="icon-ghost" href="http://ghost.org">Ghost</a></section>
+        </div>
+    </footer>
+
+    
+    <script src="/shared/vendor/jquery/jquery.js"></script>
+
+    
+    <script type="text/javascript" src="/assets/js/index.js"></script>
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {inlineMath:[['$','$'], ['\\(','\\)']]}
+      });
+    </script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>

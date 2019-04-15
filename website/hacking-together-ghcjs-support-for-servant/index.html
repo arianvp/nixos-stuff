@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+
+    
+    <title>Hacking together GHCJS support for Servant</title>
+    <meta name="description" content="" />
+
+    <meta name="HandheldFriendly" content="True" />
+    <meta name="MobileOptimized" content="320" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    
+    <link rel="stylesheet" type="text/css" href="/assets/css/screen.css" />
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic|Open+Sans:700,400" />
+
+    
+    <meta name="generator" content="Ghost 0.3" />
+<link rel="alternate" type="application/rss+xml" title="RSS" href="/rss/">
+</head>
+<body class="post-template">
+
+    
+    
+
+
+
+<main class="content" role="main">
+
+    <article class="post">
+
+        
+        <header class="post-header">
+            <a id="blog-logo" href="http://arianvp.me">
+                
+                    <img src="/content/images/2013/Oct/200px_Haskell_Logo_svg.png" alt="Blog Logo" />
+                
+            </a>
+        </header>
+
+        
+        
+
+        
+        <span class="post-meta"><time datetime="2014-12-23">23 Dec 2014</time> </span>
+
+        <h1 class="post-title">Hacking together GHCJS support for Servant</h1>
+
+        <section class="post-content">
+            <p><a href="http://github.com/arianvp/ghcjs-servant-client">Source</a>
+<a href="http://test.arianvp.me/static/index.html">Demo</a></p>
+
+<p>So tonight I wanted to hack something together in 3 hours and I did!</p>
+
+<p>I wanted servant to work in the browser.</p>
+
+<p><a href="http://haskell-servant.github.io/">Servant</a> allows you to define routes at the typelevel and it automagically creates a whole freakin rest api from that. Yay for haskell.</p>
+
+<p>Anyhow. Having type-safe communication between server and browser just sounded awesome. So I had to hack some prototype together.</p>
+
+<h2 id="hackingit">Hacking it</h2>
+
+<p>Luckily the library maintainers did a lot of work for me already. They split up  the servant package in <code>servant</code> and <code>servant-server</code> on my request. With <code>servant-server</code> containing all the server specific stuff.</p>
+
+<p><code>servant</code> compiled perfectly under GHCJS. Neat.</p>
+
+<p>Okay so now we need not only a way to create serverside code. We also need clientside functions. <code>servant-client</code> to the rescue! Lets try compile that.</p>
+
+<p>Darnit. the <code>http-client</code> dependency can't be compiled by ghcjs. Probably due to it being dependent on <code>network</code>.  Okay so lets add a conditional to the Cabalfile that <code>http-client</code> should only be loaded when  ghcjs is not used at the compiler.</p>
+
+<pre><code>if !impl(ghcjs)
+    build-depends:http-client
+</code></pre>
+
+<p>Ok nice. that works. Now we got a bunch of errors because of HTTP.Client not being in scope. Kinda makes sense. Okay so lets <br />
+just use the C Preprocessor to check if the GHCJS compiler is present. and if so, dont import  that module anywhere its used. Do the same for any code that uses the module.</p>
+
+<p>so now only one function is complaining it lacks an accompanying binding. Neat! One function should be doable to implement.</p>
+
+<p>instead of using http-client we use the JavaScriptFFI to use the XMLHTTPRequest API to make HTTP calls.  A little bit of hacking and marshalling later I discover I can't marshal  Lazy bytestrings from and to javascript....  No time left, I need to go to bed!  Okay lets just add another CPP #ifdef  and just import the strict version if we use GHCJS... That seems to work!  Except that some external function expects a Lazy bytestring. Okay lets just convert the strict bytestring to a lazy bytestring for that specific function call. Super hack.</p>
+
+<p>Okay so now everything compiles. It's super hacky. but it compiles...</p>
+
+<p>So I set up a little test environment ... and.... IT WORKS! WOOHOO :)</p>
+
+<p>I've only tested the GET HTTP method. But I dont see why others wouldn't work. Also I haven't done <em>any</em> form of exception handling but that's something for later as I need to go sleep now. I'm glad this works!</p>
+
+<p>Check out the source and the demo: <br />
+<a href="http://github.com/arianvp/ghcjs-servant-client">Source</a>
+<a href="http://test.arianvp.me/static/index.html">Demo</a></p>
+
+<p>And the test setup!</p>
+
+<h2 id="commonhs">Common.hs</h2>
+
+<pre><code>data Book = Book { title :: String
+                 , author :: String
+                 } deriving (Generic,Show)
+instance FromJSON Book
+instance ToJSON Book
+type MyApi =  "books" :&gt; Get [Book] :&lt;|&gt; "static" :&gt; Raw
+data Book = Book { title :: String
+                 , author :: String
+                 } deriving (Generic,Show)
+   instance FromJSON Book
+instance ToJSON Book
+type MyApi =  "books" :&gt; Get [Book] :&lt;|&gt; "static" :&gt; Raw
+</code></pre>
+
+<h1 id="serverhs">Server.hs</h1>
+
+<pre><code>getBooks :: EitherT (Int, String) IO [Book]
+getBooks  = return [Book "yo" "yo"]
+server = getBooks :&lt;|&gt; serveDirectory "static"
+main = Network.Wai.Handler.Warp.run 3000 (serve bookApi $ server)
+</code></pre>
+
+<h1 id="clienths">Client.hs</h1>
+
+<pre><code>getAllBooks :: BaseUrl -&gt; EitherT String IO [Book]
+(getAllBooks :&lt;|&gt; raw) = client myApi
+
+
+
+main = runEitherT $ do
+  case parseBaseUrl "http://test.arianvp.me" of
+    Left s -&gt; liftIO $ print s
+    Right u -&gt; do
+      books &lt;- getAllBooks u
+      liftIO . appendToBody . fromString . show $ books
+</code></pre>
+        </section>
+
+        <footer class="post-footer">
+
+            
+                <section class="author">
+                    <h4>Arian van Putten</h4>
+                    <p></p>
+                </section>
+            
+
+            <section class="share">
+                <h4>Share this post</h4>
+                <a class="icon-twitter" href="http://twitter.com/share?text=Hacking together GHCJS support for Servant&url=http://arianvp.me/hacking-together-ghcjs-support-for-servant/"
+                    onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                    <span class="hidden">Twitter</span>
+                </a>
+                <a class="icon-facebook" href="https://www.facebook.com/sharer/sharer.php?u=http://arianvp.me/hacking-together-ghcjs-support-for-servant/"
+                    onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+                    <span class="hidden">Facebook</span>
+                </a>
+                <a class="icon-google-plus" href="https://plus.google.com/share?url=http://arianvp.me/hacking-together-ghcjs-support-for-servant/"
+                   onclick="window.open(this.href, 'google-plus-share', 'width=490,height=530');return false;">
+                    <span class="hidden">Google+</span>
+                </a>
+            </section>
+
+        </footer>
+
+        
+
+    </article>
+
+</main>
+
+    <footer class="site-footer">
+        <a class="subscribe icon-feed" href="http://arianvp.me/rss/"><span class="tooltip">Subscribe!</span></a>
+        <div class="inner">
+             <section class="copyright">All content copyright <a href="/">foldr ::</a> &copy; 2013 &bull; All rights reserved.</section>
+             <section class="poweredby">Proudly published with <a class="icon-ghost" href="//ghost.org">Ghost</a></section>
+        </div>
+    </footer>
+
+    
+    <script src="/shared/vendor/jquery/jquery.js"></script>
+
+    
+    <script type="text/javascript" src="/assets/js/index.js"></script>
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {inlineMath:[['$','$'], ['\\(','\\)']]}
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>

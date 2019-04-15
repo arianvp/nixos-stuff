@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="Content-Type" content="text/html" charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+
+    
+    <title>Lenses and prisms for modular clientside apps</title>
+    <meta name="description" content="" />
+
+    <meta name="HandheldFriendly" content="True" />
+    <meta name="MobileOptimized" content="320" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    
+    <link rel="stylesheet" type="text/css" href="/assets/css/screen.css" />
+    <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic|Open+Sans:700,400" />
+
+    
+    <meta name="generator" content="Ghost 0.3" />
+<link rel="alternate" type="application/rss+xml" title="RSS" href="/rss/">
+</head>
+<body class="post-template tag-haskell tag-hom tag-lens">
+
+    
+    
+
+
+
+<main class="content" role="main">
+
+    <article class="post tag-haskell tag-hom tag-lens">
+
+        
+        <header class="post-header">
+            <a id="blog-logo" href="http://arianvp.me">
+                
+                    <img src="/content/images/2013/Oct/200px_Haskell_Logo_svg.png" alt="Blog Logo" />
+                
+            </a>
+        </header>
+
+        
+        
+
+        
+        <span class="post-meta"><time datetime="2015-02-22">22 Feb 2015</time> on haskell | Hom | lens</span>
+
+        <h1 class="post-title">Lenses and prisms for modular clientside apps</h1>
+
+        <section class="post-content">
+            <p>Warning: This is just a mind dump. It's not a coherent story and it's mostly for me to read back on my thought. I'm publishing it in the hope that other people can learn from my thought process. </p>
+
+<p>To recap for the ones who aren't aware. <a href="http://arianvp.me/hom-react-js-for-haskell/">Hom</a> is a (hypothetical) library for writing (hopefully) blazingly fast clientside web applications using GHCJS. Its inspired by ReactJS which uses DOM diffing to calculate the optimal way to execute view changes. It basically turns your app into <code>State -&gt; Html</code> . A great fit for the functional paradigm.  Because I hate JS as much as you guys I decided to bring this lovely goodness to haskell.  Luite and I made a start with the <a href="https://github.com/ghcjs/ghcjs-vdom">ghcjs-vdom</a> library which is a thin wrapper around the js dom diffing algorithm. I was really enthousiastic but the project somehow ended up on my shel of "I'll start working on this project again when I feel like it"-projects.</p>
+
+<p>Currently <code>Hom</code> is in the "showerthought" phase when every once in a while during a shower I come up with ways to improve my library.</p>
+
+<p>This week I had to quickly create a dashboard for a TV at my university. I decided to use Elm.  Development ended up being a joy and shipped the project after a day of elm-hacking.</p>
+
+<p>The joy of working with <code>elm-html</code> was awesome.  <code>elm-html</code> has similar goals to Hom though elm is a lot less powerful language than haskell.</p>
+
+<p>I suggest reading up on <a href="https://github.com/evancz/elm-architecture-tutorial">Elm architecture tutorial</a> before continuing.</p>
+
+<p>One of the things that annoyed me during the project is that there is a lot of code duplication. Especially a lot of the same pattern matches to delegate actions down to sub-components etc.</p>
+
+<p>Last night I was reading some lens stuff (one of those things I am trying to grock at this moment) and I started reading about prisms.  "First class patterns"  they're supposed to be.  Well that sounds like something I could use right?  I see that I keep doing the same kind of pattern matches for different scenarios. A 'pattern' seems to emerge  (pun intended).  Maybe I can abstract it with prisms? This was the shower thought.</p>
+
+<p>So this morning I started type-hacking and I ended up with some awesome stuff.</p>
+
+<p>I'm gonna assume for now that all elm's APIs are accessible in my hypothetical <code>Hom</code> library.  All the following code is haskell.</p>
+
+<p>We're gonna build an app that combines two apps into one. Namely it includes a Facebook and a Twitter widget.</p>
+
+<p>The facebook and twitter widgets are defined as follow:</p>
+
+<pre><code>module Facebook where
+import Control.Lens
+import VirtualDom
+import Signal
+
+data Model = Model
+ { _likes :: Int
+ , _comments :: [String]
+ }
+
+
+data Action = Like
+            | Comment String
+            deriving Show
+
+
+update :: Action -&gt; Model -&gt; Model
+update Like = ...
+upate (Comment s) = ...
+
+
+action :: Signal Action
+action =  -- facebookAPISource  + input events etc
+
+
+view :: Model -&gt; Html
+view m = ... code that renders the facebook widget ...
+</code></pre>
+
+<p>And Twitter:</p>
+
+<pre><code>module Twitter where
+import VirtualDom
+import Signal
+
+data Model = Model
+ { _status :: String
+ }
+
+data Action = Tweet String
+            | Favorite
+            deriving Show
+update :: Action -&gt; Model -&gt; Model
+update (Tweet s)  = ...
+update (Favorite) =  ...
+
+action :: Signal Action
+action = -- twitter api and input events etc.
+
+view :: Model -&gt; Html
+view m = -- code that renders the widget --
+</code></pre>
+
+<p>Now we want to combine these widgets. So our new model is going to be the union of those two widgets:</p>
+
+<pre><code>data Model = Model
+  { _facebook :: Facebook.Model
+  , _twitter  :: Twitter.Model
+  }
+</code></pre>
+
+<p>And the actions is going to be the union of the two widgets</p>
+
+<pre><code>data Action = FBAction Facebook.Action
+            | TAction Twitter.Action
+            | Close -- our own action for our own component
+</code></pre>
+
+<p>And our update function would be lame pattern matches. Every time we add a new subcomponent...</p>
+
+<pre><code>update :: Action -&gt; Model -&gt; Model
+update Close m =  ... change the state so the app is closed ...
+update (FBAction a) m = m { _facebook = Facebook.update a (_facebook m) }
+update (TAction a) m = m { _twitter = Twitter.update a (_twitter m) }
+</code></pre>
+
+<p>Render the views...</p>
+
+<pre><code>view :: Model -&gt; Html
+view m =
+    div []
+        [ Facebook.view (m^.facebook)
+        , Twitter.view  (m^.twitter)
+        ]
+</code></pre>
+
+<p>And run the app ...</p>
+
+<pre><code>app :: Signal Html
+app = Signal.foldp update initialState action
+</code></pre>
+
+<p>I don't know why but I wanted to hack this into something more nice with lenses and prisms.</p>
+
+<p>Now we do:</p>
+
+<pre><code>makePrisms ''Action
+makeLenses ''Model
+</code></pre>
+
+<p>and we can start doing magic!</p>
+
+<p>After reading the Prism documentation and stack overflow ( <a href='http://stackoverflow.com/questions/20774475/use-a-parameter-as-pattern-in-haskell'>http://stackoverflow.com/questions/20774475/use-a-parameter-as-pattern-in-haskell</a>) I found a way to easily <code>extend</code> your action handler.</p>
+
+<p>say we have:</p>
+
+<pre><code>update' :: Action -&gt; Model -&gt; Model
+update' Close =  .. state to close the app ..
+</code></pre>
+
+<p>and we want to add the facebook widget to that. We end up doing this:</p>
+
+<pre><code>update :: Action -&gt; Model -&gt; Model
+update = update' &amp; outside _FBAction .~ over facebook
+                    . Facebook.update
+</code></pre>
+
+<p>If we want to add a twitter widget to that we can just add it to the chain:</p>
+
+<pre><code>update = update' &amp; outside _FBAction .~ over facebook
+                    . Facebook.update
+                 &amp; outside _TAction  .~ over twitter 
+                     . Twitter.update
+</code></pre>
+
+<p>We can extract this pattern into a utility function:</p>
+
+<p>You should see it as:  If we have a prism that given an action might give us a local action apply the local action to the global state by lensing into the global state to a part that is our local state and update that.</p>
+
+<p>( I simplified the types a lot. Apparently this works for any Profunctor. not just (->) . Though I'm not sure what that means. Heck I don't even know what a Profunctor is. This lens library thing sure is complex.)</p>
+
+<pre><code>updateWith :: APrism' action localAction
+           -&gt; Setting' (-&gt;) model localModel
+           -&gt; (localAction -&gt; localModel -&gt; localModel)
+           -&gt; (action -&gt; model -&gt; model)
+           -&gt; (action -&gt; model -&gt; model)
+updateWith action lens update =
+    outside action .~ over lens . update
+</code></pre>
+
+<p>So our code becomes:</p>
+
+<pre><code>withWidgets :: (Action -&gt; Model -&gt; Model) -&gt; (Action -&gt; Model -&gt; Model)
+withWidgets = updateWith _FBAction facebook Facebook.update
+            . updateWith _TAction  twitter  Twitter.update
+
+update = withWidgets update'
+</code></pre>
+
+<p>So now we can easily add as many widgets as we want using function composition! Nice! Because the local states of widgets don't overlap, the order in which we compose these <code>updateWiths</code> doesn't matter. widgets actions are commutative.</p>
+
+<p>Okay so we got state updating covered.  How do we delegate signals from the main component to subcomponents?  Lets see how we used to do it in elm.</p>
+
+<pre><code>action_ :: Signal Action
+action = FBAction &lt;$&gt; Facebook.action
+      &lt;|&gt; TAction &lt;$&gt; Twitter.action
+</code></pre>
+
+<p>Actually this is quite elegant. But I want to do it with prisms because heck why not.</p>
+
+<p>With prisms we end up with the following code:</p>
+
+<pre><code>action :: Signal Action
+action =  review _FBAction &lt;$&gt; Facebook.action
+      &lt;|&gt; review _TAction  &lt;$&gt; Twitter.action
+</code></pre>
+
+<p>We can extract a utility function:</p>
+
+<pre><code>mountAction :: Functor f =&gt; AReview t a -&gt; f a -&gt; f t
+mountAction r = (review r &lt;$&gt;)
+
+action =  mountAction _FBAction Facebook.action
+      &lt;|&gt; mountAction _TAction Twitter.action
+</code></pre>
+
+<p>This type is super general! I am going to dub it <code>liftReview</code>. It's simply review lifted into a functor.</p>
+
+<p>Anyhow. Here my type-hacking endevaours stop. It was nice and I learned a lot about lenses.  Haskell on the clientside web is awesome. I need to build this hypothetical library. It's gonna be sick.</p>
+
+<p>peace.</p>
+        </section>
+
+        <footer class="post-footer">
+
+            
+                <section class="author">
+                    <h4>Arian van Putten</h4>
+                    <p></p>
+                </section>
+            
+
+            <section class="share">
+                <h4>Share this post</h4>
+                <a class="icon-twitter" href="http://twitter.com/share?text=Lenses and prisms for modular clientside apps&url=http://arianvp.me/lenses-and-prisms-for-modular-clientside-apps/"
+                    onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+                    <span class="hidden">Twitter</span>
+                </a>
+                <a class="icon-facebook" href="https://www.facebook.com/sharer/sharer.php?u=http://arianvp.me/lenses-and-prisms-for-modular-clientside-apps/"
+                    onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+                    <span class="hidden">Facebook</span>
+                </a>
+                <a class="icon-google-plus" href="https://plus.google.com/share?url=http://arianvp.me/lenses-and-prisms-for-modular-clientside-apps/"
+                   onclick="window.open(this.href, 'google-plus-share', 'width=490,height=530');return false;">
+                    <span class="hidden">Google+</span>
+                </a>
+            </section>
+
+        </footer>
+
+        
+
+    </article>
+
+</main>
+
+    <footer class="site-footer">
+        <a class="subscribe icon-feed" href="http://arianvp.me/rss/"><span class="tooltip">Subscribe!</span></a>
+        <div class="inner">
+             <section class="copyright">All content copyright <a href="/">foldr ::</a> &copy; 2013 &bull; All rights reserved.</section>
+             <section class="poweredby">Proudly published with <a class="icon-ghost" href="//ghost.org">Ghost</a></section>
+        </div>
+    </footer>
+
+    
+    <script src="/shared/vendor/jquery/jquery.js"></script>
+
+    
+    <script type="text/javascript" src="/assets/js/index.js"></script>
+    <script type="text/x-mathjax-config">
+      MathJax.Hub.Config({
+        tex2jax: {inlineMath:[['$','$'], ['\\(','\\)']]}
+      });
+    </script>
+    <script type="text/javascript" src="//cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>
