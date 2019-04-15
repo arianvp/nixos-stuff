@@ -5,6 +5,7 @@ self: super: {
         set expandtab
         set shiftwidth=2
         set softtabstop=2
+        set undofile
         set mouse=a
         map <C-p> :FZF
         map <C-a> :Ag 
