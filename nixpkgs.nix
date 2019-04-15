@@ -1,4 +1,4 @@
-{ nixpkgs ? import <nixpkgs> }:
+{ nixpkgs ? import <nixos-19.03> }:
 let 
   # nixpkgs = import <nixpkgs>; # TODO make this a reproducible version
   isDir = path: builtins.pathExists (path + "/.");
