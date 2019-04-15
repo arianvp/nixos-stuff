@@ -4,13 +4,14 @@
 ## Deploying a computer
 
 ### On the machine
+
 ```
-./deploy.sh
+./deploy.sh t430s localhost switch
 ```
 
 ### Remotely from NixOS machine to NixOS machine
 ```
-./deploy-remote.sh
+./deploy.sh arianvp-me root@arianvp.me switch
 ```
 
 ## Remotely from a nix computer to NixOS machine
