@@ -13,12 +13,13 @@ cleanup() {
 trap cleanup EXIT
 
 if [ $#  -ne 3 ]; then
-  echo "Usage: ./deploy.sh <deployment> <remote> [switch|boot]"
+  echo "Usage: ./deploy.sh <deployment> <remote> [switch|boot|kexec]"
   exit 1
 fi
 
 target="$1"
 remote="$2"
+action="$3"
 profile=/nix/var/nix/profiles/system
 
 remoteOrLocal() {
@@ -43,6 +44,16 @@ echo "Setting profile"
 remoteOrLocal sudo nix-env -p "$profile" --set "$result"
 
 echo "Switching to configuration"
+if [ "$action" == "kexec" ]; then
+  action2="switch"
+else
+  action2=$action
+fi
 # pass any remaining arguments to the profile
-remoteOrLocal sudo "${profile}/bin/switch-to-configuration" "${@:3}"
+remoteOrLocal sudo "${profile}/bin/switch-to-configuration" "$action2"
 
+if [ "$action" == "kexec" ]; then
+  echo "Performing kexec"
+  remoteOrLocal sudo kexec -l /run/current-system/kernel --initrd /run/current-system/initrd --reuse-cmdline
+  remoteOrLocal sudo systemctl kexec
+fi
