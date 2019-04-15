@@ -12,6 +12,10 @@ cleanup() {
 }
 trap cleanup EXIT
 
+if [ $#  -ne 3 ]; then
+  echo "Usage: ./deploy.sh <deployment> <remote> [switch|boot]"
+  exit 1
+fi
 
 target="$1"
 remote="$2"
