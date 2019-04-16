@@ -8,6 +8,12 @@
 
   # Weechat
   services.weechat.enable = true;
+  networking.firewall.allowedTCPPorts = [ 
+    80   # http
+    443  # https
+    4443 # weechat relay
+  ];
+  
   programs.screen.screenrc = ''
     multiuser on
     acladd normal_user
