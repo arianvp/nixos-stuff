@@ -1,10 +1,10 @@
-{ nixpkgs ? builtins.fetchGit {
-  url = "https://github.com/worldofpeace/nixpkgs";
-  rev = "a0e8dfd1863d1b65eeea6ce952581034b54600f5";
-  ref = "stable-tracker-update";
-}}:
 let 
   # nixpkgs = import <nixpkgs>; # TODO make this a reproducible version
+  nixpkgs = import (builtins.fetchGit {
+    url = "https://github.com/worldofpeace/nixpkgs";
+    rev = "a0e8dfd1863d1b65eeea6ce952581034b54600f5";
+    ref = "stable-tracker-update";
+  });
   isDir = path: builtins.pathExists (path + "/.");
   overlays = path:
     if isDir path 
