@@ -1,23 +1,25 @@
 # nixos-stuff
 
-
-## Deploying a computer
-
-### On the machine
-
+# Usage
 ```
-./deploy.sh t430s localhost switch
+$ ./deploy.sh <deployment> <target> [switch|boot|kexec]
 ```
 
-### Remotely from NixOS machine to NixOS machine
+# Deployments
+These are defined in `overlays/deployments.nix`
+
+
+# Deploying on digitalocean
+
+1. Build the image
 ```
-./deploy.sh arianvp-me root@arianvp.me switch
+nix-build ./nixpkgs.nix -A digitalocean-image
 ```
 
-## Remotely from a nix computer to NixOS machine
-```
-TODO
-```
+2. Upload it to Digitalocean
+3. Start a droplet
+4. you can now deploy with `./deploy.sh <deployment> root@<droplet ip> switch`
+
 
 # Setting up user environment
 
