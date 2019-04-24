@@ -1,10 +1,17 @@
-{ pkgs, ...}:
+{ lib, pkgs, ...}:
 {
   imports = [ 
     ../../modules/digitalocean/config.nix 
+  #  ../../modules/k8s
   ];
 
   system.stateVersion = "19.03";
+
+
+  /*services.kubeadm = {
+    enable = true;
+    role = "master";
+  };*/
 
   # Weechat
   services.weechat.enable = true;
@@ -21,10 +28,22 @@
 
   services.nginx = {
     enable = true;
-    virtualHosts."arianvp.me" = {
-      forceSSL = true;
-      enableACME = true;
-      locations."/".root = pkgs.arianvp-website;
+    virtualHosts = {
+      "arianvp.me" = {
+        forceSSL = true;
+        enableACME = true;
+        locations."/".root = pkgs.arianvp-website;
+      };
+      "techstock.photos" = {
+        forceSSL = true;
+        enableACME = true;
+        locations."/".root = pkgs.writeTextDir "index.html"
+          ''
+          <!doctype html>
+          <h1> Tech Stock Photos </h1>
+          <h2> Royalty Free Non-crappy tech stock photos will come here </h2>
+          '';
+      };
     };
   };
 
