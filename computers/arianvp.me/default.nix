@@ -34,5 +34,11 @@
     allowKeysForGroup = true;
   };
 
-    
+  users.users.root.openssh.authorizedKeys.keyFiles = [
+    (pkgs.fetchurl {
+      url = "https://github.com/arianvp.keys";
+      sha256 = "0v6hsr6xcpw7b5cdlb312jm4jy1dahqll8v8ppgcbrfgpxp5gmm6";
+    })
+  ];
+
 }
