@@ -1,12 +1,9 @@
 let 
   # nixpkgs = import <nixpkgs>; # TODO make this a reproducible version
   channels = builtins.fromJSON (builtins.readFile ./nixpkgs.json);
-  nixpkgs = import (builtins.fetchGit {
-    name = "stable-tracker-update";
-    url = "https://github.com/worldofpeace/nixpkgs";
-    rev = "a0e8dfd1863d1b65eeea6ce952581034b54600f5";
-    ref = "stable-tracker-update";
-  });
+  metadata = channels."nixos-19.03";
+  nixpkgs = import (builtins.fetchGit metadata);
+
   isDir = path: builtins.pathExists (path + "/.");
   overlays = path:
     if isDir path 
