@@ -2,7 +2,6 @@
 {
   imports = [ 
     ../../modules/digitalocean/config.nix 
-  #  ../../modules/k8s
   ];
 
   system.stateVersion = "19.03";

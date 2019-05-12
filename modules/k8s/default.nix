@@ -1,38 +1,102 @@
-{ pkgs, lib, ... }: {
-  config = {
-    # The defaults of nixos are sufficient to skip the kubelet-start phase
-    # 
-    /*services.kubernetes = {
-      kubelet.enable = true;
-      apiserverAddress = "apiserver.arianvp.me";
-      };*/
+{ pkgs, lib, config, ... }: let cfg = config.services.kubeadm; in {
+  options.services.kubeadm = {
+    enable = lib.mkEnableOption "kubeadm";
+    role = lib.mkOption {
+      type = lib.types.enum ["master" "worker" ];
+    };
+    apiserverAddress = lib.mkOption {
+      type = lib.types.str;
+      description = ''
+        The address on which we can reach the masters. Could be loadbalancer
+      '';
+    };
+    tlsBootstrapToken = lib.mkOption {
+      type = lib.types.str;
+      description = ''
+        The master will print this to stdout after being set up. 
+      '';
+    };
 
-    # TODO set sysctl flags
 
-    environment.systemPackages = with pkgs; [ gitMinimal openssh docker utillinux iproute ethtool thin-provisioning-tools iptables socat ];
+    discoveryFile = lib.mkOption {
+      type = lib.types.str;
+      description = ''
+        The HTTP URL where we can find the cluster info
+      '';
+    };
+
+  };
+  # TODO:  put --discovery-file in  .well-known/kubeconfig.yaml
+
+  # Got this from https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm-join/#turning-off-public-access-to-the-cluster-info-configmap
+  # kubectl -n kube-public get cm cluster-info -o json | jq -r '.data.kubeconfig > /etc/kubernetes/cluster-info.cfg'
+
+  # https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm-join/#file-or-https-based-discovery
+
+  config = lib.mkIf cfg.enable {
+
+    boot.kernelModules = [ "br_netfilter" ];
+
+    boot.kernel.sysctl = {
+      "net.ipv4.ip_forward" = 1;
+      "net.bridge.bridge-nf-call-iptables" = 1;
+    };
+
+
+    environment.systemPackages = with pkgs; [ 
+      gitMinimal
+      openssh 
+      docker 
+      utillinux 
+      iproute 
+      ethtool 
+      thin-provisioning-tools 
+      iptables 
+      socat 
+    ];
 
 
     virtualisation.docker.enable = true;
 
     systemd.services.kubeadm = {
+      wantedBy = [ "multi-user.target" ];
+      after = [ "kubelet.service" ];
+
       # These paths are needed to convince kubeadm to bootstrap
-      path = with pkgs; [ gitMinimal openssh docker utillinux iproute ethtool thin-provisioning-tools iptables socat ];
+      path = with pkgs; [ kubernetes jq gitMinimal openssh docker utillinux iproute ethtool thin-provisioning-tools iptables socat ];
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
+        # Makes sure that its only started once, during bootstrap
         ConditionPathExists = "!/var/lib/kubelet/config.yaml";
-        ExecStart = ''
-          ${pkgs.kubernetes}/bin/kubeadm init
+        ExecStart = {
+          master = "${pkgs.kubernetes}/bin/kubeadm init --token ${cfg.tlsBootstrapToken}";
+          worker = "${pkgs.kubernetes}/bin/kubeadm join ${cfg.apiserverAddress} --tls-bootstrap-token ${cfg.tlsBootstrapToken} --discovery-file ${cfg.discoveryFile}";
+        }.${cfg.role};
+      } // lib.mkIf (cfg.role == "master") {
+        requires = [ "cni-init.service" ];
+        before = [ "cni-init.service" ];
+        postStart = ''
+          kubectl -n kube-public get cm cluster-info -o json | jq -r '.data.kubeconfig > /etc/kubernetes/cluster-info.cfg'
+          chmod a+r /etc/kubernetes/cluster-info.cfg
         '';
       };
     };
-    # kubeadm token create --print-join-command  
-    # this does what we want
+
+    systemd.services.cni-init = {
+      path = with pkgs; [ kubernetes ];
+      script = ''
+        echo "Hello, this will do something later" 
+      '';
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+      };
+    };
 
     systemd.services.kubelet = {
       description = "Kubernetes Kubelet Service";
       wantedBy = [ "multi-user.target" ];
-      # after = [ "network.target" "docker.service" "kube-apiserver.service" ];
 
       path = with pkgs; [ gitMinimal openssh docker utillinux iproute ethtool thin-provisioning-tools iptables socat ];
 
@@ -47,10 +111,6 @@
         StartLimitInterval= 0;
         RestartSec = 10;
 
-        # TODO, we can infer kubelet.conf from the pki  certs. It is fixed, and can live in the nix store.
-        # TODO, bootstrap-kubelet.conf is a bit more complicated, I guess,
-        # as we need to provide it the bootstrap token..
-
         ExecStart = ''
           ${pkgs.kubernetes}/bin/kubelet \
             --kubeconfig=/etc/kubernetes/kubelet.conf \
@@ -61,9 +121,6 @@
         '';
       };
     };
-
-    # points to our Cloud Loadbalancer
-   # services.kubernetes.masterAddress = "apiserver.arianvp.me";
     # TODO enable CNI
   };
 }

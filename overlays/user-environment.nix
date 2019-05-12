@@ -2,6 +2,7 @@ self: super: {
   user-environment = self.buildEnv {
     name = "my-user-environment";
     paths = with self; [
+      (aspellWithDicts (ps : [ps.en]))
       ag
       arandr
       asciinema

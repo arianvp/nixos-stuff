@@ -5,7 +5,7 @@ let
 in 
   nixpkgs { 
     overlays = map (n: import n) [
-      ./overlays/deployments.nix
+      ./deployments.nix
       ./overlays/neovim.nix
       ./overlays/user-environment.nix
     ];

@@ -21,7 +21,7 @@ in
   #### implementation
   config = {
 
-    system.build.digitalOceanImage = import <nixos-19.03/nixos/lib/make-disk-image.nix> {
+    system.build.digitalOceanImage = import <nixpkgs/nixos/lib/make-disk-image.nix> {
       name = "digital-ocean-image";
       format = "qcow2";
       postVM = ''
