@@ -28,7 +28,7 @@ in
               type = types.nullOr (lib.mkOptionType {
                 name = "Toplevel NixOS config";
                 # TODO remove absolute path
-                merge = loc: defs: (import ../../nixpkgs/nixos/lib/eval-config.nix {
+                merge = loc: defs: (import <nixpkgs/nixos/lib/eval-config.nix> {
                   inherit system;
                   modules =
                     let extraConfig =
