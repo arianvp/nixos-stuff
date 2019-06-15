@@ -29,7 +29,7 @@
     '';
 
     networking.hostName = "t490s";
-    system.stateVersion = "19.03";
+    system.stateVersion = "18.03"; 
 
 
     boot.loader.systemd-boot.enable = true;
@@ -42,17 +42,13 @@
     boot.initrd.availableKernelModules = [ "xhci_pci" "nvme" ];
     boot.kernelModules = [ "kvm-intel" ];
 
-    boot.initrd.luks.devices."root".device = "/dev/gpt-auto-luks";
+    boot.initrd.luks.devices."root".device = "/dev/gpt-auto-root-luks";
 
     fileSystems = {
       "/" = {
-        device = "/dev/gpt-auto";
+        device = "/dev/gpt-auto-root";
         fsType = "btrfs";
         options = [ "noatime" "nodiratime" "compress=zstd" "discard" "defaults" ];
-      };
-      "/boot" = {
-        device = "/dev/disk/by-partuuid/1bc32aff-296f-4a18-aec0-41d72e2a9d43";
-        fsType = "vfat";
       };
     };
   };
