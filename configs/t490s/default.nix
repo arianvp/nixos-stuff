@@ -1,9 +1,9 @@
-{ config, pkgs, ... }: {
+{ config, pkgs, lib, modulesPath, ... }: {
   imports = [
-    ./hardware-configuration.nix 
     ../../modules/yubikey
     ../../modules/ssh-tweaks.nix
     ../../modules/env.nix
+    (modulesPath + "/installer/scan/not-detected.nix")
   ];
   config = {
     time.timeZone = "Europe/Amsterdam";
@@ -27,7 +27,33 @@
         source "${pkgs.gnome3.vte}/etc/profile.d/vte.sh"
       fi
     '';
+
     networking.hostName = "t490s";
-    system.stateVersion = "18.03"; 
+    system.stateVersion = "19.03";
+
+
+    boot.loader.systemd-boot.enable = true;
+    boot.loader.efi.canTouchEfiVariables = true;
+
+    nix.maxJobs = lib.mkDefault 8;
+    powerManagement.cpuFreqGovernor = lib.mkDefault "powersave";
+
+
+    boot.initrd.availableKernelModules = [ "xhci_pci" "nvme" ];
+    boot.kernelModules = [ "kvm-intel" ];
+
+    boot.initrd.luks.devices."root".device = "/dev/gpt-auto-luks";
+
+    fileSystems = {
+      "/" = {
+        device = "/dev/gpt-auto";
+        fsType = "btrfs";
+        options = [ "noatime" "nodiratime" "compress=zstd" "discard" "defaults" ];
+      };
+      "/boot" = {
+        device = "/dev/disk/by-partuuid/1bc32aff-296f-4a18-aec0-41d72e2a9d43";
+        fsType = "vfat";
+      };
+    };
   };
 }
