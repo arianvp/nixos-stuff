@@ -22,6 +22,7 @@
       };
       displayManager.gdm.enable = true;
     };
+    environment.systemPackages = [ pkgs.user-environment ];
     environment.interactiveShellInit = ''
       if [[ "$VTE_VERSION" > 3405 ]]; then
         source "${pkgs.gnome3.vte}/etc/profile.d/vte.sh"
@@ -30,7 +31,6 @@
 
     networking.hostName = "t490s";
     system.stateVersion = "18.03"; 
-
 
     boot.loader.systemd-boot.enable = true;
     boot.loader.efi.canTouchEfiVariables = true;
@@ -42,11 +42,13 @@
     boot.initrd.availableKernelModules = [ "xhci_pci" "nvme" ];
     boot.kernelModules = [ "kvm-intel" ];
 
-    boot.initrd.luks.devices."root".device = "/dev/gpt-auto-root-luks";
+    # /boot will be automatically mounted by gpt-auto-generator, which is
+    # enabled by default
 
+    boot.initrd.luks.devices."root".device = "/dev/disk/by-partuuid/9f5a793b-d57a-4adc-a0d7-6b6db7c97031";
     fileSystems = {
       "/" = {
-        device = "/dev/gpt-auto-root";
+        device = "/dev/mapper/root";
         fsType = "btrfs";
         options = [ "noatime" "nodiratime" "compress=zstd" "discard" "defaults" ];
       };
