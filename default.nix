@@ -1,9 +1,9 @@
 let 
   channels = builtins.fromJSON (builtins.readFile ./nixpkgs.json);
   channel = channels."nixos-19.03";
-  nixpkgs = import (builtins.fetchGit channel);
+  nixpkgs_ = (builtins.fetchGit channel);
 in 
-  nixpkgs { 
+  { nixpkgs ? nixpkgs_}: import nixpkgs { 
     overlays = map (n: import n) [
       ./deployments.nix
       ./overlays/neovim.nix

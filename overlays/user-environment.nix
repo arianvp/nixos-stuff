@@ -9,6 +9,7 @@ self: super: {
       cabal2nix
       cabal-install
       chromium
+      signal-desktop
       compton
       ctags
       discord

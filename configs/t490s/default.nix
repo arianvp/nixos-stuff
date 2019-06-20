@@ -3,16 +3,19 @@
     ../../modules/yubikey
     ../../modules/ssh-tweaks.nix
     ../../modules/env.nix
+    ../../modules/cachix.nix
+    ../../modules/hie.nix
     (modulesPath + "/installer/scan/not-detected.nix")
   ];
   config = {
+    virtualisation.docker.enable = true;
     time.timeZone = "Europe/Amsterdam";
     programs.bash.enableCompletion = true;
     hardware.pulseaudio.enable = true;
     users.users.arian = {
       isNormalUser = true;
       createHome = true;
-      extraGroups = [ "wheel" ];
+      extraGroups = [ "docker" "wheel" ];
     };
     environment.gnome3.excludePackages = with pkgs.gnome3; [ gnome-software ];
     services.xserver =  {
@@ -38,6 +41,13 @@
     nix.maxJobs = lib.mkDefault 8;
     powerManagement.cpuFreqGovernor = lib.mkDefault "powersave";
 
+    services.printing = {
+      enable = true;
+      drivers = [ pkgs.hplip ];
+    };
+
+    services.hardware.bolt.enable = true;
+    services.tlp.enable = true;
 
     boot.initrd.availableKernelModules = [ "xhci_pci" "nvme" ];
     boot.kernelModules = [ "kvm-intel" ];

@@ -1,14 +1,14 @@
-{...}: {
-  nix = {
-    binaryCaches = [
-      "https://cache.nixos.org/"
-      "https://hie-nix.cachix.org"
-      "https://arianvp.cachix.org"
-    ];
-    binaryCachePublicKeys = [
-      "hie-nix.cachix.org-1:EjBSHzF6VmDnzqlldGXbi0RM3HdjfTU3yDRi9Pd0jTY="
-      "arianvp.cachix.org-1:/NYL/rC71vauTeFWVMJXXadA/2MfziDb+/1DlLLXUvw="
-    ];
-    trustedUsers = [ "root" "arian" ];
-  };
+
+# WARN: this file will get overwritten by $ cachix use <name>
+{ pkgs, lib, ... }:
+
+let
+  folder = ./cachix;
+  toImport = name: value: folder + ("/" + name);
+  filterCaches = key: value: value == "regular" && lib.hasSuffix ".nix" key;
+  imports = lib.mapAttrsToList toImport (lib.filterAttrs filterCaches (builtins.readDir folder));
+in {
+  inherit imports;
+  nix.binaryCaches = ["https://cache.nixos.org/"];
 }
+    
