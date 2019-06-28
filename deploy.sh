@@ -32,7 +32,7 @@ remoteOrLocal() {
 
 
 echo "Building closure"
-result=$(nix-build --arg nixpkgs '../nixpkgs' --show-trace --no-out-link -A "deployments.\"${target}\".toplevel")
+result=$(nix-build  --show-trace --no-out-link -A "deployments.\"${target}\".toplevel")
 echo "Built $result"
 
 # todo copy if remote

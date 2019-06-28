@@ -1,9 +1,6 @@
 let 
-  channels = builtins.fromJSON (builtins.readFile ./nixpkgs.json);
-  channel = channels."nixos-19.03";
-  nixpkgs_ = (builtins.fetchGit channel);
-in 
-  { nixpkgs ? nixpkgs_}: import nixpkgs { 
+  channels_ = builtins.fromJSON (builtins.readFile ./nixpkgs.json);
+  channels  = builtins.mapAttrs (k: v: import (builtins.fetchGit v) {
     overlays = map (n: import n) [
       ./deployments.nix
       ./overlays/neovim.nix
@@ -12,4 +9,7 @@ in
     config = { 
       allowUnfree = true; 
     }; 
-  }
+
+  }) channels_;
+in 
+  channels."nixos-19.03";
