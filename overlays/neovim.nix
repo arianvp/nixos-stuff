@@ -7,6 +7,8 @@ self: super: {
         set softtabstop=2
         set bg=light
         set undofile
+        set ignorecase
+        set smartcase
         set mouse=a
         map <C-p> :FZF
         map <C-a> :Ag 
