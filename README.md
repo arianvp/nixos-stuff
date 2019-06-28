@@ -29,3 +29,7 @@ this will override the environment that this installs
 ```
 $ ./setup-user-env.sh
 ```
+
+# TODOS:
+Instead of have a deploy.sh, have a deploy.nix that generates a deploy.sh
+This means everything is nicely in one closure
