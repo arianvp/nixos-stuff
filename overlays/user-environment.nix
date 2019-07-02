@@ -2,14 +2,13 @@ self: super: {
   user-environment = self.buildEnv {
     name = "my-user-environment";
     paths = with self; [
-      (aspellWithDicts (ps : [ps.en]))
       ag
       arandr
       asciinema
+      bitwarden-cli
       cabal2nix
       cabal-install
       chromium
-      signal-desktop
       compton
       ctags
       discord
@@ -22,6 +21,7 @@ self: super: {
       firefox
       fzf
       git
+      gnupg
       graphviz
       htop
       j4-dmenu-desktop
@@ -32,6 +32,7 @@ self: super: {
       obs-studio
       pavucontrol
       scrot
+      signal-desktop
       tmux
       tmux.man
       transmission-gtk
