@@ -10,8 +10,8 @@ self: super: {
         set ignorecase
         set smartcase
         set mouse=a
-        map <C-p> :FZF
-        map <C-a> :Ag 
+        map <C-p> :Files<CR>
+        map <C-a> :Ag<CR>
         map <C-n> :NERDTreeToggle<CR>
         map <C-t> :TagbarToggle<CR>
         let g:ctrlp_user_command = ['.git/', 'git --git-dir=%s/.git ls-files -oc --exclude-standard']
