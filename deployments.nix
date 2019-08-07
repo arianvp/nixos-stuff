@@ -1,6 +1,6 @@
 self: super: 
   # makes sure that all nix commands use our pinned nixpkgs
-  let config = x: { imports = [ x ]; config.nix.nixPath = [ "nixpkgs=${self.path}" ]; }; in {
+  let config = x: { imports = [ x ]; config.nix.nixPath = [ "nixpkgs=${./.}" ]; }; in {
   deployments = {
     "old.arianvp.me" = super.nixos (config ./configs/arianvp.me.bak);
     "arianvp.me" = super.nixos (config ./configs/arianvp.me);
