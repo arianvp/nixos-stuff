@@ -115,7 +115,7 @@
     "url": "https://github.com/nixos/nixpkgs-channels"
   },
   "nixos-unstable-small": {
-    "rev": "e275a6c2f38d20a0bd9c5c113fb9d19b479a89fa",
+    "rev": "8b85de318dbd8733cd89076f7c1a9678cd188235",
     "ref": "refs/heads/nixos-unstable-small",
     "url": "https://github.com/nixos/nixpkgs-channels"
   },
