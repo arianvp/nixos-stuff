@@ -8,7 +8,6 @@ self: super: {
       bitwarden-cli
       cabal2nix
       cabal-install
-      zoom-us
       chromium
       compton
       ctags
@@ -38,11 +37,13 @@ self: super: {
       tmux.man
       transmission-gtk
       vlc
-      vscode
+      # vscode
       zlib
       pkg-config
       wire-desktop
       gmp
+      awscli
+      fractal
       ncurses
       (haskell.packages.ghc864.ghcWithPackages (p: [
       ]))
