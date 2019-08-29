@@ -1,5 +1,5 @@
 let 
-  pkgs = import ./.;
+  pkgs = import ./. {};
 in
   pkgs.mkShell {
     name = "Shell";
