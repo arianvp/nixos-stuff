@@ -15,7 +15,7 @@ with lib;
     initrd.kernelModules = [ "virtio_scsi" ];
     kernelModules = [ "virtio_pci" "virtio_net" ];
     loader = {
-      grub.device = "/dev/sda";
+      grub.device = "/dev/vda";
       timeout = 0;
       grub.configurationLimit = 0;
     };
