@@ -6,12 +6,6 @@
 
   system.stateVersion = "19.03";
 
-
-  /*services.kubeadm = {
-    enable = true;
-    role = "master";
-  };*/
-
   # Weechat
   services.weechat.enable = true;
   networking.firewall.allowedTCPPorts = [ 
@@ -19,7 +13,7 @@
     443  # https
     4443 # weechat relay
   ];
-  
+
   programs.screen.screenrc = ''
     multiuser on
     acladd normal_user
