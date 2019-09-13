@@ -3,6 +3,15 @@ self: super:
   let 
     # TODO: filterSource the nixPath for unwanted rebuilds
     config = x: { imports = [ x ]; config.nix.nixPath = [ "nixpkgs=${./.}" ]; }; 
+    install = deployment: super.writeScriptBin "install-it"
+    ''
+      set -e
+      set -x
+      mkdir /mnt/etc
+      touch /mnt/etc/NIXOS
+      ${deployment.nixos-enter}/bin/nixos-enter --root /mnt -- nix-env --set /nix/var/nix/profiles/system ${deployment.toplevel}
+    '';
+    # TODO Extract this to a nice reusable piece of nix for others to use
     deploy = deployment: super.writeScriptBin "deploy" 
     ''
       set -e
@@ -40,7 +49,7 @@ self: super:
       "old.arianvp.me" = deploy (super.nixos (config ./configs/arianvp.me.bak));
       "arianvp-me" = deploy (super.nixos (config ./configs/arianvp.me));
       "ryzen" =  deploy (super.nixos (config ./configs/ryzen));
-      "t430s" = deploy (super.nixos (config ./configs/t430s));
+      "t430s" =  (super.nixos (config ./configs/t430s));
       "t490s" = deploy (super.nixos (config ./configs/t490s));
     };
     digitalocean-image = (super.nixos (config ./modules/digitalocean/image.nix )).digitalOceanImage;
