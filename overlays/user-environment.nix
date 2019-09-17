@@ -31,13 +31,19 @@ self: super: {
       neovim
       obs-studio
       pavucontrol
+      gnome-builder
+      gnome3.glade
       scrot
       signal-desktop
       tmux
+      tmate
+      mono
       tmux.man
       transmission-gtk
       vlc
-      # vscode
+      vscode
+      fsharp
+      dotnet-sdk
       zlib
       pkg-config
       wire-desktop
