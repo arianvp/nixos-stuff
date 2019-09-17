@@ -2,6 +2,7 @@
 {
   imports = [ 
     ../../modules/digitalocean/config.nix 
+    ./network.nix
   ];
 
   system.stateVersion = "19.03";

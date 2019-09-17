@@ -28,7 +28,7 @@ with lib;
   networking = {
     firewall.allowedTCPPorts = [ 22 ];
     hostName = mkDefault ""; # use dhcp
-    useNetworkd = true;
+    # useNetworkd = true;
   };
 
   systemd.services.digitalocean-set-hostname = {
