@@ -55,12 +55,16 @@
       socat 
     ];
 
-
     virtualisation.docker.enable = true;
 
     systemd.services.kubeadm = {
       wantedBy = [ "multi-user.target" ];
       after = [ "kubelet.service" ];
+      postStart = lib.mkIf (cfg.role == "master")
+        ''
+          kubectl -n kube-public get cm cluster-info -o json | jq -r '.data.kubeconfig > /etc/kubernetes/cluster-info.cfg'
+          chmod a+r /etc/kubernetes/cluster-info.cfg
+        '';
 
       # These paths are needed to convince kubeadm to bootstrap
       path = with pkgs; [ kubernetes jq gitMinimal openssh docker utillinux iproute ethtool thin-provisioning-tools iptables socat ];
@@ -69,31 +73,14 @@
         RemainAfterExit = true;
         # Makes sure that its only started once, during bootstrap
         ConditionPathExists = "!/var/lib/kubelet/config.yaml";
+        Statedirectory = "kubelet";
+        ConfigurationDirectory = "kubernetes";
         ExecStart = {
           master = "${pkgs.kubernetes}/bin/kubeadm init --token ${cfg.tlsBootstrapToken}";
           worker = "${pkgs.kubernetes}/bin/kubeadm join ${cfg.apiserverAddress} --tls-bootstrap-token ${cfg.tlsBootstrapToken} --discovery-file ${cfg.discoveryFile}";
         }.${cfg.role};
-      } // lib.mkIf (cfg.role == "master") {
-        requires = [ "cni-init.service" ];
-        before = [ "cni-init.service" ];
-        postStart = ''
-          kubectl -n kube-public get cm cluster-info -o json | jq -r '.data.kubeconfig > /etc/kubernetes/cluster-info.cfg'
-          chmod a+r /etc/kubernetes/cluster-info.cfg
-        '';
       };
     };
-
-    systemd.services.cni-init = {
-      path = with pkgs; [ kubernetes ];
-      script = ''
-        echo "Hello, this will do something later" 
-      '';
-      serviceConfig = {
-        Type = "oneshot";
-        RemainAfterExit = true;
-      };
-    };
-
     systemd.services.kubelet = {
       description = "Kubernetes Kubelet Service";
       wantedBy = [ "multi-user.target" ];
@@ -121,6 +108,5 @@
         '';
       };
     };
-    # TODO enable CNI
   };
 }
