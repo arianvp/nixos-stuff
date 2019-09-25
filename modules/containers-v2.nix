@@ -27,18 +27,14 @@ in
               default = null;
               type = types.nullOr (lib.mkOptionType {
                 name = "Toplevel NixOS config";
-                # TODO remove absolute path
-                merge = loc: defs: (import <nixpkgs/nixos/lib/eval-config.nix> {
-                  inherit system;
-                  modules =
-                    let extraConfig =
-                      { boot.isContainer = true;
-                        networking.hostName = mkDefault name;
-                        networking.useDHCP = false;
-                      };
-                    in [ extraConfig ] ++ (map (x: x.value) defs);
-                  prefix = [ "containers" name ];
-                }).config;
+                merge = loc: defs: (pkgs.nixos {
+                  imports = map (x: x.value) defs;
+                  boot.isContainer = true;
+                  networking.hostName = mkDefault name;
+                  networking.dhcpcd.enable = false;
+                  systemd.network.enable = true;
+                  networking.firewall.enable = false;
+                });
               });
             };
             path = mkOption {
@@ -47,7 +43,7 @@ in
             };
           };
           config = {
-            path = config.config.system.build.toplevel;
+            path = config.config.toplevel;
           };
         }
       ));
@@ -62,6 +58,8 @@ in
         mkdir -p -m 0755 "/var/lib/machines/$MACHINE/nix" "/var/lib/machines/$MACHINE/etc" "/var/lib/machines/$MACHINE/var/lib"
         mkdir -p -m 0700 /var/lib/machines/$MACHINE/var/lib/private "/var/lib/machines/$MACHINE/root"
       '';
+      # Dont run in user-namespace. doesn't work
+      serviceConfig.ExecStart = [ "" "${pkgs.systemd}/bin/systemd-nspawn --quiet --keep-unit --boot --link-journal=try-guest --network-veth --settings=override --machine=%i" ];
     };
 
     # Enable she machine on boot

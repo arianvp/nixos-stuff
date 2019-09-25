@@ -2,13 +2,18 @@
 {
   imports = [ 
     ../../modules/digitalocean/config.nix 
+    ../../modules/containers-v2.nix
     ./network.nix
   ];
 
   system.stateVersion = "19.03";
 
+  # needed for networkd to function. obscure
+  time.timeZone = "Europe/Amsterdam";
+
   # Weechat
   services.weechat.enable = true;
+  networking.firewall.enable = false;
   networking.firewall.allowedTCPPorts = [ 
     80   # http
     443  # https
@@ -19,6 +24,15 @@
     multiuser on
     acladd normal_user
   '';
+
+  services.systemd-nspawn.machines = {
+    "test1".config = {...}: {
+      services.nginx.enable = true;  
+    };
+    "test2".config = {...}: {
+      services.nginx.enable = true;  
+    };
+  };
 
   services.nginx = {
     enable = true;
