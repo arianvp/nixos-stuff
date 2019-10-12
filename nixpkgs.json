@@ -100,32 +100,32 @@
     "url": "https://github.com/nixos/nixpkgs-channels"
   },
   "nixos-19.03": {
-    "rev": "021d733ea3f87b8c9232020b4e606d08eaca160b",
+    "rev": "0e0ee084d6dfc83b5b67b6cbcefe43664114808d",
     "ref": "refs/heads/nixos-19.03",
     "url": "https://github.com/nixos/nixpkgs-channels"
   },
   "nixos-19.03-small": {
-    "rev": "2c61951df92e7a19483adfe7dd29a94c718b9c84",
+    "rev": "df7e351af91e6cbf4434e281d35fec39348a5d91",
     "ref": "refs/heads/nixos-19.03-small",
     "url": "https://github.com/nixos/nixpkgs-channels"
   },
   "nixos-19.09": {
-    "rev": "88f32cca5a47b788556c00c7057d09ef083d3bfb",
+    "rev": "88bbb3c809699f44bf844094a2cd7874e0ea4a39",
     "ref": "refs/heads/nixos-19.09",
     "url": "https://github.com/nixos/nixpkgs-channels"
   },
   "nixos-19.09-small": {
-    "rev": "404d1cd097915793e8200de8fd496a112ecef1f7",
+    "rev": "d5291756487d70bc336e33512a9baf9fa1788faf",
     "ref": "refs/heads/nixos-19.09-small",
     "url": "https://github.com/nixos/nixpkgs-channels"
   },
   "nixos-unstable": {
-    "rev": "d484f2b7fc0834a068e8ace851faa449a03963f5",
+    "rev": "07d4df5962625285bcc09b057b40001bfa32340d",
     "ref": "refs/heads/nixos-unstable",
     "url": "https://github.com/nixos/nixpkgs-channels"
   },
   "nixos-unstable-small": {
-    "rev": "82fe35cd29b848a3dd5f6de50f62b0ed9e4f5866",
+    "rev": "e904777dc9b29b2c64925eb23c556ff3b9b1d365",
     "ref": "refs/heads/nixos-unstable-small",
     "url": "https://github.com/nixos/nixpkgs-channels"
   },
@@ -140,22 +140,22 @@
     "url": "https://github.com/nixos/nixpkgs-channels"
   },
   "nixpkgs-18.09-darwin": {
-    "rev": "f2ffac1ee4a0b8b449338bcf957c8fe8fe010555",
+    "rev": "f0b18a3f96fc638bcfc55f2c9c45f3ef19196696",
     "ref": "refs/heads/nixpkgs-18.09-darwin",
     "url": "https://github.com/nixos/nixpkgs-channels"
   },
   "nixpkgs-19.03-darwin": {
-    "rev": "2c61951df92e7a19483adfe7dd29a94c718b9c84",
+    "rev": "df7e351af91e6cbf4434e281d35fec39348a5d91",
     "ref": "refs/heads/nixpkgs-19.03-darwin",
     "url": "https://github.com/nixos/nixpkgs-channels"
   },
   "nixpkgs-19.09-darwin": {
-    "rev": "9c0c769bfa71537bb315e7c834e804eb20dd1fe1",
+    "rev": "88bbb3c809699f44bf844094a2cd7874e0ea4a39",
     "ref": "refs/heads/nixpkgs-19.09-darwin",
     "url": "https://github.com/nixos/nixpkgs-channels"
   },
   "nixpkgs-unstable": {
-    "rev": "c4196cca9acd1c51f62baf10fcbe34373e330bb3",
+    "rev": "bef773ed53f3d535792d7d7ff3ea50a3deeb1cdd",
     "ref": "refs/heads/nixpkgs-unstable",
     "url": "https://github.com/nixos/nixpkgs-channels"
   }
