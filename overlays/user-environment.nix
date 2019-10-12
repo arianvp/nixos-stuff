@@ -33,6 +33,7 @@ self: super: {
       pavucontrol
       gnome-builder
       gnome3.glade
+      gnome3.gnome-boxes
       scrot
       signal-desktop
       tmux
@@ -47,6 +48,7 @@ self: super: {
       zlib
       pkg-config
       wire-desktop
+      win-virtio
       gmp
       awscli
       fractal
