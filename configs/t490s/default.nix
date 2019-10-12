@@ -5,10 +5,12 @@
     ../../modules/env.nix
     ../../modules/cachix.nix
     ../../modules/hie.nix
+    ../../modules/containers-v2.nix
     (modulesPath + "/installer/scan/not-detected.nix")
   ];
   config = {
     virtualisation.docker.enable = true;
+    virtualisation.libvirtd.enable = true;
     time.timeZone = "Europe/Amsterdam";
     programs.bash.enableCompletion = true;
     hardware.pulseaudio.enable = true;
@@ -18,6 +20,19 @@
       extraGroups = [ "docker" "wheel" ];
     };
     environment.gnome3.excludePackages = with pkgs.gnome3; [ gnome-software ];
+
+
+        services.systemd-nspawn.machines = {
+          "test1".config = {...}: {
+            services.nginx.enable = true;  
+            networking.firewall.allowedTCPPorts = [ 80 ];
+            systemd.network.networks."80-container-host0".networkConfig.Address = "192.168.33.2";
+          };
+          "test2".config = {...}: {
+            networking.firewall.allowedTCPPorts = [ 80 ];
+            services.nginx.enable = true;  
+          };
+        };
     services.xserver =  {
       enable = true;
       desktopManager.gnome3 = {
