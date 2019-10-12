@@ -29,11 +29,13 @@ in
                 name = "Toplevel NixOS config";
                 merge = loc: defs: (pkgs.nixos {
                   imports = map (x: x.value) defs;
-                  boot.isContainer = true;
+                  boot.isContainer = true; # Why is this even needed? Ugly!
                   networking.hostName = mkDefault name;
                   networking.dhcpcd.enable = false;
+                  # Workaround for 19.09
+                  # TODO figure why this is needed?????????????????
+                  networking.useHostResolvConf = false;
                   systemd.network.enable = true;
-                  networking.firewall.enable = false;
                 });
               });
             };
@@ -64,14 +66,17 @@ in
 
     # Enable she machine on boot
     systemd.targets."machines".wants = 
-      map (name:  "systemd-nspawn@${name}.service") (attrNames config.services.systemd-nspawn.machines);
+    map (name:  "systemd-nspawn@${name}.service") (attrNames config.services.systemd-nspawn.machines);
+
+    # Open up DHCP
+    networking.firewall.interfaces."vz-nixos".allowedUDPPorts = [ 68 67 ];
 
     systemd.nspawn =
       flip mapAttrs config.services.systemd-nspawn.machines (name: container: {
         execConfig = {
           Boot = false;
           Parameters = "${container.path}/init";
-          PrivateUsers = "yes";
+          PrivateUsers = "no";
         };
         networkConfig = {
           Zone = "nixos";
