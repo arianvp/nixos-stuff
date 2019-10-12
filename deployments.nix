@@ -1,8 +1,16 @@
 self: super: 
   # makes sure that all nix commands use our pinned nixpkgs
   let 
-    # TODO: filterSource the nixPath for unwanted rebuilds
-    config = x: { imports = [ x ]; /*config.nix.nixPath = [ "nixpkgs=${./.}" ]; */ }; 
+    config = x: {
+      imports = [ x ];
+      config.nix = {
+        nixPath = [ "nixpkgs=${self.nix-gitignore.gitignoreSourcePure [./.gitignore] ./.}" ];
+        binaryCaches = [ "https://cache.nixos.org" "https://cache.dhall-lang.org" ];
+        binaryCachePublicKeys = [
+          "cache.dhall-lang.org:I9/H18WHd60olG5GsIjolp7CtepSgJmM2CsO813VTmM="
+        ];
+      };
+    }; 
     install = deployment: super.writeScriptBin "install-it"
     ''
       set -e
