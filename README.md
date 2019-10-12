@@ -18,7 +18,7 @@ These are defined in `overlays/deployments.nix`
 
 1. Build the image
 ```
-nix-build ./nixpkgs.nix -A digitalocean-image
+nix-build -A digitalocean-image
 ```
 
 2. Upload it to Digitalocean
@@ -27,6 +27,7 @@ nix-build ./nixpkgs.nix -A digitalocean-image
 
 
 # Setting up user environment
+If you're not on NixOS
 
 Note: Can not be used in conjunction with manual usage of `nix-env --install` as
 this will override the environment that this installs
@@ -35,6 +36,3 @@ this will override the environment that this installs
 $ ./setup-user-env.sh
 ```
 
-# TODOS:
-Instead of have a deploy.sh, have a deploy.nix that generates a deploy.sh
-This means everything is nicely in one closure
