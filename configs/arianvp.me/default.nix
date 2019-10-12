@@ -13,7 +13,6 @@
 
   # Weechat
   services.weechat.enable = true;
-  networking.firewall.enable = false;
   networking.firewall.allowedTCPPorts = [ 
     80   # http
     443  # https
