@@ -1,11 +1,12 @@
 { pkgs, lib, config, ... }: 
 let 
-  cfg = config.services.kubeadm; 
+  cfg = config.services.kubeadm.kubelet;
   path = with pkgs; [
     docker utillinux iproute ethtool iptables socat
   ];
 in {
-  options.services.kubeadm = {
+  # TODO conflicts services.kubernetes.kubelet
+  options.services.kubeadm.kubelet = {
     enable = lib.mkEnableOption ''
       Enables kubeadm support.  This module is minimal on purpose.  It will
       create a kubelet.service that is compatible with kubeadm and it will
@@ -31,7 +32,6 @@ in {
       "net.bridge.bridge-nf-call-iptables" = 1;
     };
 
-
     environment.systemPackages = [ pkgs.kubernetes ] ++ path;
 
     virtualisation.docker.enable = true;
@@ -44,6 +44,7 @@ in {
 
       serviceConfig = {
         StateDirectory = "kubelet";
+        ConfiguratonDirectory = "kubernetes";
 
         # This populates $KUBELET_KUBEADM_ARGS and is provided
         # by kubeadm init and join
