@@ -17,7 +17,7 @@ with lib;
     loader = {
       grub.device = "/dev/vda";
       timeout = 0;
-      grub.configurationLimit = 0;
+      grub.configurationLimit = 5;
     };
   };
   services.openssh = {
