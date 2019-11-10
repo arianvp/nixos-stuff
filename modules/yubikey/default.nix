@@ -16,6 +16,6 @@
 
   # Allow for storing your SSH key on yubikey
   programs.ssh.extraConfig = lib.mkBefore ''
-  PKCS11Provider=${pkgs.yubico-piv-tool}/lib/libykcs11.so
+  PKCS11Provider=${pkgs.opensc}/lib/opensc-pkcs11.so
   '';
 }
