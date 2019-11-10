@@ -5,7 +5,6 @@ let
       ./deployments.nix
       ./overlays/neovim.nix
       ./overlays/user-environment.nix
-      ./overlays/wire.nix
       ./overlays/fonts.nix
     ];
     config = { 
