@@ -4,6 +4,7 @@ self: super: {
     paths = with self; [
       ag
       arandr
+      nixpkgs-fmt
       asciinema
       bitwarden-cli
       cabal2nix
@@ -16,6 +17,8 @@ self: super: {
       dzen2
       elm2nix
       evince
+      taskwarrior
+      timewarrior
       feh
       feh.man
       firefox
@@ -55,6 +58,7 @@ self: super: {
       ncurses
       (haskell.packages.ghc864.ghcWithPackages (p: [
       ]))
+      (import (builtins.fetchTarball "https://github.com/hercules-ci/ghcide-nix/tarball/master") {}).ghcide-ghc844
     ];
   };
 }

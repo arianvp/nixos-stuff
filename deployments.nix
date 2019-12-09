@@ -5,9 +5,15 @@ self: super:
       imports = [ x ];
       config.nix = {
         nixPath = [ "nixpkgs=${self.nix-gitignore.gitignoreSourcePure [./.gitignore] ./.}" ];
-        binaryCaches = [ "https://cache.nixos.org" "https://cache.dhall-lang.org" ];
+        binaryCaches = [ 
+          "https://cache.nixos.org"
+          "https://cache.dhall-lang.org"
+          "https://hercules-ci.cachix.org"
+        ];
         binaryCachePublicKeys = [
           "cache.dhall-lang.org:I9/H18WHd60olG5GsIjolp7CtepSgJmM2CsO813VTmM="
+          "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+          "hercules-ci.cachix.org-1:ZZeDl9Va+xe9j+KqdzoBZMFJHVQ42Uu/c/1/KMC5Lw0="
         ];
       };
     }; 
