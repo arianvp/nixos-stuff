@@ -1,6 +1,6 @@
-{ config, lib, pkgs, ... }: {
+{ config, lib, pkgs, modulesPath, ... }: {
   imports =
-    [ <nixpkgs/nixos/modules/installer/scan/not-detected.nix>
+    [  (modulesPath + "/installer/scan/not-detected.nix")
       ./rootfs.nix
     ];
 

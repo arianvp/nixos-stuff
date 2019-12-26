@@ -6,11 +6,13 @@
     ../../modules/env.nix
     ../../modules/containers-v2.nix
     ../../modules/direnv.nix
+    ../../modules/steam-support.nix
   ];
   config = {
     time.timeZone = "Europe/Amsterdam";
     programs.bash.enableCompletion = true;
     hardware.pulseaudio.enable = true;
+    virtualisation.docker.enable = true;
     users.users.arian = {
       isNormalUser = true;
       createHome = true;
@@ -29,6 +31,7 @@
         source "${pkgs.gnome3.vte}/etc/profile.d/vte.sh"
       fi
     '';
+    environment.systemPackages = [ pkgs.steam ];
     networking.hostName = "t430s";
     system.stateVersion = "18.03"; 
   };
