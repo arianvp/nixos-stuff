@@ -16,4 +16,5 @@ let
   channel = channels."nixos-19.09";
   channels  = builtins.mapAttrs (k: v: import (builtins.fetchGit v) (args // cfg)) channels_;
 in 
-  channels."nixos-19.09" // { inherit channels fork; }
+  /*channels."nixos-19.09" // { inherit channels fork; }*/
+  (import ./nixos-19.09.nix) (args // cfg)
