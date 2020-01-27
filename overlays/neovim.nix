@@ -10,6 +10,7 @@ self: super: {
         set ignorecase
         set smartcase
         set mouse=a
+        autocmd BufWritePre * %s/\s\+$//e
         map <C-p> :Files<CR>
         map <C-a> :Ag<CR>
         map <C-n> :NERDTreeToggle<CR>
