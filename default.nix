@@ -1,20 +1,17 @@
-{ ... } @ args:
-let 
+let
   cfg = {
     overlays = map (n: import n) [
       ./deployments.nix
       ./overlays/neovim.nix
       ./overlays/user-environment.nix
       ./overlays/fonts.nix
+      ./overlays/pkgs.nix
     ];
-    config = { 
-      allowUnfree = true; 
-    }; 
+    config = {
+      allowUnfree = true;
+    } ;
   };
-  channels_ = builtins.fromJSON (builtins.readFile ./nixpkgs.json);
-  fork = import ../nixos/nixpkgs (args // cfg);
-  channel = channels."nixos-19.09";
-  channels  = builtins.mapAttrs (k: v: import (builtins.fetchGit v) (args // cfg)) channels_;
-in 
-  /*channels."nixos-19.09" // { inherit channels fork; }*/
-  (import ./nixos-19.09.nix) (args // cfg)
+  sources = import ./nix/sources.nix;
+  pkgs = import sources.nixpkgs;
+in
+  pkgs cfg
