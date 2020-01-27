@@ -56,6 +56,7 @@ in
     # Set up specific stuff for this machine
     systemd.services."systemd-nspawn@" = {
       environment.MACHINE = "%i";
+      # TODO(arianvp): Systemd should set up these directories on startup no?
       preStart = ''
         mkdir -p -m 0755 "/var/lib/machines/$MACHINE/nix" "/var/lib/machines/$MACHINE/etc" "/var/lib/machines/$MACHINE/var/lib"
         mkdir -p -m 0700 /var/lib/machines/$MACHINE/var/lib/private "/var/lib/machines/$MACHINE/root"
@@ -65,7 +66,7 @@ in
     };
 
     # Enable she machine on boot
-    systemd.targets."machines".wants = 
+    systemd.targets."machines".wants =
     map (name:  "systemd-nspawn@${name}.service") (attrNames config.services.systemd-nspawn.machines);
 
     # Open up DHCP
@@ -82,7 +83,7 @@ in
           Zone = "nixos";
         };
         filesConfig = {
-          BindReadOnly = [ 
+          BindReadOnly = [
             "/nix/store"
             "/nix/var/nix/db"
             "/nix/var/nix/daemon-socket"
