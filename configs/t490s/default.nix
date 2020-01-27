@@ -14,6 +14,8 @@
     time.timeZone = "Europe/Amsterdam";
     programs.bash.enableCompletion = true;
     hardware.pulseaudio.enable = true;
+    systemd.additionalUpstreamSystemUnits = [ "systemd-portabled.service" ];
+
     fonts.fonts = [ pkgs.apl385 pkgs.noto-fonts pkgs.noto-fonts-emoji ];
     users.users.arian = {
       isNormalUser = true;
@@ -25,13 +27,13 @@
 
         services.systemd-nspawn.machines = {
           "test1".config = {...}: {
-            services.nginx.enable = true;  
+            services.nginx.enable = true;
             networking.firewall.allowedTCPPorts = [ 80 ];
             systemd.network.networks."80-container-host0".networkConfig.Address = "192.168.33.2";
           };
           "test2".config = {...}: {
             networking.firewall.allowedTCPPorts = [ 80 ];
-            services.nginx.enable = true;  
+            services.nginx.enable = true;
           };
         };
     services.xserver =  {
@@ -49,7 +51,7 @@
     '';
 
     networking.hostName = "t490s";
-    system.stateVersion = "18.03"; 
+    system.stateVersion = "18.03";
 
     boot.loader.systemd-boot.enable = true;
     boot.loader.efi.canTouchEfiVariables = true;
