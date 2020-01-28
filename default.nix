@@ -5,7 +5,6 @@ let
       ./overlays/neovim.nix
       ./overlays/user-environment.nix
       ./overlays/fonts.nix
-      ./overlays/pkgs.nix
     ];
     config = {
       allowUnfree = true;
