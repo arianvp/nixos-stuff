@@ -75,9 +75,18 @@ in
     systemd.nspawn =
       flip mapAttrs config.services.systemd-nspawn.machines (name: container: {
         execConfig = {
+          # We can't use Boot=true as our init system is at
+          # ${container.path}/init and not at /sbin/init or /usr/lib/systemd
+          # where systemd-nspawn expects it.
           Boot = false;
           Parameters = "${container.path}/init";
           PrivateUsers = "no";
+          # When Boot=true this is the default. This causes systemd-nspawn to
+          # send SIGTRMIN+3 when it receives SIGTERM, signalling the
+          # encapsulated systemd that it should do a graceful shutdown IF THIS
+          # IS NOT SET, systemd-nspawn WILL SEND A SIGKILL INSTEAD. WHICH IS
+          # BAD.
+          KillSignal = "SIGTRMIN+3";
         };
         networkConfig = {
           Zone = "nixos";
