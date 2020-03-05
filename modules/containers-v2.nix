@@ -86,7 +86,7 @@ in
           # encapsulated systemd that it should do a graceful shutdown IF THIS
           # IS NOT SET, systemd-nspawn WILL SEND A SIGKILL INSTEAD. WHICH IS
           # BAD.
-          KillSignal = "SIGTRMIN+3";
+          KillSignal = "SIGRTMIN+3";
         };
         networkConfig = {
           Zone = "nixos";

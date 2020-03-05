@@ -5,6 +5,8 @@ let
       ./overlays/neovim.nix
       ./overlays/user-environment.nix
       ./overlays/fonts.nix
+      ./overlays/pkgs.nix
+      ./overlays/ormolu.nix
     ];
     config = {
       allowUnfree = true;

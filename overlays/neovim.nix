@@ -19,7 +19,7 @@ self: super: {
         tnoremap <Esc> <C-\><C-n>
       '';
       packages.myPackages = with self.vimPlugins; {
-        start = [ tagbar nerdtree fugitive fzfWrapper fzf-vim  vim-nix vim-terraform ];
+        start = [ tagbar nerdtree fugitive fzfWrapper fzf-vim vim-jsonnet vim-nix vim-terraform vim-tmux-navigator ];
       };
     };
   };

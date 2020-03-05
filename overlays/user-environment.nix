@@ -30,6 +30,7 @@ self: super: {
       j4-dmenu-desktop
       jq
       libreoffice
+      haskell.packages.ghc865.ormolu
       multimc
       neovim
       obs-studio
@@ -56,9 +57,8 @@ self: super: {
       awscli
       fractal
       ncurses
-      (haskell.packages.ghc864.ghcWithPackages (p: [
+      (haskell.packages.ghc865.ghcWithPackages (p: [
       ]))
-      (import (builtins.fetchTarball "https://github.com/hercules-ci/ghcide-nix/tarball/master") {}).ghcide-ghc844
     ];
   };
 }

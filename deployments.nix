@@ -1,11 +1,11 @@
-self: super: 
+self: super:
   # makes sure that all nix commands use our pinned nixpkgs
-  let 
+  let
     config = x: {
       imports = [ x ];
       config.nix = {
         nixPath = [ "nixpkgs=${self.nix-gitignore.gitignoreSourcePure [./.gitignore] ./.}" ];
-        binaryCaches = [ 
+        binaryCaches = [
           "https://cache.nixos.org"
           "https://cache.dhall-lang.org"
           "https://hercules-ci.cachix.org"
@@ -16,7 +16,7 @@ self: super:
           "hercules-ci.cachix.org-1:ZZeDl9Va+xe9j+KqdzoBZMFJHVQ42Uu/c/1/KMC5Lw0="
         ];
       };
-    }; 
+    };
     install = deployment: super.writeScriptBin "install-it"
     ''
       set -e
@@ -32,7 +32,7 @@ self: super:
         ''
           ${deployment.nixos-install}/bin/nixos-install --no-bootloader --no-channel-copy --system ${deployment.toplevel} --root $(realpath $1)
         '';
-      deploy = super.writeScriptBin "deploy" 
+      deploy = super.writeScriptBin "deploy"
         ''
           set -e
           tmpDir=$(mktemp -t -d nixos-rebuild.XXXXXX)
@@ -55,7 +55,7 @@ self: super:
           fi
 
           remoteOrLocal() {
-            if [ "$remote" == "local" ]; then 
+            if [ "$remote" == "local" ]; then
               "$@"
             else
               ssh $SSHOPTS "$remote" "$@"
@@ -67,9 +67,9 @@ self: super:
       };
   in {
     deployments = {
-      "old.arianvp.me" = deploy (super.nixos (config ./configs/arianvp.me.bak));
+      # "old.arianvp.me" = deploy (super.nixos (config ./configs/arianvp.me.bak));
       "arianvp-me" = deploy (super.nixos (config ./configs/arianvp.me));
-      "ryzen" =  deploy (super.nixos (config ./configs/ryzen));
+      # "ryzen" =  deploy (super.nixos (config ./configs/ryzen));
       "t430s" =  deploy (super.nixos (config ./configs/t430s));
       "t490s" = deploy (super.nixos (config ./configs/t490s));
     };
