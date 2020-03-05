@@ -1,9 +1,11 @@
 { lib, pkgs, config, ...}:
 {
-  imports = [ 
-    ../../modules/digitalocean/config.nix 
+  imports = [
+    ../../modules/digitalocean/config.nix
     ../../modules/containers-v2.nix
     ./network.nix
+    ./bitwarden.nix
+    ./monitoring.nix
   ];
 
   system.stateVersion = "19.03";
@@ -13,7 +15,7 @@
 
   # Weechat
   services.weechat.enable = true;
-  networking.firewall.allowedTCPPorts = [ 
+  networking.firewall.allowedTCPPorts = [
     80   # http
     443  # https
     4443 # weechat relay
@@ -26,10 +28,10 @@
 
   services.systemd-nspawn.machines = {
     "test1".config = {...}: {
-      services.nginx.enable = true;  
+      services.nginx.enable = true;
     };
     "test2".config = {...}: {
-      services.nginx.enable = true;  
+      services.nginx.enable = true;
     };
   };
 
@@ -40,17 +42,16 @@
         forceSSL = true;
         enableACME = true;
         locations."/".root = pkgs.arianvp-website;
+        # locations."/chrome-reproducer".index = "${../../chrome-reproducer.html}";
       };
-      "techstock.photos" = {
+      /*"techstock.photos" = {
         forceSSL = true;
         enableACME = true;
-        locations."/".root = pkgs.writeTextDir "index.html"
-          ''
-          <!doctype html>
-          <h1> Tech Stock Photos </h1>
-          <h2> Royalty Free Non-crappy tech stock photos will come here </h2>
+        locations."/reproducer".root = pkgs.writeTextDir "index.html"
+        ''
+          ${../../chrome-reproducer.html}
           '';
-      };
+      };*/
     };
   };
 
@@ -63,7 +64,7 @@
   users.users.root.openssh.authorizedKeys.keyFiles = [
     (pkgs.fetchurl {
       url = "https://github.com/arianvp.keys";
-      sha256 = "0v6hsr6xcpw7b5cdlb312jm4jy1dahqll8v8ppgcbrfgpxp5gmm6";
+      sha256 = "0m9qpkn0hf5cddz145yc8ws5bmbzxa296hsgzw15p3kw1ramdipq";
     })
   ];
 

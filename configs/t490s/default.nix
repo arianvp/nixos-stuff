@@ -9,6 +9,8 @@
     (modulesPath + "/installer/scan/not-detected.nix")
   ];
   config = {
+    nix.extraOptions = ''
+    '';
     virtualisation.docker.enable = true;
     virtualisation.libvirtd.enable = true;
     time.timeZone = "Europe/Amsterdam";
@@ -25,25 +27,30 @@
     environment.gnome3.excludePackages = with pkgs.gnome3; [ gnome-software ];
 
 
-        services.systemd-nspawn.machines = {
-          "test1".config = {...}: {
-            services.nginx.enable = true;
-            networking.firewall.allowedTCPPorts = [ 80 ];
-            systemd.network.networks."80-container-host0".networkConfig.Address = "192.168.33.2";
-          };
-          "test2".config = {...}: {
-            networking.firewall.allowedTCPPorts = [ 80 ];
-            services.nginx.enable = true;
-          };
-        };
-    services.xserver =  {
+    services.systemd-nspawn.machines = {
+      "test1".config = { ... }: {
+        services.nginx.enable = true;
+        networking.firewall.allowedTCPPorts = [ 80 ];
+        systemd.network.networks."80-container-host0".networkConfig.Address = "192.168.33.2";
+      };
+      "test2".config = { ... }: {
+        networking.firewall.allowedTCPPorts = [ 80 ];
+        services.nginx.enable = true;
+      };
+    };
+    services.xserver = {
       enable = true;
       desktopManager.gnome3 = {
         enable = true;
       };
       displayManager.gdm.enable = true;
     };
-    environment.systemPackages = [ pkgs.user-environment ];
+    environment.systemPackages = [
+      pkgs.user-environment
+      pkgs.gnomeExtensions.dash-to-panel
+      pkgs.gnome3.gnome-tweaks
+      pkgs.gnome3.gnome-shell-extensions
+    ];
     environment.interactiveShellInit = ''
       if [[ "$VTE_VERSION" > 3405 ]]; then
         source "${pkgs.gnome3.vte}/etc/profile.d/vte.sh"
@@ -82,4 +89,6 @@
       };
     };
   };
+
+
 }
