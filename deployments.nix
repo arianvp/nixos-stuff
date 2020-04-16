@@ -4,7 +4,7 @@ self: super:
     config = x: {
       imports = [ x ];
       config.nix = {
-        nixPath = [ "nixpkgs=${self.nix-gitignore.gitignoreSourcePure [./.gitignore] ./.}" ];
+        nixPath = [ "nixpkgs=${super.nix-gitignore.gitignoreSourcePure [./.gitignore] ./.}" ];
         binaryCaches = [
           "https://cache.nixos.org"
           "https://cache.dhall-lang.org"

@@ -23,6 +23,18 @@
         "url": "https://github.com/NixOS/nixpkgs-channels/archive/bf7c0f0461e047bec108a5c5d5d1b144289a65ba.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
+    "nixpkgs-flokli": {
+        "branch": "systemd-mainline",
+        "description": "Nix Packages collection",
+        "homepage": null,
+        "owner": "flokli",
+        "repo": "nixpkgs",
+        "rev": "90f9b47719b5b9b73b0ad4626abf6d1975ea56cf",
+        "sha256": "1nr5ppn40mmw001p7glhwzsxprx349zq566683dz9zxl29h40c1a",
+        "type": "tarball",
+        "url": "https://github.com/flokli/nixpkgs/archive/90f9b47719b5b9b73b0ad4626abf6d1975ea56cf.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
     "nixpkgs-unstable": {
         "branch": "nixpkgs-unstable",
         "description": "Nix Packages collection",

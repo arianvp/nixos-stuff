@@ -5,6 +5,7 @@ self: super: {
       ag
       arandr
       nixpkgs-fmt
+      go
       asciinema
       bitwarden-cli
       cabal2nix
@@ -30,10 +31,8 @@ self: super: {
       j4-dmenu-desktop
       jq
       libreoffice
-      haskell.packages.ghc865.ormolu
       multimc
       neovim
-      obs-studio
       pavucontrol
       gnome-builder
       gnome3.glade
@@ -45,7 +44,7 @@ self: super: {
       mono
       tmux.man
       transmission-gtk
-      vlc
+      tdesktop
       vscode
       fsharp
       dotnet-sdk
