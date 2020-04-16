@@ -2,6 +2,10 @@ let
   cfg = {
     overlays = [
       import ./deployments.nix
+
+      # Replace with: To remove infinite recursion
+      # (import ./deployments.nix)
+
       /*./overlays/neovim.nix
       ./overlays/user-environment.nix
       ./overlays/fonts.nix
