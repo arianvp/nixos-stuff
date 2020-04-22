@@ -12,6 +12,4 @@ jobs:
       with:
         name: mycache
         signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
-        # Only needed for private caches
-        authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
     - run: nix-build -A deployments.t490s.toplevel
