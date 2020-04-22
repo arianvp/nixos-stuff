@@ -11,6 +11,7 @@
       "98-main" = {
         matchConfig.Name = "en*";
         networkConfig.DHCP = "yes";
+        networkConfig.LinkLocalAddressing = "yes";
       };
     };
   };
