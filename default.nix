@@ -1,6 +1,6 @@
 let
   cfg = {
-    overlays = map (n: import n) [
+    overlays = map import [
       ./deployments.nix
       ./overlays/neovim.nix
       ./overlays/user-environment.nix
