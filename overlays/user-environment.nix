@@ -30,7 +30,6 @@ self: super: {
       j4-dmenu-desktop
       jq
       libreoffice
-      haskell.packages.ghc865.ormolu
       multimc
       neovim
       obs-studio
