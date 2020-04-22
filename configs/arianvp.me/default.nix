@@ -55,6 +55,10 @@
     };
   };
 
+  # Needed to accept terms
+  security.acme.email = "arian.vanputten@gmail.com";
+  security.acme.acceptTerms = true;
+
   # Allow weechat to access the cert
   security.acme.certs."arianvp.me" = {
     group = "weechat";
