@@ -1,24 +1,14 @@
 { pkgs, config, ... }:
 with pkgs;
 {
-  imports = [ 
+  imports = [
     ./hardware-configuration.nix
     ../../modules/yubikey
-    ../../modules/steam-support.nix
-    ../../modules/gitlab-runner.nix
-    ../../modules/containers-v2.nix
   ];
 
   programs.ssh.startAgent = true;
 
-  nixpkgs.config.allowUnfree = true;
-
-
-  boot.kernelPackages = pkgs.linuxPackages_4_19;
   boot.kernelModules = [ "kvm-intel" "kvm-amd" ];
-  boot.kernelParams = ["amdgpu.dc=1"]; networking.firewall.enable = false;
-  networking.firewall.allowedTCPPorts = [ 51413 27950 27952 27960 27965 ];
-  networking.firewall.allowedUDPPorts = [ 27950 27952 27960 27965 ];
 
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
@@ -26,37 +16,18 @@ with pkgs;
   hardware.pulseaudio.enable = true;
 
   networking.hostName = "ryzen";
-  networking.useNetworkd = true;
 
   time.timeZone = "Europe/Amsterdam";
 
-  services.fwupd.enable = true;
-
-  environment.systemPackages = [ 
-    arc-theme arc-icon-theme ntfs3g  rofi
-  ];
-
-  systemd.targets."multi-user".wants = [ "machines.target" ];
-
-  /*
-  containers.arianisverycool = {
-    privateNetwork = true;
-    config = {
-      services.nginx.enable = true;
-    };
+  services.resolved = {
+    enable = true;
+    extraConfig = ''
+    MulticastDNS=yes
+    '';
   };
 
-  services.systemd-nspawn.machines.arian = {
-    config = {...}: {
-      services.nginx.enable = true;
-    };
-  };*/
-
-  services.ipfs.enable = false;
-
-  fonts.fonts = with pkgs; [ fira-code ];
-
-  services.urxvtd.enable = true;
+  services.openssh.enable = true;
+  networking.firewall.allowedTCPPorts = [ 22 ];
 
   services.xserver = {
     enable = true;
@@ -74,9 +45,15 @@ with pkgs;
      isNormalUser = true;
      uid = 1000;
      extraGroups = ["wheel" "audio"];
+     openssh.authorizedKeys.keyFiles = [
+    (pkgs.fetchurl {
+      url = "https://github.com/arianvp.keys";
+      sha256 = "0m9qpkn0hf5cddz145yc8ws5bmbzxa296hsgzw15p3kw1ramdipq";
+    })
+      ];
    };
 
   # Never change this value unless instructed to.
-  system.stateVersion = "18.03"; 
+  system.stateVersion = "18.03";
 }
 

@@ -69,7 +69,7 @@ self: super:
     deployments = {
       # "old.arianvp.me" = deploy (super.nixos (config ./configs/arianvp.me.bak));
       "arianvp-me" = deploy (super.nixos (config ./configs/arianvp.me));
-      # "ryzen" =  deploy (super.nixos (config ./configs/ryzen));
+      "ryzen" =  deploy (super.nixos (config ./configs/ryzen));
       "t430s" =  deploy (super.nixos (config ./configs/t430s));
       "t490s" = deploy (super.nixos (config ./configs/t490s));
     };

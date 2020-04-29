@@ -16,7 +16,14 @@
     time.timeZone = "Europe/Amsterdam";
     programs.bash.enableCompletion = true;
     hardware.pulseaudio.enable = true;
+    services.resolved = {
+      enable = true;
+      extraConfig = ''
+      MulticastDNS=yes
+      '';
+    };
     systemd.additionalUpstreamSystemUnits = [ "systemd-portabled.service" ];
+    hardware.opengl.enable = true;
 
     fonts.fonts = [ pkgs.apl385 pkgs.noto-fonts pkgs.noto-fonts-emoji ];
     users.users.arian = {
