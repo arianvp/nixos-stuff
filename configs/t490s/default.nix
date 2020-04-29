@@ -11,19 +11,25 @@
   config = {
     nix.extraOptions = ''
     '';
+    nix.distributedBuilds = true;
+    nix.buildMachines = [
+      {
+        hostName = "ryzen.local";
+        sshUser = "arian";
+        sshKey = "/root/.ssh/id_ed25519";
+        system = "x86_64-linux";
+        supportedFeatures =  [ "big-parallel" ];
+        maxJobs = 8;
+      }
+    ];
     virtualisation.docker.enable = true;
     virtualisation.libvirtd.enable = true;
     time.timeZone = "Europe/Amsterdam";
     programs.bash.enableCompletion = true;
     hardware.pulseaudio.enable = true;
-    services.resolved = {
-      enable = true;
-      extraConfig = ''
-      MulticastDNS=yes
-      '';
-    };
     systemd.additionalUpstreamSystemUnits = [ "systemd-portabled.service" ];
     hardware.opengl.enable = true;
+    services.avahi.nssmdns = true;
 
     fonts.fonts = [ pkgs.apl385 pkgs.noto-fonts pkgs.noto-fonts-emoji ];
     users.users.arian = {

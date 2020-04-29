@@ -19,11 +19,16 @@ with pkgs;
 
   time.timeZone = "Europe/Amsterdam";
 
-  services.resolved = {
+  services.avahi = {
     enable = true;
-    extraConfig = ''
-    MulticastDNS=yes
-    '';
+    nssmdns = true;
+    publish = {
+      enable = true;
+      domain = true;
+      addresses = true;
+      userServices = true;
+      workstation = true;
+    };
   };
 
   services.openssh.enable = true;
@@ -41,6 +46,7 @@ with pkgs;
     desktopManager = { default = "none"; xterm.enable = false; };
   };
 
+  nix.trustedUsers = [ "arian" ];
   users.extraUsers.arian = {
      isNormalUser = true;
      uid = 1000;
