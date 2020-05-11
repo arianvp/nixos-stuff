@@ -1,6 +1,6 @@
 { pkgs, lib, ... }: {
   environment.systemPackages = with pkgs; [
-    yubico-piv-tool # superseded by 
+    yubico-piv-tool # superseded by
     yubioath-desktop
     yubikey-manager-qt
     yubikey-manager
@@ -11,9 +11,10 @@
 
   # Enable u2f over USB, for yubikey auth in browser
   hardware.u2f.enable = true;
-  
-  # programs.ssh.pkcs11Provider = "${pkgs.yubico-piv-tool}/lib/libykcs11.so";
+
   programs.ssh.startAgent = true;
+
+  programs.ssh.agentPKCS11Whitelist = "${pkgs.opensc}/lib/opensc-pkcs11.so";
 
   # Allow for storing your SSH key on yubikey
   programs.ssh.extraConfig = lib.mkBefore ''
