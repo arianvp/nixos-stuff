@@ -48,18 +48,19 @@ with pkgs;
 
   nix.trustedUsers = [ "arian" ];
   users.extraUsers.arian = {
-     isNormalUser = true;
-     uid = 1000;
-     extraGroups = ["wheel" "audio"];
-     openssh.authorizedKeys.keyFiles = [
-    (pkgs.fetchurl {
-      url = "https://github.com/arianvp.keys";
-      sha256 = "0m9qpkn0hf5cddz145yc8ws5bmbzxa296hsgzw15p3kw1ramdipq";
-    })
-      ];
-   };
+    isNormalUser = true;
+    uid = 1000;
+    extraGroups = [ "wheel" "audio" ];
+    openssh.authorizedKeys.keyFiles = [
+      (
+        pkgs.fetchurl {
+          url = "https://github.com/arianvp.keys";
+          sha256 = "0m9qpkn0hf5cddz145yc8ws5bmbzxa296hsgzw15p3kw1ramdipq";
+        }
+      )
+    ];
+  };
 
   # Never change this value unless instructed to.
   system.stateVersion = "18.03";
 }
-
