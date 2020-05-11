@@ -19,6 +19,11 @@ with pkgs;
 
   time.timeZone = "Europe/Amsterdam";
 
+  services.kubernetes = {
+    roles = [ "master" "node" ];
+    masterAddress = "${config.networking.hostName}.local";
+  };
+
   services.avahi = {
     enable = true;
     nssmdns = true;
