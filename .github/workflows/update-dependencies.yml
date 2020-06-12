@@ -32,3 +32,4 @@ jobs:
         commit-message: "chore: update dependencies"
         title: "chore: update dependencies"
         reviewers: "arianvp" 
+        branch: "chore/update-dependencies" 
