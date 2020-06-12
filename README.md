@@ -1,5 +1,5 @@
 # nixos-stuff
-
+trying to manually trigger a pr
 # Usage
 ```
 nix run -f . deployments.t490s -c deploy [switch|boot|test] [target*]
