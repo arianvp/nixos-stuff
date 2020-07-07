@@ -6,7 +6,7 @@ name: Update dependencies
 # events but only for the master branch
 on:
   schedule:
-    - cron: '*/10 * * * *'
+    - cron: '0 8 * * *'
   workflow_dispatch:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
@@ -29,6 +29,7 @@ jobs:
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v2.8.0
       with:
+        token: ${{ secrets.PAT }} # needed so that this triggers further flows. not ideal:  
         commit-message: "chore: update dependencies"
         title: "chore: update dependencies"
         reviewers: "arianvp" 
