@@ -4,7 +4,7 @@ self: super:
     config = x: {
       imports = [ x ];
       config.nix = {
-        nixPath = [ "nixpkgs=${self.nix-gitignore.gitignoreSourcePure [./.gitignore] ./.}" ];
+        nixPath = [ "nixpkgs=${self.gitignore.gitignoreSource ./.}" ];
         binaryCaches = [
           "https://cache.nixos.org"
           "https://cache.dhall-lang.org"
@@ -58,7 +58,7 @@ self: super:
             if [ "$remote" == "local" ]; then
               "$@"
             else
-              ssh $SSHOPTS "$remote" "$@"
+              ssh $SSHOPTS -t "$remote" "$@"
             fi
           }
           remoteOrLocal sudo nix-env --profile "$profile" --set "${deployment.toplevel}" --show-trace
