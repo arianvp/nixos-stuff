@@ -3,6 +3,14 @@ on:
   pull_request:
 jobs:
   build:
+    strategy:
+      matrix:
+        # TODO
+        deployment:
+          - name: arianvp-me
+            target: "root@arianvp.me"
+          - name: t490s
+          - name: ryzen
     runs-on: ubuntu-latest
     steps:
     - name: Checkout the pushed commit
@@ -25,9 +33,14 @@ jobs:
 
     - name: Compare changeset
       run: |
-        old=$(nix-instantiate ./master -A deployments.t490s.toplevel)
-        new=$(nix-instantiate ./pushed -A deployments.t490s.toplevel)
+        old=$(nix-instantiate ./master -A deployments.${{ matrix.deployment.name }}.toplevel)
+        new=$(nix-instantiate ./pushed -A deployments.${{ matrix.deployment.name }}.toplevel)
         nix run -f ./master nix-diff -c nix-diff --color=always $old $new
 
     - name: Build
-      run: nix-build ./pushed -A deployments.t490s.toplevel
+      run: nix-build ./pushed -A deployments.${{ matrix.deployment.name }}.toplevel
+
+    - name: Deploy
+      if: ${{ matrix.deployment.target }}
+      run: |
+        echo This could have been a deploy
