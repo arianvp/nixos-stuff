@@ -1,3 +1,4 @@
+{ ... }:
 let
   cfg = {
     overlays = map import [
@@ -7,12 +8,15 @@ let
       ./overlays/fonts.nix
       ./overlays/pkgs.nix
       # ./overlays/ormolu.nix
-    ];
+    ] ++ [ nivOverlay ];
     config = {
       allowUnfree = true;
-    } ;
+    };
   };
   sources = import ./nix/sources.nix;
+  nivOverlay = self: super: {
+   gitignore = import sources."gitignore.nix" { lib = super.lib; };
+  };
   pkgs = import sources.nixpkgs;
 in
-  pkgs cfg
+pkgs cfg
