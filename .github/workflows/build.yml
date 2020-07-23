@@ -6,7 +6,17 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout the pushed commit
+      uses: actions/checkout@v2
+      with:
+        path: pushed
+
+    - name: Check out master
+      uses: actions/checkout@v2
+      with:
+        path: master
+        ref: master
+
     - uses: cachix/install-nix-action@v8
     - uses: cachix/cachix-action@v6
       with:
@@ -14,4 +24,11 @@ jobs:
         signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
-    - run: nix-build -A deployments.t490s.toplevel
+    - name: Compare changeset
+      run: |
+        old=$(nix-instantiate ./master -A deployments.t490s.toplevel)
+        new=$(nix-instantiate ./pushed -A deployments.t490s.toplevel)
+        nix run -f . nix-diff -c nix-diff $old $new
+
+    - name: Build
+      run: nix-build ./pushed -A deployments.t490s.toplevel
