@@ -26,6 +26,7 @@ jobs:
 
     - name: Compare changeset
       run: |
+        ls -la
         old=$(nix-instantiate ./master -A deployments.t490s.toplevel)
         new=$(nix-instantiate ./pushed -A deployments.t490s.toplevel)
         nix run -f . nix-diff -c nix-diff $old $new
