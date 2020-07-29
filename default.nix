@@ -7,6 +7,7 @@ let
       ./overlays/user-environment.nix
       ./overlays/fonts.nix
       ./overlays/pkgs.nix
+      ./overlays/wire.nix
       # ./overlays/ormolu.nix
     ] ++ [ nivOverlay ];
     config = {
