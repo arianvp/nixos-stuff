@@ -5,6 +5,7 @@ self: super: {
       ag
       arandr
       nixpkgs-fmt
+      wire-desktop-internal
       asciinema
       bitwarden-cli
       cabal2nix
@@ -18,10 +19,12 @@ self: super: {
       elm2nix
       evince
       taskwarrior
+      tailscale
       timewarrior
       feh
       feh.man
       firefox
+      libreoffice
       fzf
       git
       gnupg
@@ -50,7 +53,6 @@ self: super: {
       dotnet-sdk
       zlib
       pkg-config
-      wire-desktop
       win-virtio
       gmp
       awscli
