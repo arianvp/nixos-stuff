@@ -1,12 +1,11 @@
 { config, pkgs, ... }: {
   imports = [
-    ./hardware-configuration.nix 
+    ./hardware-configuration.nix
     ../../modules/yubikey
     ../../modules/ssh-tweaks.nix
     ../../modules/env.nix
     ../../modules/containers-v2.nix
     ../../modules/direnv.nix
-    ../../modules/steam-support.nix
   ];
   config = {
     time.timeZone = "Europe/Amsterdam";
@@ -19,6 +18,7 @@
       extraGroups = [ "wheel" ];
     };
     environment.gnome3.excludePackages = with pkgs.gnome3; [ gnome-software ];
+    environment.systemPackages = [ pkgs.vscode  pkgs.chromium pkgs.neovim ];
     services.xserver =  {
       enable = true;
       desktopManager.gnome3 = {
@@ -31,8 +31,7 @@
         source "${pkgs.gnome3.vte}/etc/profile.d/vte.sh"
       fi
     '';
-    environment.systemPackages = [ pkgs.steam ];
     networking.hostName = "t430s";
-    system.stateVersion = "18.03"; 
+    system.stateVersion = "18.03";
   };
 }
