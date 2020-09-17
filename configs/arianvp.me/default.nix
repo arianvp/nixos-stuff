@@ -68,7 +68,7 @@
   users.users.root.openssh.authorizedKeys.keyFiles = [
     (pkgs.fetchurl {
       url = "https://github.com/arianvp.keys";
-      sha256 = "0m9qpkn0hf5cddz145yc8ws5bmbzxa296hsgzw15p3kw1ramdipq";
+      sha256 = "0ypavfx99qmf4a0jb05l0bbqvmq7zkvgl3r8zhdx46ryk62gjbwh";
     })
   ];
 
