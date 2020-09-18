@@ -27,7 +27,7 @@ jobs:
       run: nix run -f . niv -c niv update
       env:
         # It seems I was running into rate-limits or something?
-        GITHUB_TOKEN: "${secrets.GITHUB_TOKEN}"
+        GITHUB_TOKEN: "${{secrets.GITHUB_TOKEN}}"
 
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v2.8.0
