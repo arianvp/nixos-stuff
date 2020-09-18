@@ -25,12 +25,15 @@ jobs:
     # Runs a single command using the runners shell
     - name: Update dependencies
       run: nix run -f . niv -c niv update
+      env:
+        # It seems I was running into rate-limits or something?
+        GITHUB_TOKEN: "${secrets.GITHUB_TOKEN}"
 
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v2.8.0
       with:
-        token: ${{ secrets.PAT }} # needed so that this triggers further flows. not ideal:  
+        token: ${{ secrets.PAT }} # needed so that this triggers further flows. not ideal:
         commit-message: "chore: update dependencies"
         title: "chore: update dependencies"
-        reviewers: "arianvp" 
-        branch: "chore/update-dependencies" 
+        reviewers: "arianvp"
+        branch: "chore/update-dependencies"
