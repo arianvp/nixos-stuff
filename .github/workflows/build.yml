@@ -32,8 +32,8 @@ jobs:
 
     - name: Compare changeset
       run: |
-        old=$(nix-instantiate ./master -A deployments.${{ matrix.deployment.name }}.toplevel)
-        new=$(nix-instantiate ./pushed -A deployments.${{ matrix.deployment.name }}.toplevel)
+        old=$(nix-instantiate ./master -A deployments.${{ matrix.deployment }}.toplevel)
+        new=$(nix-instantiate ./pushed -A deployments.${{ matrix.deployment }}.toplevel)
         nix run -f ./master nix-diff -c nix-diff --color=always $old $new
 
     - name: Build
