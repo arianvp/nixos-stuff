@@ -7,10 +7,9 @@ jobs:
       matrix:
         # TODO
         deployment:
-          - name: arianvp-me
-            target: "root@arianvp.me"
-          - name: t490s
-          - name: ryzen
+          - arianvp-me
+          - t490s
+          - ryzen
     runs-on: ubuntu-latest
     steps:
     - name: Checkout the pushed commit
@@ -38,7 +37,7 @@ jobs:
         nix run -f ./master nix-diff -c nix-diff --color=always $old $new
 
     - name: Build
-      run: nix-build ./pushed -A deployments.${{ matrix.deployment.name }}.toplevel
+      run: nix-build ./pushed -A deployments.${{ matrix.deployment }}.toplevel
 
     - name: Deploy
       if: ${{ matrix.deployment.target }}
