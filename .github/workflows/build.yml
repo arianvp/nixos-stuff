@@ -46,7 +46,7 @@ jobs:
       run: |
         mkdir -p report
         nix-store --query --requisites --include-outputs ./result > report/software.txt
-        nix run -f ./master vulnix -c vulnix https://raw.githubusercontent.com/ckauhaus/nixos-vulnerability-roundup/master/whitelists/nixos-20.09.toml ./result | tee report/vulnerabilities.txt
+        nix run -f ./master vulnix -c vulnix -w https://raw.githubusercontent.com/ckauhaus/nixos-vulnerability-roundup/master/whitelists/nixos-20.09.toml ./result | tee report/vulnerabilities.txt
 
 
     - name: Upload software report
