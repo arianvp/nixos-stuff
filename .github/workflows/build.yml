@@ -42,7 +42,16 @@ jobs:
     - name: Build
       run: nix-build ./pushed -A deployments.${{ matrix.deployment }}.toplevel
 
-    - name: Deploy
-      if: ${{ matrix.deployment.target }}
+    - name: Dump software list and security audit
       run: |
-        echo This could have been a deploy
+        mkdir -p report
+        nix-store --query --requisites --include-outputs ./result > report/software.txt
+        nix run -f ./master vulnix -c vulnix https://raw.githubusercontent.com/ckauhaus/nixos-vulnerability-roundup/master/whitelists/nixos-20.09.toml ./result | tee report/vulnerabilities.txt
+
+
+    - name: Upload software report
+      if: always()
+      uses: actions/upload-artifact@v2
+      with:
+        name: report
+        path: report/
