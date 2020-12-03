@@ -27,7 +27,6 @@
     time.timeZone = "Europe/Amsterdam";
     programs.bash.enableCompletion = true;
     hardware.pulseaudio.enable = true;
-    systemd.additionalUpstreamSystemUnits = [ "systemd-portabled.service" ];
     hardware.opengl.enable = true;
     services.avahi.nssmdns = true;
 

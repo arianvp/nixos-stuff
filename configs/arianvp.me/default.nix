@@ -59,11 +59,6 @@
   security.acme.email = "arian.vanputten@gmail.com";
   security.acme.acceptTerms = true;
 
-  # Allow weechat to access the cert
-  security.acme.certs."arianvp.me" = {
-    group = "weechat";
-    allowKeysForGroup = true;
-  };
 
   users.users.root.openssh.authorizedKeys.keyFiles = [
     (pkgs.fetchurl {

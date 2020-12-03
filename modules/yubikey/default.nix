@@ -9,8 +9,6 @@
   # Enable smartcard daemon, to read TOPT tokens from yubikey
   services.pcscd.enable = true;
 
-  # Enable u2f over USB, for yubikey auth in browser
-  hardware.u2f.enable = true;
 
   programs.ssh.startAgent = true;
 
