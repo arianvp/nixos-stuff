@@ -60,11 +60,9 @@
   security.acme.acceptTerms = true;
 
 
-  users.users.root.openssh.authorizedKeys.keyFiles = [
-    (pkgs.fetchurl {
-      url = "https://github.com/arianvp.keys";
-      sha256 = "0ypavfx99qmf4a0jb05l0bbqvmq7zkvgl3r8zhdx46ryk62gjbwh";
-    })
+  users.users.root.openssh.authorizedKeys.keys = [
+    "sk-ssh-ed25519@openssh.com AAAAGnNrLXNzaC1lZDI1NTE5QG9wZW5zc2guY29tAAAAIDXJypxL7B7Pl4WS4Suv654AguJMhYjKBPhTQNLRsBOgAAAABHNzaDo= ssh:"
+    "sk-ssh-ed25519@openssh.com AAAAGnNrLXNzaC1lZDI1NTE5QG9wZW5zc2guY29tAAAAICUTTzP5D0bLXRqGkw3ujx9ihqAYVC/Tz8RBz06FCeh0AAAABHNzaDo= ssh:"
   ];
 
 }
