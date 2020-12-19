@@ -17,7 +17,7 @@ let
   sources = import ./nix/sources.nix;
   nivOverlay = self: super: {
     gitignore = import sources."gitignore.nix" { lib = super.lib; };
-    niv = import sources.niv { pkgs = super; };
+    # niv = import sources.niv { pkgs = super; };
   };
   pkgs = import sources.nixpkgs;
 in
