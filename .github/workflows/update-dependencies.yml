@@ -24,11 +24,7 @@ jobs:
 
     # Runs a single command using the runners shell
     - name: Update dependencies
-      run: nix run -f . niv -c niv update
-      env:
-        # It seems I was running into rate-limits or something?
-        GITHUB_TOKEN: "${{secrets.GITHUB_TOKEN}}"
-        GITHUB_PATH: ""
+      run: GITHUB_PATH= nix run -f . niv -c niv update
 
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v3.5.1
