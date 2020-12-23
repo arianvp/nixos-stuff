@@ -1,34 +1,30 @@
-# This is a basic workflow to help you get started with Actions
-
 name: Update dependencies
-
-# Controls when the action will run. Triggers the workflow on push or pull request
-# events but only for the master branch
 on:
   schedule:
     - cron: '0 8 * * *'
   workflow_dispatch:
-
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   update-dependencies:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
     - uses: cachix/install-nix-action@v12
-
-    # Runs a single command using the runners shell
     - name: Update dependencies
-      run: GITHUB_PATH= nix run -f . niv -c niv update
+      run: |
+        before=$(nix-instantiate -A deployments.t490s.toplevel)
 
-    - name: Create Pull Request
+        GITHUB_PATH= nix run -f . niv -c niv update
+
+        after=$(nix-instantiate -A deployments.t490s.toplevel)
+
+        echo "before=$before"
+        echo "after=$after"
+        test $before = $after
+    - name: Create Pull Request if there was a change
+      if: ${{ failure() }}
       uses: peter-evans/create-pull-request@v3.5.1
       with:
+        path: after
         token: ${{ secrets.PAT }} # needed so that this triggers further flows. not ideal:
         commit-message: "chore: update dependencies"
         title: "chore: update dependencies"
