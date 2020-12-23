@@ -19,11 +19,11 @@ jobs:
 
         echo "before=$before"
         echo "after=$after"
-        # test $before = $after
+        test $before = $after
     - name: Create Pull Request if there was a change
+      if: ${{ failure() }}
       uses: peter-evans/create-pull-request@v3.6.0
       with:
-        path: after
         token: ${{ secrets.PAT }} # needed so that this triggers further flows. not ideal:
         commit-message: "chore: update dependencies"
         title: "chore: update dependencies"
