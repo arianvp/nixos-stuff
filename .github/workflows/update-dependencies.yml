@@ -17,14 +17,13 @@ jobs:
 
         after=$(nix-instantiate -A deployments.t490s.toplevel)
 
-        nix_diff=$(nix run -f . nix-diff -c nix-diff $before $after)
-
-        echo "nix_diff=$nix_diff" >> $GITHUB_ENV
-
-        test $before = $after
+        if [ $before != $after ]; then
+          nix_diff=$(nix run -f . nix-diff -c nix-diff $before $after)
+          echo "nix_diff=$nix_diff" >> $GITHUB_ENV
+        fi
 
     - name: Create Pull Request if there was a change
-      if: ${{ failure() }}
+      if: ${{ env.nix_diff }}
       uses: peter-evans/create-pull-request@v3.6.0
       with:
         token: ${{ secrets.PAT }} # needed so that this triggers further flows. not ideal:
