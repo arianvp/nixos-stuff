@@ -24,7 +24,8 @@ jobs:
           git add -A
 
           msg=$(mktemp)
-          echo "chore: update dependencies\n" >> $msg
+          echo "chore: update dependencies" >> $msg
+          echo "" >> $msg
           echo "Summary of changes:" >> $msg
           nix run -f . nix-diff -c nix-diff $before $after >> $msg
           git commit -F $msg
