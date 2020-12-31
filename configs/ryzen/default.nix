@@ -55,7 +55,6 @@ with pkgs;
   };
   environment.systemPackages = [
     pkgs.user-environment
-    pkgs.gnomeExtensions.dash-to-panel
     pkgs.gnome3.gnome-tweaks
     pkgs.gnome3.gnome-shell-extensions
     pkgs.nodejs-12_x
