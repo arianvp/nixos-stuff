@@ -1,11 +1,9 @@
-{ pkgs, lib, config, ... }: 
-let 
+{ pkgs, lib, config, ... }:
+let
   cfg = config.services.kubeadm.kubelet;
-  path = with pkgs; [
-    docker utillinux iproute ethtool iptables socat
-  ];
 in {
   # TODO conflicts services.kubernetes.kubelet
+  imports = [ ../containerd.nix  ];
   options.services.kubeadm.kubelet = {
     enable = lib.mkEnableOption ''
       Enables kubeadm support.  This module is minimal on purpose.  It will
@@ -15,36 +13,40 @@ in {
       kubeadm join should allow you to set up a kubernetes cluster with ease.
     '';
   };
-  # TODO:  put --discovery-file in  .well-known/kubeconfig.yaml
-
-  # Got this from https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm-join/#turning-off-public-access-to-the-cluster-info-configmap
-  # kubectl -n kube-public get cm cluster-info -o json | jq -r '.data.kubeconfig > /etc/kubernetes/cluster-info.cfg'
-
-  # https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm-join/#file-or-https-based-discovery
 
   config = lib.mkIf cfg.enable {
+    environment.systemPackages = [
+      # TODO Only used by kubeadm
+      pkgs.cri-tools
 
+      # TODO Only used by kube-proxy
+      pkgs.conntrack-tools
+
+      # TODO Only used by kube-proxy
+      pkgs.iptables
+
+      # Brings kubectl and kubeadm in scope
+      # TODO: also brings all the other bs in scope. do we want?
+      pkgs.kubernetes
+    ];
+
+    # TODO: modeprobe@br_netfilter ?
     boot.kernelModules = [ "br_netfilter" ];
-
-    boot.kernel.sysctl = {
-      # TODO IPV6/DualStack
-      "net.ipv4.ip_forward" = 1;  
-      "net.bridge.bridge-nf-call-iptables" = 1;
-    };
-
-    environment.systemPackages = [ pkgs.kubernetes ] ++ path;
-
-    virtualisation.docker.enable = true;
 
     systemd.services.kubelet = {
       description = "Kubernetes Kubelet Service";
       wantedBy = [ "multi-user.target" ];
 
-      path = with pkgs; [ openssh docker utillinux iproute ethtool thin-provisioning-tools iptables socat ];
-
+      unitConfig = {
+        ConditionPathExists = [
+          "|/etc/kubernetes/kubelet.conf"
+          "|/etc/kubernetes/bootstrap-kubelet.conf"
+          "/var/lib/kubelet/config.yaml"
+        ];
+      };
       serviceConfig = {
         StateDirectory = "kubelet";
-        ConfiguratonDirectory = "kubernetes";
+        ConfigurationDirectory = "kubernetes";
 
         # This populates $KUBELET_KUBEADM_ARGS and is provided
         # by kubeadm init and join
@@ -59,7 +61,6 @@ in {
             --kubeconfig=/etc/kubernetes/kubelet.conf \
             --bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf \
             --config=/var/lib/kubelet/config.yaml \
-            --cni-bin-dir=${pkgs.cni}/bin \
             $KUBELET_KUBEADM_ARGS
         '';
       };
