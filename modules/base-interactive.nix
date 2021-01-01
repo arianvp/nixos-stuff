@@ -32,6 +32,8 @@
     packages = [
       pkgs.git
       pkgs.nixfmt
+      pkgs.jujutsu
+      pkgs.jjui
       pkgs.btop
       pkgs.nixd
       pkgs.go
