@@ -3,6 +3,13 @@
 let
   cfg = config.cluster.kubernetes;
   ip = "192.168.0.23";
+
+  kubeadmConfig = pkgs.writeText "config.yaml" ''
+    apiVersion: kubeadm.k8s.io/v1beta2
+    kind: InitConfiguration
+    bootstrapTokens:
+      token: wpvajq.glyvtwk80ngp4kml
+  '';
 in
 {
   # TODO conflicts services.kubernetes.kubelet
@@ -45,6 +52,17 @@ in
         ${pkgs.kubernetes}/bin/kubeadm init phase kubeconfig controller-manager
         ${pkgs.kubernetes}/bin/kubeadm init phase kubeconfig scheduler
         ${pkgs.kubernetes}/bin/kubeadm init phase kubeconfig admin
+      '';
+      serviceConfig = {
+        Type = "oneshot";
+        ConfigurationDirectory = "kubernetes";
+      };
+    };
+    systemd.services.kubeadm-init-finalize = {
+      wants = [ "etcd.service" "kube-scheduler.service" "kube-apiserver.service" "kube-controller-manager.service" ];
+      after = [ "etcd.service" "kube-scheduler.service" "kube-apiserver.service" "kube-controller-manager.service" ];
+      script = ''
+        ${pkgs.kubernetes}/bin/kubeadm init phase bootstrap-token --config ${kubeadmConfig}
       '';
       serviceConfig = {
         Type = "oneshot";
