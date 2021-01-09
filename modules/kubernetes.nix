@@ -1,14 +1,14 @@
-
 { pkgs, lib, config, ... }:
 let
   cfg = config.cluster.kubernetes;
   ip = "192.168.0.23";
+  token = "wpvajq.glyvtwk80ngp4kml";
 
-  kubeadmConfig = pkgs.writeText "config.yaml" ''
+  initConfig = pkgs.writeText "config.yaml" ''
     apiVersion: kubeadm.k8s.io/v1beta2
     kind: InitConfiguration
     bootstrapTokens:
-      token: wpvajq.glyvtwk80ngp4kml
+      - token: ${token}
   '';
 in
 {
@@ -44,9 +44,13 @@ in
 
     virtualisation.containerd.enable = true;
 
+    # idempotent
     systemd.services.kubeadm-init = {
+      wantedBy = [ "multi-user.target" ];
+
       wants = [ "etcd.service" "kube-scheduler.service" "kube-apiserver.service" "kube-controller-manager.service" ];
       before = [ "etcd.service" "kube-scheduler.service" "kube-apiserver.service" "kube-controller-manager.service" ];
+
       script = ''
         ${pkgs.kubernetes}/bin/kubeadm init phase certs all
         ${pkgs.kubernetes}/bin/kubeadm init phase kubeconfig controller-manager
@@ -58,11 +62,14 @@ in
         ConfigurationDirectory = "kubernetes";
       };
     };
+
+    # Idempotent; but renews token expiration every time it starts. Need to think if this is desired
     systemd.services.kubeadm-init-finalize = {
+      wantedBy = [ "multi-user.target" ];
       wants = [ "etcd.service" "kube-scheduler.service" "kube-apiserver.service" "kube-controller-manager.service" ];
       after = [ "etcd.service" "kube-scheduler.service" "kube-apiserver.service" "kube-controller-manager.service" ];
       script = ''
-        ${pkgs.kubernetes}/bin/kubeadm init phase bootstrap-token --config ${kubeadmConfig}
+        ${pkgs.kubernetes}/bin/kubeadm init phase bootstrap-token --config ${initConfig}
       '';
       serviceConfig = {
         Type = "oneshot";
@@ -71,12 +78,14 @@ in
     };
 
     systemd.services.etcd = {
+      wantedBy = [ "multi-user.target" ];
       serviceConfig = {
         Type = "notify";
         Restart = "always";
         RestartSec = "10s";
         LimitNOFILE = 40000;
         StateDirectory = "etcd";
+        StateDirectoryMode = "0700";
         ExecStart = ''
           ${pkgs.etcd}/bin/etcd \
           --advertise-client-urls=https://192.168.0.23:2379 \
@@ -141,6 +150,7 @@ in
       pathConfig.PathExists = [ "/etc/kubernetes/controller-manager.conf" ];
     };*/
     systemd.services.kube-controller-manager = {
+      wantedBy = [ "multi-user.target" ];
       serviceConfig = {
         Restart = "always";
         RestartSec = "10s";
@@ -169,6 +179,7 @@ in
       pathConfig.PathExists = [ "/etc/kubernetes/scheduler.conf" ];
     };*/
     systemd.services.kube-scheduler = {
+      wantedBy = [ "multi-user.target" ];
       unitConfig.ConditionPathExists = [ "/etc/kubernetes/scheduler.conf" ];
       serviceConfig = {
         Restart = "always";
@@ -193,45 +204,68 @@ in
       ];
     };*/
 
-    systemd.services.kube-proxy = {
-    };
     systemd.services.kubelet =
-      let config = pkgs.writeText "config.yaml" ''
-        apiVersion: kubelet.config.k8s.io/v1beta1
-        authentication:
-          anonymous:
-            enabled: false
-          webhook:
-            cacheTTL: 0s
-            enabled: true
-          x509:
-            clientCAFile: /etc/kubernetes/pki/ca.crt
-        authorization:
-          mode: Webhook
-          webhook:
-            cacheAuthorizedTTL: 0s
-            cacheUnauthorizedTTL: 0s
-        clusterDNS:
-        - 10.96.0.10
-        clusterDomain: cluster.local
-        cpuManagerReconcilePeriod: 0s
-        evictionPressureTransitionPeriod: 0s
-        fileCheckFrequency: 0s
-        healthzBindAddress: 127.0.0.1
-        healthzPort: 10248
-        httpCheckFrequency: 0s
-        imageMinimumGCAge: 0s
-        kind: KubeletConfiguration
-        logging: {}
-        nodeStatusReportFrequency: 0s
-        nodeStatusUpdateFrequency: 0s
-        rotateCertificates: true
-        runtimeRequestTimeout: 0s
-        streamingConnectionIdleTimeout: 0s
-        syncFrequency: 0s
-        volumeStatsAggPeriod: 0s
-      ''; in
+      let
+        bootstrapKubeconfig = pkgs.writeText "bootstrap-kubelet.conf" ''
+          apiVersion: v1
+          kind: Config
+          clusters:
+          - cluster:
+              certificate-authority: /etc/kubernetes/pki/ca.crt
+              server: https://${ip}:6443
+            name: bootstrap
+          contexts:
+          - context:
+              cluster: bootstrap
+              user: kubelet-bootstrap
+            name: bootstrap
+          current-context: bootstrap
+          preferences: {}
+          users:
+          - name: kubelet-bootstrap
+            user:
+              token: ${token}
+        '';
+        config = pkgs.writeText "config.yaml" ''
+          apiVersion: kubelet.config.k8s.io/v1beta1
+          authentication:
+            anonymous:
+              enabled: false
+            webhook:
+              cacheTTL: 0s
+              enabled: true
+            x509:
+              clientCAFile: /etc/kubernetes/pki/ca.crt
+          authorization:
+            mode: Webhook
+            webhook:
+              cacheAuthorizedTTL: 0s
+              cacheUnauthorizedTTL: 0s
+          clusterDNS:
+          - 10.96.0.10
+          clusterDomain: cluster.local
+          cpuManagerReconcilePeriod: 0s
+          evictionPressureTransitionPeriod: 0s
+          fileCheckFrequency: 0s
+          healthzBindAddress: 127.0.0.1
+          healthzPort: 10248
+          httpCheckFrequency: 0s
+          imageMinimumGCAge: 0s
+          kind: KubeletConfiguration
+          logging: {}
+          nodeStatusReportFrequency: 0s
+          nodeStatusUpdateFrequency: 0s
+          rotateCertificates: true
+          runtimeRequestTimeout: 0s
+          streamingConnectionIdleTimeout: 0s
+          syncFrequency: 0s
+          volumeStatsAggPeriod: 0s
+          staticPodPath: /etc/kubernetes/manifests
+        '';
+      in
       {
+
+        wantedBy = [ "multi-user.target" ];
 
         path = [
           # NOTE: iptables.go:556] Could not set up iptables canary mangle/KUBE-KUBELET-CANARY: error creating chain "KUBE-KUBELET-CANARY": executable file not found in $PATH:
@@ -255,7 +289,7 @@ in
           ExecStart = ''
             ${pkgs.kubernetes}/bin/kubelet \
               --kubeconfig=/etc/kubernetes/kubelet.conf \
-              --bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf \
+              --bootstrap-kubeconfig=${bootstrapKubeconfig} \
               --container-runtime=remote \
               --container-runtime-endpoint=/run/containerd/containerd.sock \
               --config=${config}
