@@ -5,16 +5,24 @@
 
   outputs = { self, nixpkgs }: {
 
+    overlays = {
+      fonts = import ./overlays/fonts.nix;
+      wire = import ./overlays/wire.nix;
+      neovim = import ./overlays/neovim.nix;
+      user-environment = import ./overlays/user-environment.nix;
+    };
+
+    nixosModules = {
+      kubernetes = import ./modules/kubernetes.nix;
+      containerd = import ./modules/kubernetes.nix;
+    };
+
     nixosConfigurations =
       with import nixpkgs
         {
           system = "x86_64-linux";
           config.allowUnfree = true;
-          overlays = map import [
-            ./overlays/fonts.nix
-            ./overlays/wire.nix
-            ./overlays/user-environment.nix
-          ];
+          overlays = nixpkgs.lib.attrValues self.overlays;
         };
       let
         nixos' = config:
@@ -56,7 +64,7 @@
       {
         ryzen = nixos' ./configs/ryzen;
         t490s = nixos' ./configs/t490s;
-        arianvp-me = nixos' ./configs/arianvp-me;
+        arianvp-me = nixos' ./configs/arianvp.me;
       };
   };
 }
