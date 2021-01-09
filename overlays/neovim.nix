@@ -1,5 +1,5 @@
-self: super: {
-  neovim = super.neovim.override {
+final: prev: {
+  neovim = prev.neovim.override {
     configure = {
       customRC = ''
         set expandtab
@@ -18,7 +18,7 @@ self: super: {
         let g:ctrlp_user_command = ['.git/', 'git --git-dir=%s/.git ls-files -oc --exclude-standard']
         tnoremap <Esc> <C-\><C-n>
       '';
-      packages.myPackages = with self.vimPlugins; {
+      packages.myPackages = with final.vimPlugins; {
         start = [ tagbar nerdtree fugitive fzfWrapper fzf-vim vim-jsonnet vim-nix vim-terraform vim-tmux-navigator ];
       };
     };

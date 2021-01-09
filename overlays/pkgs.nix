@@ -1,4 +1,4 @@
-self: super: {
+final: prev: {
   # protobuf-lol = self.protobuf;
 
 

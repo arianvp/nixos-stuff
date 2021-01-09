@@ -7,7 +7,7 @@ sha256_=$(cat $f | awk '/SHA256:/ { print $2 }')
 sha256=$(nix-hash --type sha256 --to-base32 ${sha256_})
 
 cat <<EOF
-self: super: {
+final: prev: {
   # NOTE: This is the internal development-build of wire. It is not meant for
   # public consumption and it comes with NO warranty whatsoever
   wire-desktop-internal = super.wire-desktop.overrideAttrs (old: old // rec {

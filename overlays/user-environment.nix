@@ -1,7 +1,7 @@
-self: super: {
-  user-environment = self.buildEnv {
+final: prev: {
+  user-environment = final.buildEnv {
     name = "my-user-environment";
-    paths = with self; [
+    paths = with final; [
       ag
       arandr
       nixpkgs-fmt
