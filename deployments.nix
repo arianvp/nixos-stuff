@@ -28,11 +28,11 @@ self: super:
     # TODO Extract this to a nice reusable piece of nix for others to use
     deploy = deployment: {
       toplevel = deployment.toplevel;
-      install = super.writeScriptBin "install"
+      install = super.writeScript "install"
         ''
           ${deployment.nixos-install}/bin/nixos-install --no-bootloader --no-channel-copy --system ${deployment.toplevel} --root $(realpath $1)
         '';
-      deploy = super.writeScriptBin "deploy"
+      deploy = super.writeScript "deploy"
         ''
           set -e
           tmpDir=$(mktemp -t -d nixos-rebuild.XXXXXX)
