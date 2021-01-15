@@ -41,7 +41,7 @@
       "arianvp.me" = {
         forceSSL = true;
         enableACME = true;
-        locations."/".root = pkgs.arianvp-website;
+        locations."/".root = ../../website;
         # locations."/chrome-reproducer".index = "${../../chrome-reproducer.html}";
       };
       /*"techstock.photos" = {
