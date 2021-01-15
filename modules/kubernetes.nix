@@ -262,6 +262,7 @@ in
           streamingConnectionIdleTimeout: 0s
           syncFrequency: 0s
           volumeStatsAggPeriod: 0s
+          cgroupDriver: systemd
         '';
       in
       {
