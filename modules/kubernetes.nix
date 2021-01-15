@@ -36,6 +36,8 @@ in
       pkgs.kubernetes
     ];
 
+    networking.firewall.allowedTCPPorts = [ 6443 ];
+
     # TODO: modeprobe@br_netfilter ?
     boot.kernelModules = [ "br_netfilter" ];
 
@@ -228,6 +230,7 @@ in
         '';
         config = pkgs.writeText "config.yaml" ''
           apiVersion: kubelet.config.k8s.io/v1beta1
+          kind: KubeletConfiguration
           authentication:
             anonymous:
               enabled: false
@@ -251,7 +254,6 @@ in
           healthzPort: 10248
           httpCheckFrequency: 0s
           imageMinimumGCAge: 0s
-          kind: KubeletConfiguration
           logging: {}
           nodeStatusReportFrequency: 0s
           nodeStatusUpdateFrequency: 0s
@@ -260,7 +262,6 @@ in
           streamingConnectionIdleTimeout: 0s
           syncFrequency: 0s
           volumeStatsAggPeriod: 0s
-          staticPodPath: /etc/kubernetes/manifests
         '';
       in
       {
