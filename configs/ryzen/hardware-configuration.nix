@@ -9,10 +9,17 @@
   boot.initrd.availableKernelModules = [ "xhci_pci" "ahci" "usbhid" "usb_storage" "sd_mod" ];
   boot.kernelModules = [ "kvm-amd" ];
 
-  fileSystems."/" =
-    { device = "/dev/disk/by-uuid/282e0d31-b2b4-4b13-a857-794a89b6245a";
-      fsType = "btrfs";
-    };
+  fileSystems."/" = {
+    device = "/dev/disk/by-uuid/282e0d31-b2b4-4b13-a857-794a89b6245a";
+    fsType = "btrfs";
+  };
+  fileSystems."/var/lib" = {
+    fsType = "none";
+    options = ["bind"];
+    device = "/var/lib";
+  };
+
+
 
   nix.maxJobs = lib.mkDefault 16;
   nix.buildCores = lib.mkDefault 16;

@@ -5,11 +5,15 @@ with pkgs;
     ./hardware-configuration.nix
     ../../modules/yubikey
     ../../modules/direnv.nix
+    ../../modules/kubernetes.nix
   ];
+
+  nix.package = pkgs.nixFlakes;
 
   programs.ssh.startAgent = true;
 
   boot.kernelModules = [ "kvm-intel" "kvm-amd" ];
+  boot.supportedFilesystems = [ "ntfs" ];
 
   # :boot.kernelPackages = pkgs.linuxPackages_latest;
 
@@ -20,42 +24,32 @@ with pkgs;
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
-  hardware.pulseaudio.enable = true;
-
-
   networking.hostName = "ryzen";
 
   time.timeZone = "Europe/Amsterdam";
 
-
-  services.avahi = {
-    enable = true;
-    nssmdns = true;
-    publish = {
-      enable = true;
-      domain = true;
-      addresses = true;
-      userServices = true;
-      workstation = true;
-    };
-  };
   fonts.fonts = [ pkgs.apl385 pkgs.noto-fonts pkgs.noto-fonts-emoji ];
-
+  cluster.kubernetes.enable = true;
 
   services.openssh.enable = true;
-  networking.firewall.allowedTCPPorts = [ 22 ];
+  networking.firewall.allowedTCPPorts = [ 22  8200 ];
+  networking.firewall.allowedUDPPorts = [ 1900 ];
+
+
+  services.minidlna = {
+    enable = true;
+    announceInterval = 60;
+    mediaDirs = [ "/srv/videos" ];
+  };
 
   services.xserver = {
     enable = true;
-    desktopManager.gnome3 = {
-      enable = true;
-    };
-    #displayManager.gdm.enable = true;
+    desktopManager.gnome3.enable = true;
     displayManager.lightdm.enable = true;
   };
   environment.systemPackages = [
-    pkgs.user-environment
     pkgs.gnome3.gnome-tweaks
+    pkgs.user-environment
     pkgs.gnome3.gnome-shell-extensions
     pkgs.nodejs-12_x
   ];
