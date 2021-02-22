@@ -60,7 +60,7 @@ with pkgs;
       (
         pkgs.fetchurl {
           url = "https://github.com/arianvp.keys";
-          sha256 = "0m9qpkn0hf5cddz145yc8ws5bmbzxa296hsgzw15p3kw1ramdipq";
+          sha256 = "1q63gl8f0384w00dvqsb5kv4hjp71gwsfm4dr41r0y39mc4ca7f4";
         }
       )
     ];
