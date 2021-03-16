@@ -50,7 +50,7 @@ self: super: {
       dotnet-sdk
       zlib
       pkg-config
-      wire-desktop
+      wire-desktop-internal
       win-virtio
       gmp
       awscli
