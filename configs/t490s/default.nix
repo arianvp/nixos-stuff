@@ -5,6 +5,7 @@
     ../../modules/env.nix
     ../../modules/cachix.nix
     ../../modules/hie.nix
+    ../../modules/direnv.nix
     ../../modules/containers-v2.nix
     (modulesPath + "/installer/scan/not-detected.nix")
   ];
