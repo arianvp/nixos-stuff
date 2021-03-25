@@ -6,13 +6,13 @@ on:
       - master
 jobs:
   build:
-    # strategy:
-    #   matrix:
-    #     # TODO
-    #     deployment:
-    #       - arianvp-me
-    #       - t490s
-    #       - ryzen
+    strategy:
+      matrix:
+        # TODO
+        deployment:
+          - arianvp-me
+          - t490s
+          - ryzen
     runs-on: ubuntu-latest
     steps:
     - name: Checkout the pushed commit
@@ -39,10 +39,10 @@ jobs:
         signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
-    - name: Build
+    - name: Build ${{ matrix.deployment }}
       run: |
-        nix build -L ./master#nixosConfigurations.t490s.config.system.build.toplevel --profile /tmp/nix-profile
-        nix build -L ./pushed#nixosConfigurations.t490s.config.system.build.toplevel --profile /tmp/nix-profile
+        nix build -L ./master#nixosConfigurations.${{ matrix.deployment }}.config.system.build.toplevel --profile /tmp/nix-profile
+        nix build -L ./pushed#nixosConfigurations.${{ matrix.deployment }}.config.system.build.toplevel --profile /tmp/nix-profile
 
         nix profile diff-closures --profile /tmp/nix-profile
 
