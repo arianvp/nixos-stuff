@@ -11,7 +11,9 @@
   ];
   config = {
     nix.extraOptions = ''
+      experimental-features = nix-command flakes
     '';
+    nix.package = pkgs.nixFlakes;
     nix.distributedBuilds = true;
     nix.buildMachines = [
       {

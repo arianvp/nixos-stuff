@@ -8,30 +8,37 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+      with:
+        # Nix Flakes doesn't work on shallow clones
+        fetch-depth: 0
     - uses: cachix/install-nix-action@v12
-    - name: Update dependencies
+      with:
+        install_url: https://github.com/numtide/nix-flakes-installer/releases/download/nix-2.4pre20210126_f15f0b8/install
+        extra_nix_config: |
+          experimental-features = nix-command flakes
+    - uses: cachix/cachix-action@v8
+      with:
+        name: arianvp
+        signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
+        authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+    - uses: actions/cache@v2
+      with:
+        path: /nix/store
+        key: nix-store
+    - name: Build
       run: |
-        before=$(nix-instantiate -A deployments.t490s.toplevel)
+        nix build .#nixosConfigurations.t490s.config.system.build.toplevel --profile ./nix-profile
 
-        GITHUB_PATH= nix run -f . niv -c niv update
+        nix flake update
 
-        after=$(nix-instantiate -A deployments.t490s.toplevel)
+        nix build .#nixosConfigurations.t490s.config.system.build.toplevel --profile ./nix-profile
 
-        if [ $before != $after ]; then
-          git config user.name ${GITHUB_ACTOR}
-          git config user.email ${GITHUB_ACTOR}@users.noreply.github.com
-
-          git add -A
-
-          msg=$(mktemp)
-          echo "chore: update dependencies" >> $msg
-          echo "" >> $msg
-          echo "Summary of changes:" >> $msg
-          nix run -f . nix-diff -c nix-diff $before $after >> $msg
-          git commit -F $msg
-        else
-          git restore nix/sources.json
-        fi
+        msg=$(mktemp)
+        echo "chore: update dependencies" >> $msg
+        echo "" >> $msg
+        echo "Summary of changes:" >> $msg
+        nix profile diff-closures --profile ./nix-profile | tee -a $msg
+        git commit -F $msg
 
     - name: Create Pull Request if there was a change
       uses: peter-evans/create-pull-request@v3.6.0
