@@ -7,41 +7,25 @@ jobs:
   update-dependencies:
     runs-on: ubuntu-latest
     steps:
+
     - uses: actions/checkout@v2
       with:
         # Nix Flakes doesn't work on shallow clones
         fetch-depth: 0
+
     - uses: cachix/install-nix-action@v12
       with:
         install_url: https://github.com/numtide/nix-flakes-installer/releases/download/nix-2.4pre20210126_f15f0b8/install
         extra_nix_config: |
           experimental-features = nix-command flakes
-    - uses: cachix/cachix-action@v8
-      with:
-        name: arianvp
-        signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
-        authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
-    - name: Build
+
+    - name: Update
       run: |
-        nix build .#nixosConfigurations.t490s.config.system.build.toplevel --print-build-logs --profile /tmp/nix-profile
-
-        nix build .#nixosConfigurations.t490s.config.system.build.toplevel --print-build-logs --profile /tmp/nix-profile --recreate-lock-file
-
-        git config user.name ${GITHUB_ACTOR}
-        git config user.email ${GITHUB_ACTOR}@users.noreply.github.com
-
-        git add -A
-
-        msg=$(mktemp)
-        echo "chore: update dependencies" >> $msg
-        echo "" >> $msg
-        echo "Summary of changes:" >> $msg
-        nix profile diff-closures --profile /tmp/nix-profile | tee -a $msg
-        git commit -F $msg
+        nix flake update
 
     - name: Create Pull Request if there was a change
       uses: peter-evans/create-pull-request@v3.8.2
       with:
-        token: ${{ secrets.PAT }} # needed so that this triggers further flows. not ideal:
+        token: ${{ secrets.PAT }} # needed so that this triggers further flows. not ideal.
         title: "chore: update dependencies"
         branch: "chore/update-dependencies"
