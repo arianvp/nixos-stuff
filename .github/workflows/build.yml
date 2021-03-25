@@ -10,9 +10,9 @@ jobs:
       matrix:
         # TODO
         deployment:
-          - arianvp-me
+          # - arianvp-me
           - t490s
-          - ryzen
+          # - ryzen
     runs-on: ubuntu-latest
     steps:
     - name: Checkout the pushed commit
