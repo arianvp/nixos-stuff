@@ -3,6 +3,7 @@ on:
   schedule:
     - cron: '0 8 * * *'
   workflow_dispatch:
+  pull_request:
 jobs:
   update-dependencies:
     runs-on: ubuntu-latest
@@ -27,21 +28,26 @@ jobs:
         key: nix-store
     - name: Build
       run: |
-        nix build .#nixosConfigurations.t490s.config.system.build.toplevel --profile ./nix-profile
+        nix build .#nixosConfigurations.t490s.config.system.build.toplevel --profile /tmp/nix-profile
 
         nix flake update
 
-        nix build .#nixosConfigurations.t490s.config.system.build.toplevel --profile ./nix-profile
+        nix build .#nixosConfigurations.t490s.config.system.build.toplevel --profile /tmp/nix-profile
+
+        git config user.name ${GITHUB_ACTOR}
+        git config user.email ${GITHUB_ACTOR}@users.noreply.github.com
+
+        git add -A
 
         msg=$(mktemp)
         echo "chore: update dependencies" >> $msg
         echo "" >> $msg
         echo "Summary of changes:" >> $msg
-        nix profile diff-closures --profile ./nix-profile | tee -a $msg
+        nix profile diff-closures --profile /tmp/nix-profile | tee -a $msg
         git commit -F $msg
 
     - name: Create Pull Request if there was a change
-      uses: peter-evans/create-pull-request@v3.6.0
+      uses: peter-evans/create-pull-request@v3.8.2
       with:
         token: ${{ secrets.PAT }} # needed so that this triggers further flows. not ideal:
         title: "chore: update dependencies"
