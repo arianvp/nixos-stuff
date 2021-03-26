@@ -21,19 +21,12 @@
     4443 # weechat relay
   ];
 
+  environment.systemPackages = [ pkgs.ghc ];
+
   programs.screen.screenrc = ''
     multiuser on
     acladd normal_user
   '';
-
-  services.systemd-nspawn.machines = {
-    "test1".config = {...}: {
-      services.nginx.enable = true;
-    };
-    "test2".config = {...}: {
-      services.nginx.enable = true;
-    };
-  };
 
   services.nginx = {
     enable = true;
@@ -68,7 +61,7 @@
       "arianvp.me" = {
         forceSSL = true;
         enableACME = true;
-        locations."/".root = pkgs.arianvp-website;
+        locations."/".root = ../../website;
         # locations."/chrome-reproducer".index = "${../../chrome-reproducer.html}";
       };
       /*"techstock.photos" = {
