@@ -47,28 +47,41 @@ jobs:
     - name: Diff
       id: diff
       run: |
-        nix profile diff-closures --profile /tmp/nix-profile
+        nix profile diff-closures --profile /tmp/nix-profile | tee /tmp/diff.txt
+        OUTPUT_DIFF="$(cat /tmp/diff.txt)"
+        OUTPUT_DIFF="${OUTPUT_DIFF//'%'/'%25'}"
+        OUTPUT_DIFF="${OUTPUT_DIFF//$'\n'/'%0A'}"
+        OUTPUT_DIFF="${OUTPUT_DIFF//$'\r'/'%0D'}"
+        echo "$OUTPUT_DIFF"
+        echo "::set-output name=diff::$OUTPUT_DIFF"
 
-    - name: Post diff report
+    - name: Scan for security issues
+      id: security
+      run: |
+        nix run nixpkgs/nixos-20.09#vulnix -- -w https://raw.githubusercontent.com/ckauhaus/nixos-vulnerability-roundup/master/whitelists/nixos-20.09.toml /tmp/nix-profile | tee /tmp/security.txt
+        OUTPUT_SECURITY="$(cat /tmp/security.txt)"
+        OUTPUT_SECURITY="${OUTPUT_SECURITY//'%'/'%25'}"
+        OUTPUT_SECURITY="${OUTPUT_SECURITY//$'\n'/'%0A'}"
+        OUTPUT_SECURITY="${OUTPUT_SECURITY//$'\r'/'%0D'}"
+        echo "$OUTPUT_SECURITY"
+        echo "::set-output name=security::$OUTPUT_SECURITY"
+
+    - name: Post report
       uses: peter-evans/commit-comment@v1
       with:
         body: |
           # Summary of changes
 
+          For your information, I have made the following summary of changes.
+          Please use this in your assement whether this commit should be merged.
+
+          ## Version report
+
           ```
-          ${{ steps.diff.outputs.build-log }}
+          ${{ steps.diff.outputs.diff }}
           ```
 
-
-        #    run: |
-        #      mkdir -p report
-        #      nix-store --query --requisites --include-outputs ./result > report/software.txt
-        #      nix run -f ./master vulnix -c vulnix -w https://raw.githubusercontent.com/ckauhaus/nixos-vulnerability-roundup/master/whitelists/nixos-20.09.toml ./result | tee report/vulnerabilities.txt
-
-
-        #  - name: Upload software report
-        #    if: always()
-        #    uses: actions/upload-artifact@v2
-        #    with:
-        #      name: report-${{ matrix.deployment }}
-        #      path: report/
+          ## Vulnerability report
+          ```
+          ${{ steps.security.outputs.security }}
+          ```
