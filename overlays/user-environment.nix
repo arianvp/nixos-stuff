@@ -56,8 +56,6 @@ self: super: {
       awscli
       fractal
       ncurses
-      (haskell.packages.ghc865.ghcWithPackages (p: [
-      ]))
     ];
   };
 }
