@@ -1,18 +1,12 @@
-name: Build deployments
+name: Pull request
 on:
   pull_request:
-  push:
-    branches:
-      - master
 jobs:
   build:
     strategy:
       matrix:
-        # TODO
         deployment:
           - arianvp-me
-          # - t490s
-          # - ryzen
     runs-on: ubuntu-latest
     steps:
     - name: Checkout the pushed commit
