@@ -1,7 +1,7 @@
-{ lib, pkgs, config, ...}:
+{ lib, pkgs, config, modulesPath, ...}:
 {
   imports = [
-    ../../modules/digitalocean/config.nix
+     (modulesPath + "/virtualisation/digital-ocean-image.nix")
     ../../modules/containers-v2.nix
     ./network.nix
     ./bitwarden.nix
