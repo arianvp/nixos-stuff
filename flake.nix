@@ -1,13 +1,16 @@
 {
   description = "Arian's computers";
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-20.09";
 
   outputs = { self, nixpkgs }: {
 
     nixosModules = {
       cachix = import ./modules/cachix.nix;
       direnv = import ./modules/direnv.nix;
+    };
+
+    deploy.targets.node = {
     };
 
     nixosConfigurations = {
@@ -23,6 +26,8 @@
               ./overlays/user-environment.nix
               ./overlays/wire.nix
               ./overlays/fonts.nix
+	      ./overlays/neovim.nix
+	      ./overlays/vscodium.nix
             ];
           }
         ];
