@@ -7,10 +7,9 @@
   ];
 
   # Enable smartcard daemon, to read TOPT tokens from yubikey
-  # services.pcscd.enable = true;
+  services.pcscd.enable = true;
 
-
-  programs.ssh.startAgent = true;
+  # programs.ssh.startAgent = true;
 
   # programs.ssh.agentPKCS11Whitelist = "${pkgs.opensc}/lib/opensc-pkcs11.so";
 
