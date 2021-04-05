@@ -27,7 +27,8 @@
               ./overlays/wire.nix
               ./overlays/fonts.nix
 	      ./overlays/neovim.nix
-	      ./overlays/vscodium.nix
+              ./overlays/vscodium.nix
+              ./overlays/systemd-initrd.nix
             ];
           }
         ];

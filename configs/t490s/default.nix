@@ -7,6 +7,7 @@
     ../../modules/hie.nix
     ../../modules/direnv.nix
     ../../modules/containers-v2.nix
+    ../../modules/systemd-initrd.nix
     (modulesPath + "/installer/scan/not-detected.nix")
   ];
   config = {
