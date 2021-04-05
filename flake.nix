@@ -5,10 +5,20 @@
 
   outputs = { self, nixpkgs }: {
 
+    nixosModules = {
+      cachix = import ./modules/cachix.nix;
+      direnv = import ./modules/direnv.nix;
+    };
+
+    deploy.targets.node = {
+    };
+
     nixosConfigurations = {
       t490s = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
-        modules = [
+        modules = with self.nixosModules; [
+          cachix
+          direnv
           ./configs/t490s
           {
             nixpkgs.config.allowUnfree = true;
@@ -16,13 +26,18 @@
               ./overlays/user-environment.nix
               ./overlays/wire.nix
               ./overlays/fonts.nix
+	      ./overlays/neovim.nix
+	      ./overlays/vscodium.nix
             ];
           }
         ];
       };
       arianvp-me = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
-        modules = [ ./configs/arianvp.me ];
+        modules = with self.nixosModules; [
+          cachix
+          ./configs/arianvp.me
+        ];
       };
     };
   };

@@ -19,13 +19,11 @@ jobs:
         extra_nix_config: |
           experimental-features = nix-command flakes
 
-    - name: Update
-      run: |
-        nix flake update
+    - run:  nix flake update
 
-    - name: Create Pull Request if there was a change
-      uses: peter-evans/create-pull-request@v3.8.2
+    - uses: peter-evans/create-pull-request@v3.8.2
       with:
         token: ${{ secrets.PAT }} # needed so that this triggers further flows. not ideal.
-        title: "chore: update dependencies"
+        title: "chore: nix flake update"
+        commit-message: "chore: nix flake update"
         branch: "chore/update-dependencies"
