@@ -40,7 +40,7 @@
       createHome = true;
       extraGroups = [ "docker" "wheel" ];
     };
-    environment.gnome3.excludePackages = with pkgs.gnome3; [ gnome-software ];
+    environment.gnome3.excludePackages = with pkgs.gnome3; [ gnome-software geary ];
 
 
     services.systemd-nspawn.machines = {
@@ -90,13 +90,14 @@
     services.hardware.bolt.enable = true;
     services.tlp.enable = true;
 
-    boot.initrd.availableKernelModules = [ "xhci_pci" "nvme" ];
+    boot.initrd.availableKernelModules = [ "xhci_pci" "nvme" "usbhid" ];
     boot.kernelModules = [ "kvm-intel" ];
 
     # /boot will be automatically mounted by gpt-auto-generator, which is
     # enabled by default
 
-    boot.initrd.luks.devices."root".device = "/dev/disk/by-id/0c642ebc-2b76-43dc-b9ba-34f1125d7f16";
+    # not needed.   root will be automatically mounted by gpt-auto-generator
+    # boot.initrd.luks.devices."root".device = "/dev/disk/by-uuid/0c642ebc-2b76-43dc-b9ba-34f1125d7f16";
     fileSystems = {
       "/" = {
         device = "/dev/mapper/root";
