@@ -8,6 +8,7 @@
     ../../modules/direnv.nix
     ../../modules/containers-v2.nix
     ../../modules/systemd-initrd.nix
+    ../../modules/device-mapper.nix
     (modulesPath + "/installer/scan/not-detected.nix")
   ];
   config = {

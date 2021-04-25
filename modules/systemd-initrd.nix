@@ -56,6 +56,7 @@ in
     "system/boot/grow-partition.nix"
 
     # TODO: Uses extraUdevRulesCommands which we don't want to support (weird imperative interface)
+    "tasks/lvm.nix"
     "tasks/swraid.nix"
     "tasks/swraid.nix"
     "tasks/bcache.nix"
@@ -79,7 +80,7 @@ in
 
 
     # TODO: Uses extraUtilsCommands which we don't want to support (weird imperative interface)
-    "tasks/lvm.nix"
+    # "tasks/lvm.nix"
     "system/boot/plymouth.nix"
     "config/console.nix"
 
@@ -102,6 +103,9 @@ in
         ExecStart = [ "" "${pkgs.busybox}/bin/ash" ];
         Environment = "PATH=${pkgs.busybox}/bin:${pkgs.systemd}/bin:${pkgs.utillinux}/bin";
       };
+
+      # Lets get ourselves stuck on purpose
+      services.initrd-cleanup.enable = false;
 
       # Not sure if needed anymore? But nixos initrd does this as well. keeping
       services.modprobe-init = {
@@ -204,7 +208,17 @@ in
       "squashfs"
       "overlay"
       "af_packet"
+
+      "crc32c"
       "btrfs"
+
+      "cryptd"
+
+      # Needed for LUKS on 5.10; but didn't need in 5.4. odd
+      "aes"
+      "aes_generic"
+      "xts"
+      "cbc"
 
       # Needed for systemd-gpt-auto-generator
       "efivars"
