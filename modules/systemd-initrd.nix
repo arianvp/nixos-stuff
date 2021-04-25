@@ -212,6 +212,9 @@ in
       "crc32c"
       "btrfs"
 
+      # Add nvme modprobe
+      "nvme"
+
       "cryptd"
 
       # Needed for LUKS on 5.10; but didn't need in 5.4. odd
@@ -225,30 +228,34 @@ in
       "efivarfs"
       "efi_pstore"
 
-      # TODO make this smaller
+      # QEMU
       "virtio_pci"
       "virtio_blk"
       "virtio_mmio"
       "virtio_console"
       "virtio_balloon"
       "virtio_rng"
-      "uhci_hcd"
+
+      # Keyboard
+      "atkbd"
       "ehci_hcd"
       "ehci_pci"
-      "ohci_hcd"
-      "ohci_pci"
-      "xhci_hcd"
-      "xhci_pci"
-      "usbhid"
+      "hid_apple"
       "hid_generic"
       "hid_lenovo"
-      "hid_apple"
-      "hid_roccat"
-      "hid_logitech_hidpp"
       "hid_logitech_dj"
+      "hid_logitech_hidpp"
       "hid_microsoft"
+      "hid_roccat"
+      "i8042"
+      "ohci_hcd"
+      "ohci_pci"
+      "pcips2"
+      "sdhci_pci"
+      "uhci_hcd"
       "usbhid"
-      "atkbd"
+      "xhci_hcd"
+      "xhci_pci"
     ];
   };
 }
