@@ -1,7 +1,19 @@
 {
   "nodes": {
+    "fork": {
+      "locked": {
+        "narHash": "sha256-sZiMKZFP6BfTKszPKWp69F79/mjDIGKKNU7oi+Oqwbg=",
+        "path": "/home/arian/Projects/nixos/nixpkgs",
+        "type": "path"
+      },
+      "original": {
+        "path": "/home/arian/Projects/nixos/nixpkgs",
+        "type": "path"
+      }
+    },
     "root": {
       "inputs": {
+        "fork": "fork",
         "stable": "stable",
         "unstable": "unstable"
       }
