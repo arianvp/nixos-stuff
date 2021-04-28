@@ -104,6 +104,10 @@ in
         Environment = "PATH=${pkgs.busybox}/bin:${pkgs.systemd}/bin:${pkgs.utillinux}/bin";
       };
 
+      services.debug-shell.environment = {
+        PATH = "${pkgs.util-linux}/bin:${pkgs.busybox}/bin:${pkgs.systemd}/bin:${pkgs.strace}/bin";
+      };
+
       # Not sure if needed anymore? But nixos initrd does this as well. keeping
       services.modprobe-init = {
         wantedBy = [ "sysinit.target" ];
@@ -183,12 +187,12 @@ in
 
       ];
 
-      boot.kernelParams = [
-        "rd.udev.log_priority=debug"
-        "systemd.log_level=debug"
-        "rd.systemd.log_level=debug"
-        "rd.systemd.debug_shell=1"
-      ];
+    boot.kernelParams = [
+      "rd.udev.log_priority=debug"
+      "systemd.log_level=debug"
+      "rd.systemd.log_level=debug"
+      "rd.systemd.debug_shell=1"
+    ];
 
     system.build.initialRamdisk =
       makeInitrd { storeContents = config.system.build.initialFS; };
