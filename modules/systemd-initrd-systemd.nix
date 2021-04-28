@@ -38,7 +38,7 @@ let
     "initrd-udevadm-cleanup-db.service"
     "initrd.target"
     "kexec.target"
-    "kmod-static-nodes.service"
+    # "kmod-static-nodes.service"
     #"ldconfig.service"
     "local-fs-pre.target"
     "local-fs.target"
@@ -383,6 +383,29 @@ in
   config = {
 
     system.build.initrdUnits = generateUnits "system" cfg.units upstreamUnits upstreamWants;
+
+    # TODO: Our patches completely b0rk systemd early boot.
+    # systemd-tmpfiles-setup-dev should happen BEFORE udev even is started or
+    # REALLY BAD THINGS happen. Yet we delay it all the way to multi-user for
+    # nixops send-keys?
+    # https://github.com/NixOS/nixpkgs/blob/master/pkgs/os-specific/linux/systemd/default.nix#L486-L490
+    boot.initrd.systemd.services.systemd-tmpfiles-setup-dev.wantedBy = [ "sysinit.target" ];
+
+
+    # TODO: Remove once we patched nixpkgs
+    boot.initrd.systemd.services.kmod-static-nodes = {
+      wantedBy = [ "sysinit.target" ];
+      unitConfig = {
+        Before = [ "sysinit.target" "systemd-tmpfiles-setup-dev.service" ];
+        DefaultDependencies = "no";
+        ConditionCapability = "CAP_SYS_MODULE";
+      };
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = "yes";
+        ExecStart = "${pkgs.kmod}/bin/kmod static-nodes --format=tmpfiles --output=/run/tmpfiles.d/static-nodes.conf";
+      };
+    };
 
 
     boot.initrd.systemd.units =

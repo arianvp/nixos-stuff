@@ -44,7 +44,6 @@ in
   disabledModules = [
     "system/boot/stage-1.nix"
 
-
     # Requires extraUtilsCommands and sytemd comes with its own cryptsetup mechanisms!
     "system/boot/luksroot.nix"
     # Not supported for now
@@ -95,6 +94,7 @@ in
 
     "services/network-filesystems/nfsd.nix"
     "services/x11/display-managers/xpra.nix"
+    "services/networking/iscsi/root-initiator.nix"
   ];
   config = {
     boot.initrd.systemd = {
@@ -152,6 +152,10 @@ in
       pkgs.linkFarm "initrdfs" [
         { name = "etc/initrd-release"; path = "${config.environment.etc.os-release.source}"; }
         { name = "init"; path = "${systemd}/lib/systemd/systemd"; }
+        # TODO: Fix systemd kmod path in nixos systemd package. We patch  kmod
+        # to look in this path (and also /lib/modules) but we patched systemd
+        # to only look into /run/booted-system. We should patch systemd to look
+        # in all the folders kmod is looking
         { name = "lib/modules"; path = "${modulesClosure}/lib/modules"; }
         # TODO: No firmware for now
         # { name ="lib/firmware"; path = "${modulesClosure}/lib/firmware"; }
