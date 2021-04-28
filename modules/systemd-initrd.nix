@@ -16,7 +16,7 @@ let
         find $(cat $closureInfo/store-paths) | cpio --make-directories --pass-through $path
         (cd ${storeContents} && (find . | cpio --make-directories --pass-through $path))
 
-        (cd $path && (find . | cpio -o -H newc | gzip > $out/initrd))
+        (cd $path && (find . | cpio -R +0:+0 -o -H newc | gzip > $out/initrd))
 
       '';
     };
