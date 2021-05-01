@@ -9,9 +9,6 @@ jobs:
     steps:
 
     - uses: actions/checkout@v2
-      with:
-        # Nix Flakes doesn't work on shallow clones
-        fetch-depth: 0
 
     - uses: cachix/install-nix-action@v13
       with:

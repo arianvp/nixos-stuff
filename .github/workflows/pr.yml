@@ -12,13 +12,11 @@ jobs:
     - name: Checkout the pushed commit
       uses: actions/checkout@v2
       with:
-        fetch-depth: 0
         path: pushed
 
     - name: Check out master
       uses: actions/checkout@v2
       with:
-        fetch-depth: 0
         path: master
         ref: master
 
