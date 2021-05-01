@@ -1,12 +1,46 @@
 {
   "nodes": {
-    "nixpkgs": {
+    "fork": {
       "locked": {
-        "lastModified": 1617042094,
-        "narHash": "sha256-c8w5/Dz+r8gHIGZs1BHJPSzpP3Sga/BYebRkqBoDANY=",
+        "narHash": "sha256-sZiMKZFP6BfTKszPKWp69F79/mjDIGKKNU7oi+Oqwbg=",
+        "path": "/home/arian/Projects/nixos/nixpkgs",
+        "type": "path"
+      },
+      "original": {
+        "path": "/home/arian/Projects/nixos/nixpkgs",
+        "type": "path"
+      }
+    },
+    "root": {
+      "inputs": {
+        "fork": "fork",
+        "stable": "stable",
+        "unstable": "unstable"
+      }
+    },
+    "stable": {
+      "locked": {
+        "lastModified": 1619076297,
+        "narHash": "sha256-8cysnX6zlCAog9NrrROEEvKLX/2hmJz0anRBCnjL+Ns=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "310885ec804f9fa0db5c705c7f5d35d415f50564",
+        "rev": "4263ba5e133cc3fc699c1152ab5ee46ef668e675",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-20.09",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "unstable": {
+      "locked": {
+        "lastModified": 1619130746,
+        "narHash": "sha256-r4yNj3UfemxhXJe+2We+opeujK/kDBMxHw0E4N+y7PM=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "abb55ca1315f9a0dce5e3bce73d6e23e37f8b23a",
         "type": "github"
       },
       "original": {
@@ -14,11 +48,6 @@
         "ref": "nixpkgs-unstable",
         "repo": "nixpkgs",
         "type": "github"
-      }
-    },
-    "root": {
-      "inputs": {
-        "nixpkgs": "nixpkgs"
       }
     }
   },
