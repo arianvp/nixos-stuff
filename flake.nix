@@ -54,6 +54,13 @@
         t490s = stable.lib.nixosSystem configOld;
         t490s-fork = fork.lib.nixosSystem configNew;
         t490s-unstable = unstable.lib.nixosSystem configNew;
+        ryzen = unstable.lib.nixosSystem {
+          system = "x86_64-linux";
+          modules = with self.nixosModules; [
+            cachix
+            ./configs/ryzen
+          ];
+        };
         arianvp-me = unstable.lib.nixosSystem {
           system = "x86_64-linux";
           modules = with self.nixosModules; [

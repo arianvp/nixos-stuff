@@ -19,11 +19,6 @@ with pkgs;
 
   time.timeZone = "Europe/Amsterdam";
 
-  services.kubernetes = {
-    roles = [ "master" "node" ];
-    masterAddress = "${config.networking.hostName}.local";
-  };
-
   services.avahi = {
     enable = true;
     nssmdns = true;
@@ -41,16 +36,13 @@ with pkgs;
 
   services.xserver = {
     enable = true;
-    windowManager = {
-      xmonad = {
-        enable = true;
-        enableContribAndExtras = true;
-      };
-      default = "xmonad";
+    desktopManager.gnome3 = {
+      enable = true;
     };
-    desktopManager = { default = "none"; xterm.enable = false; };
+    displayManager.gdm.enable = true;
   };
 
+  nix.package = pkgs.nixFlakes;
   nix.trustedUsers = [ "arian" ];
   users.extraUsers.arian = {
     isNormalUser = true;
@@ -60,7 +52,7 @@ with pkgs;
       (
         pkgs.fetchurl {
           url = "https://github.com/arianvp.keys";
-          sha256 = "1q63gl8f0384w00dvqsb5kv4hjp71gwsfm4dr41r0y39mc4ca7f4";
+          sha256 = "sha256-AeabXoMSq73ZhQE8m6fvdGWX7pGN4pL/3budKwpeGqk=";
         }
       )
     ];
