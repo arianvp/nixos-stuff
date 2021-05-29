@@ -32,6 +32,7 @@ with pkgs;
   };
 
   services.openssh.enable = true;
+  cluster.kubernetes.enable = true;
   networking.firewall.allowedTCPPorts = [ 22 ];
 
   services.xserver = {
