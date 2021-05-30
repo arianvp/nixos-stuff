@@ -1,4 +1,4 @@
-{ pkgs, config, ... }:
+{ pkgs, config, lib, ... }:
 with pkgs;
 {
   imports = [
@@ -31,6 +31,8 @@ with pkgs;
     };
   };
 
+  services.resolved.enable = true;
+
   services.openssh.enable = true;
   cluster.kubernetes.enable = true;
   networking.firewall.allowedTCPPorts = [ 22 ];
@@ -58,6 +60,14 @@ with pkgs;
       )
     ];
   };
+
+  services.minidlna = {
+    enable = true;
+    mediaDirs = [ "/home/arian/Downloads" ];
+  };
+  systemd.services.minidlna.serviceConfig.User = lib.mkForce "arian";
+
+  environment.systemPackages = [ pkgs.neovim ];
 
   # Never change this value unless instructed to.
   system.stateVersion = "18.03";

@@ -12,6 +12,7 @@
       direnv = import ./modules/direnv.nix;
       systemd-initrd = import ./modules/systemd-initrd.nix;
       device-mapper = import ./modules/device-mapper.nix;
+      kubernetes = import ./modules/kubernetes.nix;
       overlays = {
               nixpkgs.config.allowUnfree = true;
               nixpkgs.overlays = map import [
@@ -58,6 +59,8 @@
           system = "x86_64-linux";
           modules = with self.nixosModules; [
             cachix
+            kubernetes
+            overlays
             ./configs/ryzen
           ];
         };

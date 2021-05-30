@@ -17,6 +17,9 @@ in
     enable = lib.mkEnableOption ''
       Set up a single-node conformant and secure kubernetes cluster
     '';
+    containerRuntimeEndpoint = lib.mkOption {
+      type = lib.types.str;
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -67,8 +70,8 @@ in
     # Idempotent; but renews token expiration every time it starts. Need to think if this is desired
     systemd.services.kubeadm-init-finalize = {
       wantedBy = [ "multi-user.target" ];
-      wants = [ "etcd.service" "kube-scheduler.service" "kube-apiserver.service" "kube-controller-manager.service" ];
-      after = [ "etcd.service" "kube-scheduler.service" "kube-apiserver.service" "kube-controller-manager.service" ];
+      wants = [ "kube-apiserver.service" ];
+      after = [ "kube-apiserver.service" ];
       script = ''
         ${pkgs.kubernetes}/bin/kubeadm init phase bootstrap-token --config ${initConfig}
       '';
@@ -77,6 +80,27 @@ in
         ConfigurationDirectory = "kubernetes";
       };
     };
+    /*
+    Can't uncomment; as this runs etcd as its own user; but kubeadm creates certificates that are owned by root.
+    Wonder whether we should be using kubeadm at all
+    services.etcd = {
+      enable = true;
+      advertiseClientUrls = [ "https://192.168.0.23:2379" ];
+      certFile = "/etc/kubernetes/pki/etcd/server.crt";
+      clientCertAuth = true;
+      initialAdvertisePeerUrls = [ "https://192.168.0.23:2380" ];
+      initialCluster = [ "${config.networking.hostName}=129.168.0.23:2380" ];
+      keyFile = "/etc/kubernetes/pki/etcd/server.key";
+      listenClientUrls = [ "https://192.168.0.23:2379" ];
+      listenPeerUrls = [ "https://192.168.0.23:2380" ];
+      name = "${config.networking.hostName}";
+      peerCertFile = "/etc/kubernetes/pki/etcd/peer.crt";
+      peerClientCertAuth = true;
+      peerKeyFile = "/etc/kubernetes/pki/etcd/peer.key";
+      peerTrustedCaFile  = "/etc/kubernetes/pki/etcd/ca.crt";
+      # TODO: snapshotCount = 10000
+    };
+    */
 
     systemd.services.etcd = {
       wantedBy = [ "multi-user.target" ];
@@ -112,6 +136,7 @@ in
 
     systemd.services.kube-apiserver = {
       wantedBy = [ "multi-user.target" ];
+      after = [ "etcd.service" ];
       serviceConfig = {
         Restart = "always";
         RestartSec = "10s";
@@ -126,7 +151,7 @@ in
           --etcd-cafile=/etc/kubernetes/pki/etcd/ca.crt \
           --etcd-certfile=/etc/kubernetes/pki/apiserver-etcd-client.crt \
           --etcd-keyfile=/etc/kubernetes/pki/apiserver-etcd-client.key \
-          --etcd-servers=https://127.0.0.1:2379 \
+          --etcd-servers=https://192.168.0.23:2379 \
           --kubelet-client-certificate=/etc/kubernetes/pki/apiserver-kubelet-client.crt \
           --kubelet-client-key=/etc/kubernetes/pki/apiserver-kubelet-client.key \
           --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname \
