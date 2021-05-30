@@ -113,16 +113,16 @@ in
         StateDirectoryMode = "0700";
         ExecStart = ''
           ${pkgs.etcd}/bin/etcd \
-          --advertise-client-urls=https://192.168.0.23:2379 \
+          --advertise-client-urls=https://${ip}:2379 \
           --cert-file=/etc/kubernetes/pki/etcd/server.crt \
           --client-cert-auth=true \
           --data-dir=/var/lib/etcd \
-          --initial-advertise-peer-urls=https://192.168.0.23:2380 \
-          --initial-cluster=ryzen=https://192.168.0.23:2380 \
+          --initial-advertise-peer-urls=https://${ip}:2380 \
+          --initial-cluster=ryzen=https://${ip}:2380 \
           --key-file=/etc/kubernetes/pki/etcd/server.key \
-          --listen-client-urls=https://127.0.0.1:2379,https://192.168.0.23:2379 \
+          --listen-client-urls=https://127.0.0.1:2379,https://${ip}:2379 \
           --listen-metrics-urls=http://127.0.0.1:2381 \
-          --listen-peer-urls=https://192.168.0.23:2380 \
+          --listen-peer-urls=https://${ip}:2380 \
           --name=ryzen \
           --peer-cert-file=/etc/kubernetes/pki/etcd/peer.crt \
           --peer-client-cert-auth=true \
@@ -151,7 +151,7 @@ in
           --etcd-cafile=/etc/kubernetes/pki/etcd/ca.crt \
           --etcd-certfile=/etc/kubernetes/pki/apiserver-etcd-client.crt \
           --etcd-keyfile=/etc/kubernetes/pki/apiserver-etcd-client.key \
-          --etcd-servers=https://192.168.0.23:2379 \
+          --etcd-servers=https://${ip}:2379 \
           --kubelet-client-certificate=/etc/kubernetes/pki/apiserver-kubelet-client.crt \
           --kubelet-client-key=/etc/kubernetes/pki/apiserver-kubelet-client.key \
           --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname \
