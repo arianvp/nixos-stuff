@@ -99,13 +99,8 @@ in
   config = {
     boot.initrd.systemd = {
 
-      services.emergency.serviceConfig = {
-        ExecStart = [ "" "${pkgs.busybox}/bin/ash" ];
-        Environment = "PATH=${pkgs.busybox}/bin:${pkgs.systemd}/bin:${pkgs.utillinux}/bin";
-      };
-
       services.debug-shell.environment = {
-        PATH = "${pkgs.util-linux}/bin:${pkgs.busybox}/bin:${pkgs.systemd}/bin:${pkgs.strace}/bin";
+        PATH = "${pkgs.util-linuxMinimal}/bin:${pkgs.busybox}/bin:${config.boot.initrd.systemd.package}/bin:${pkgs.strace}/bin";
       };
 
       # Not sure if needed anymore? But nixos initrd does this as well. keeping
@@ -192,14 +187,9 @@ in
       ];
 
     boot.kernelParams = [
-      "rd.udev.log_priority=debug"
-      "systemd.log_level=debug"
-      "rd.systemd.log_level=debug"
-      "rd.systemd.debug_shell=1"
     ];
 
-    system.build.initialRamdisk =
-      makeInitrd { storeContents = config.system.build.initialFS; };
+    system.build.initialRamdisk = makeInitrd { storeContents = config.system.build.initialFS; };
 
     # This is here for debugging. So that you can quickly test out the initrd
     system.build.runvm = pkgs.writeShellScriptBin "runvm"

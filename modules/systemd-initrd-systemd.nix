@@ -93,7 +93,6 @@ let
     "systemd-hostnamed.service"
     "systemd-hwdb-update.service"
     "systemd-hybrid-sleep.service"
-    "systemd-importd.service"
     # "systemd-initctl.service"
     # "systemd-initctl.socket"
     "systemd-journal-catalog-update.service"
@@ -115,7 +114,8 @@ let
     "systemd-random-seed.service"
     "systemd-reboot.service"
     "systemd-remount-fs.service"
-    "systemd-repart.service"
+    # TODO: systemd-repart gets disabled when importd is disabled due to implicit dependency in openssl. urfgh
+    # "systemd-repart.service"
     "systemd-resolved.service"
     "systemd-rfkill.service"
     "systemd-rfkill.socket"
@@ -155,7 +155,8 @@ let
     "sysinit.target.wants"
     "sockets.target.wants"
     "local-fs.target.wants"
-    "initrd-root-fs.target.wants"
+    # TODO: systemd-repart
+    # "initrd-root-fs.target.wants"
   ];
 
   systemd = cfg.package;
