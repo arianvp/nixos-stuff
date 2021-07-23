@@ -11,6 +11,7 @@
   ];
   config = {
     boot.kernelPackages = pkgs.linuxPackages_5_4;
+    boot.kernelParams = [ "quiet" "loglevel=3" "vga=current" ];
     nix.extraOptions = ''
       experimental-features = nix-command flakes
     '';
@@ -33,6 +34,11 @@
     hardware.pulseaudio.enable = true;
     hardware.opengl.enable = true;
     services.avahi.nssmdns = true;
+    services.nginx.enable = true;
+    networking.firewall.allowedTCPPorts = [ 80 ];
+
+
+  services.tailscale.enable = true;
 
     fonts.fonts = [ pkgs.apl385 pkgs.noto-fonts pkgs.noto-fonts-emoji ];
     users.users.arian = {
@@ -41,19 +47,6 @@
       extraGroups = [ "docker" "wheel" ];
     };
     environment.gnome3.excludePackages = with pkgs.gnome3; [ gnome-software geary ];
-
-
-    services.systemd-nspawn.machines = {
-      "test1".config = { ... }: {
-        services.nginx.enable = true;
-        networking.firewall.allowedTCPPorts = [ 80 ];
-        systemd.network.networks."80-container-host0".networkConfig.Address = "192.168.33.2";
-      };
-      "test2".config = { ... }: {
-        networking.firewall.allowedTCPPorts = [ 80 ];
-        services.nginx.enable = true;
-      };
-    };
     services.xserver = {
       enable = true;
       desktopManager.gnome3 = {
@@ -66,6 +59,7 @@
       pkgs.gnomeExtensions.dash-to-panel
       pkgs.gnome3.gnome-tweaks
       pkgs.gnome3.gnome-shell-extensions
+      pkgs.tailscale
     ];
     environment.interactiveShellInit = ''
       if [[ "$VTE_VERSION" > 3405 ]]; then
@@ -76,6 +70,16 @@
     networking.hostName = "t490s";
     system.stateVersion = "18.03";
 
+    systemd.services.test = {
+      wantedBy = [ "multi-user.target" ];
+      serviceConfig = {
+        DynamicUser = true;
+        RuntimeDirectory = "test";
+        LoadCredential = "foo:/etc/passwd";
+        ExecStartPre = "${pkgs.coreutils}/bin/ls";
+        ExecStart = "${pkgs.coreutils}/bin/cat \${CREDENTIALS_DIRECTORY}/foo";
+      };
+    };
     boot.loader.systemd-boot.enable = true;
     boot.loader.efi.canTouchEfiVariables = true;
 
@@ -88,7 +92,6 @@
     };
 
     services.hardware.bolt.enable = true;
-    services.tlp.enable = true;
 
     boot.initrd.availableKernelModules = [ "xhci_pci" "nvme" "usbhid" ];
     boot.kernelModules = [ "kvm-intel" ];

@@ -2,7 +2,7 @@
   "nodes": {
     "fork": {
       "locked": {
-        "narHash": "sha256-sZiMKZFP6BfTKszPKWp69F79/mjDIGKKNU7oi+Oqwbg=",
+        "narHash": "sha256-PIQQTVNuzMiLxG+ucxORntd27wH1r4U1MsNgRdZ7lAg=",
         "path": "/home/arian/Projects/nixos/nixpkgs",
         "type": "path"
       },
@@ -20,11 +20,11 @@
     },
     "stable": {
       "locked": {
-        "lastModified": 1619076297,
-        "narHash": "sha256-8cysnX6zlCAog9NrrROEEvKLX/2hmJz0anRBCnjL+Ns=",
+        "lastModified": 1625876282,
+        "narHash": "sha256-z/Gv+11Uzdv3HcQCY+xGi1+iuc3rmCaPzxxDSMnuRAI=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "4263ba5e133cc3fc699c1152ab5ee46ef668e675",
+        "rev": "068984c00e0d4e54b6684d98f6ac47c92dcb642e",
         "type": "github"
       },
       "original": {
@@ -36,11 +36,11 @@
     },
     "unstable": {
       "locked": {
-        "lastModified": 1619130746,
-        "narHash": "sha256-r4yNj3UfemxhXJe+2We+opeujK/kDBMxHw0E4N+y7PM=",
+        "lastModified": 1625942347,
+        "narHash": "sha256-gNxZar+Mc8lv8FbBldl8ztKtUZU3/SJuL5eqCjW/m7U=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "abb55ca1315f9a0dce5e3bce73d6e23e37f8b23a",
+        "rev": "fb45fa64ae3460d6bd2701ab5a6c4512d781f166",
         "type": "github"
       },
       "original": {

@@ -51,7 +51,7 @@
         };
       in
       {
-        t490s = stable.lib.nixosSystem configOld;
+        t490s = unstable.lib.nixosSystem configNew;
         t490s-fork = fork.lib.nixosSystem configNew;
         t490s-unstable = unstable.lib.nixosSystem configNew;
         ryzen = unstable.lib.nixosSystem {
