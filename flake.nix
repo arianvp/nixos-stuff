@@ -5,8 +5,9 @@
   inputs.andir.url = "github:andir/nixpkgs/systemdv249";
   inputs.unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
   inputs.stable.url = "github:NixOS/nixpkgs/nixos-21.05";
+  inputs.webauthn.url = "github:arianvp/webauthn-oidc";
 
-  outputs = { self, andir, stable, unstable, fork }: {
+  outputs = { self, webauthn, andir, stable, unstable, fork }: {
 
     nixosModules = {
       cachix = import ./modules/cachix.nix;
@@ -65,7 +66,10 @@
         arianvp-me = unstable.lib.nixosSystem {
           system = "x86_64-linux";
           modules = with self.nixosModules; [
-            cachix
+            webauthn.nixosModule
+            {
+              services.webauthn-oidc.host = "oidc.arianvp.me";
+            }
             ./configs/arianvp.me
           ];
         };
