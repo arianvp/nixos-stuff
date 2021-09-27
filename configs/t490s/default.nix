@@ -100,7 +100,7 @@
     # enabled by default
 
     # not needed.   root will be automatically mounted by gpt-auto-generator
-    # boot.initrd.luks.devices."root".device = "/dev/disk/by-uuid/0c642ebc-2b76-43dc-b9ba-34f1125d7f16";
+    boot.initrd.luks.devices."root".device = "/dev/disk/by-uuid/0c642ebc-2b76-43dc-b9ba-34f1125d7f16";
     fileSystems = {
       "/" = {
         device = "/dev/mapper/root";

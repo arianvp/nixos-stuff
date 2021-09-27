@@ -88,7 +88,7 @@ in
     "hardware/cpu/amd-microcode.nix"
 
     # TODO: bootloader setting path is different
-    "hardware/video/hidpi.nix"
+    # "hardware/video/hidpi.nix"
 
     "virtualisation/virtualbox-guest.nix"
 

@@ -2,10 +2,11 @@
   description = "Arian's computers";
 
   inputs.fork.url = "/home/arian/Projects/nixos/nixpkgs";
+  inputs.andir.url = "github:andir/nixpkgs/systemdv249";
   inputs.unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-  inputs.stable.url = "github:NixOS/nixpkgs/nixos-20.09";
+  inputs.stable.url = "github:NixOS/nixpkgs/nixos-21.05";
 
-  outputs = { self, stable, unstable, fork }: {
+  outputs = { self, andir, stable, unstable, fork }: {
 
     nixosModules = {
       cachix = import ./modules/cachix.nix;
@@ -20,7 +21,7 @@
                 ./overlays/fonts.nix
                 ./overlays/neovim.nix
                 ./overlays/vscodium.nix
-                ./overlays/systemd-initrd.nix
+                # ./overlays/systemd-initrd.nix
               ];
             };
     };
@@ -35,8 +36,8 @@
             cachix
             direnv
             overlays
-            systemd-initrd
-            device-mapper
+            # systemd-initrd
+            # device-mapper
             ./configs/t490s
           ];
         };
