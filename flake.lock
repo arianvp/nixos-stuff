@@ -103,11 +103,11 @@
         "utils": "utils"
       },
       "locked": {
-        "lastModified": 1632779011,
-        "narHash": "sha256-fF0VPu1tkIGIx7FEUKg17UMotOsLgbVymYdeaM0Emu4=",
+        "lastModified": 1632927214,
+        "narHash": "sha256-k2+3chSl6HsnDW6Owpem1EPP7mZLO2fTmWCRhA2i+1s=",
         "owner": "arianvp",
         "repo": "webauthn-oidc",
-        "rev": "0f72975ef6f3eab4b59319c7d51ae09fb15fa40e",
+        "rev": "671a38359219d8d2fe9608f87a12333c868bdce6",
         "type": "github"
       },
       "original": {

@@ -68,7 +68,9 @@
           modules = with self.nixosModules; [
             webauthn.nixosModule
             {
+
               services.webauthn-oidc.host = "oidc.arianvp.me";
+              services.webauthn-oidc.createNginxConfig = true;
             }
             ./configs/arianvp.me
           ];
