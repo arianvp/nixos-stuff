@@ -4,8 +4,6 @@
      (modulesPath + "/virtualisation/digital-ocean-image.nix")
     ../../modules/containers-v2.nix
     ./network.nix
-    ./bitwarden.nix
-    ./monitoring.nix
   ];
 
   system.stateVersion = "19.03";
@@ -21,7 +19,6 @@
     4443 # weechat relay
   ];
 
-  environment.systemPackages = [ pkgs.ghc ];
 
   programs.screen.screenrc = ''
     multiuser on
@@ -36,23 +33,23 @@
       map $scheme $hsts_header {
           https   "max-age=31536000; includeSubdomains; preload";
       }
-      add_header Strict-Transport-Security $hsts_header;
+      add_header Strict-Transport-Security $hsts_header always;
 
       # Enable CSP for your services.
       #add_header Content-Security-Policy "script-src 'self'; object-src 'none'; base-uri 'none';" always;
 
       # Minimize information leaked to other domains
-      add_header 'Referrer-Policy' 'origin-when-cross-origin';
+      add_header 'Referrer-Policy' 'origin-when-cross-origin' always;
 
       # Disable embedding as a frame
-      add_header X-Frame-Options DENY;
+      add_header X-Frame-Options DENY always;
 
       # Prevent injection of code in other mime types (XSS Attacks)
-      add_header X-Content-Type-Options nosniff;
+      add_header X-Content-Type-Options nosniff always;
 
       # Enable XSS protection of the browser.
       # May be unnecessary when CSP is configured properly (see above)
-      add_header X-XSS-Protection "1; mode=block";
+      add_header X-XSS-Protection "1; mode=block" always;
 
       # This might create errors
       proxy_cookie_path / "/; secure; HttpOnly; SameSite=strict";
