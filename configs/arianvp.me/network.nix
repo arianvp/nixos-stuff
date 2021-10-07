@@ -7,8 +7,7 @@
   systemd.network = {
     enable = true;
     networks = {
-      # 98 so that we overwrite the broken 99-main that NixOS provides
-      "98-main" = {
+      "99-main" = {
         matchConfig.Name = "en*";
         networkConfig.DHCP = "yes";
         networkConfig.LinkLocalAddressing = "yes";

@@ -31,6 +31,7 @@
     virtualisation.libvirtd.enable = true;
     time.timeZone = "Europe/Amsterdam";
     programs.bash.enableCompletion = true;
+    programs.gnupg.agent.enable = true;
     hardware.pulseaudio.enable = true;
     hardware.opengl.enable = true;
     services.avahi.nssmdns = true;

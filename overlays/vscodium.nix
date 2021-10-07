@@ -10,6 +10,6 @@ final: prev: {
     ];
   };
 
-  # Make sure we don't accidentally use unfree software. Begone!
-  vscode = final.vscodium;
+  vscodiumOrig = prev.vscodium;
+
 }

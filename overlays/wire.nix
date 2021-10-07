@@ -8,7 +8,8 @@ self: super: {
       sha256 = "1h938yhkwzgf6campq3gaclgc54dnjgpzqk55nr5ywdgia6396sl";
     };
     postFixup = ''
-      makeWrapper $out/opt/WireInternal/wire-desktop-internal $out/bin/wire-desktop  "''${gappsWrapperArgs[@]}"
+      makeWrapper $out/opt/WireInternal/wire-desktop-internal $out/bin/wire-desktop-internal  "''${gappsWrapperArgs[@]}"
+      sed -i "s|/opt/WireInternal/wire-desktop-internal|$out/bin/wire-desktop-internal|g" "$out/share/applications/wire-desktop-internal.desktop"
     '';
   });
 }

@@ -1,4 +1,7 @@
-#!/bin/sh
+#!/usr/bin/env bash
+
+set -euo pipefail
+
 f=$(mktemp)
 curl -s https://wire-app.wire.com/linux-internal/debian/dists/stable/main/binary-amd64/Packages > $f
 filename=$(cat $f | awk '/Filename:/ { print $2 }')
@@ -17,7 +20,8 @@ self: super: {
       sha256 = "$sha256";
     };
     postFixup = ''
-      makeWrapper \$out/opt/WireInternal/wire-desktop-internal \$out/bin/wire-desktop  "''\${gappsWrapperArgs[@]}"
+      makeWrapper \$out/opt/WireInternal/wire-desktop-internal \$out/bin/wire-desktop-internal  "''\${gappsWrapperArgs[@]}"
+      sed -i "s|/opt/WireInternal/wire-desktop-internal|\$out/bin/wire-desktop-internal|g" "\$out/share/applications/wire-desktop-internal.desktop"
     '';
   });
 }

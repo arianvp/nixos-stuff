@@ -5,7 +5,7 @@
   inputs.andir.url = "github:andir/nixpkgs/systemdv249";
   inputs.unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
   inputs.stable.url = "github:NixOS/nixpkgs/nixos-21.05";
-  inputs.webauthn.url = "github:arianvp/webauthn-oidc";
+  inputs.webauthn.url = "/home/arian/Projects/webauthn-oidc";
 
   outputs = { self, webauthn, andir, stable, unstable, fork }: {
 

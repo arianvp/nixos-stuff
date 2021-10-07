@@ -8,8 +8,6 @@ self: super: {
       asciinema
       bitwarden-cli
       cabal2nix
-      cabal-install
-      chromium
       compton
       ctags
       discord
@@ -30,7 +28,6 @@ self: super: {
       j4-dmenu-desktop
       jq
       libreoffice
-      multimc
       neovim
       obs-studio
       pavucontrol
