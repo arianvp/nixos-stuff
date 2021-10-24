@@ -10,12 +10,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout the pushed commit
-      uses: actions/checkout@v2
+      uses: actions/checkout@v2.3.4
       with:
         path: pushed
 
     - name: Check out master
-      uses: actions/checkout@v2
+      uses: actions/checkout@v2.3.4
       with:
         path: master
         ref: master
