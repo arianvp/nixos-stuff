@@ -62,7 +62,7 @@ jobs:
         echo "::set-output name=security::$OUTPUT_SECURITY"
 
     - name: Post report
-      uses: peter-evans/commit-comment@v1
+      uses: peter-evans/commit-comment@v1.3.2
       with:
         body: |
           # Summary of changes
