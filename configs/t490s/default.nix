@@ -71,16 +71,10 @@
     networking.hostName = "t490s";
     system.stateVersion = "18.03";
 
-    systemd.services.test = {
-      wantedBy = [ "multi-user.target" ];
-      serviceConfig = {
-        DynamicUser = true;
-        RuntimeDirectory = "test";
-        LoadCredential = "foo:/etc/passwd";
-        ExecStartPre = "${pkgs.coreutils}/bin/ls";
-        ExecStart = "${pkgs.coreutils}/bin/cat \${CREDENTIALS_DIRECTORY}/foo";
-      };
-    };
+    security.pam.u2f.enable  = true;
+
+    security.pam.u2f.cue = true;
+
     boot.loader.systemd-boot.enable = true;
     boot.loader.efi.canTouchEfiVariables = true;
 
