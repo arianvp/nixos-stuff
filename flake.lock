@@ -103,13 +103,17 @@
         "utils": "utils"
       },
       "locked": {
-        "narHash": "sha256-qTpMSJc86qqQCl62/NuFtAYPFMEkHRc/O2I2XyV18Oo=",
-        "path": "/home/arian/Projects/webauthn-oidc",
-        "type": "path"
+        "lastModified": 1635163120,
+        "narHash": "sha256-wBp6i2W6O3AuahmeUfGoh1NBcOKkB6aCJ+a3WVqJwDc=",
+        "owner": "arianvp",
+        "repo": "webauthn-oidc",
+        "rev": "26fc1f1df3100d1abc7a6e2241c29e2b914d1589",
+        "type": "github"
       },
       "original": {
-        "path": "/home/arian/Projects/webauthn-oidc",
-        "type": "path"
+        "owner": "arianvp",
+        "repo": "webauthn-oidc",
+        "type": "github"
       }
     }
   },
