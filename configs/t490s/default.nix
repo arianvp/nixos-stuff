@@ -23,7 +23,7 @@
         sshUser = "arian";
         sshKey = "/root/.ssh/id_ed25519";
         system = "x86_64-linux";
-        supportedFeatures =  [ "big-parallel" ];
+        supportedFeatures = [ "big-parallel" ];
         maxJobs = 8;
       }
     ];
@@ -39,7 +39,7 @@
     networking.firewall.allowedTCPPorts = [ 80 ];
 
 
-  services.tailscale.enable = true;
+    services.tailscale.enable = true;
 
     fonts.fonts = [ pkgs.apl385 pkgs.noto-fonts pkgs.noto-fonts-emoji ];
     users.users.arian = {
@@ -71,7 +71,7 @@
     networking.hostName = "t490s";
     system.stateVersion = "18.03";
 
-    security.pam.u2f.enable  = true;
+    security.pam.u2f.enable = true;
 
     security.pam.u2f.cue = true;
 
