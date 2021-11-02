@@ -12,12 +12,10 @@ jobs:
 
     - uses: cachix/install-nix-action@v14.1
       with:
-        install_url: https://nixos-nix-install-tests.cachix.org/serve/vij683ly7sl95nnhb67bdjjfabclr85m/install
-        install_options: '--tarball-url-prefix https://nixos-nix-install-tests.cachix.org/serve'
+        install_url: https://releases.nixos.org/nix/nix-2.4/install
         extra_nix_config: |
           experimental-features = nix-command flakes
           access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
-
 
     - name: Update flake
       run: |

@@ -9,21 +9,10 @@ jobs:
           - arianvp-me
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout the pushed commit
-      uses: actions/checkout@v2.3.4
-      with:
-        path: pushed
-
-    - name: Check out master
-      uses: actions/checkout@v2.3.4
-      with:
-        path: master
-        ref: master
-
+    - uses: actions/checkout@v2.3.4
     - uses: cachix/install-nix-action@v14.1
       with:
-        install_url: https://nixos-nix-install-tests.cachix.org/serve/vij683ly7sl95nnhb67bdjjfabclr85m/install
-        install_options: '--tarball-url-prefix https://nixos-nix-install-tests.cachix.org/serve'
+        install_url: https://releases.nixos.org/nix/nix-2.4/install
         extra_nix_config: |
           experimental-features = nix-command flakes
           access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
@@ -35,48 +24,52 @@ jobs:
         authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
 
     - name: Build
-      run: |
-        nix build -L ./master#nixosConfigurations.${{ matrix.deployment }}.config.system.build.toplevel --profile /tmp/nix-profile
-        nix build -L ./pushed#nixosConfigurations.${{ matrix.deployment }}.config.system.build.toplevel --profile /tmp/nix-profile
+      run:
+        nix build -L .#nixosConfigurations.${{ matrix.deployment }}.config.system.build.toplevel
 
-    - name: Diff
-      id: diff
-      run: |
-        nix profile diff-closures --profile /tmp/nix-profile | tee /tmp/diff.txt
-        OUTPUT_DIFF="$(cat /tmp/diff.txt)"
-        OUTPUT_DIFF="${OUTPUT_DIFF//'%'/'%25'}"
-        OUTPUT_DIFF="${OUTPUT_DIFF//$'\n'/'%0A'}"
-        OUTPUT_DIFF="${OUTPUT_DIFF//$'\r'/'%0D'}"
-        echo "$OUTPUT_DIFF"
-        echo "::set-output name=diff::$OUTPUT_DIFF"
+          # - name: Build
+          #   run: |
+          #     nix build -L ./master#nixosConfigurations.${{ matrix.deployment }}.config.system.build.toplevel --profile /tmp/nix-profile
+          #     nix build -L ./pushed#nixosConfigurations.${{ matrix.deployment }}.config.system.build.toplevel --profile /tmp/nix-profile
 
-    - name: Scan for security issues
-      id: security
-      run: |
-        nix run nixpkgs/nixos-20.09#vulnix -- -w https://raw.githubusercontent.com/ckauhaus/nixos-vulnerability-roundup/master/whitelists/nixos-20.09.toml /tmp/nix-profile | tee /tmp/security.txt
-        OUTPUT_SECURITY="$(cat /tmp/security.txt)"
-        OUTPUT_SECURITY="${OUTPUT_SECURITY//'%'/'%25'}"
-        OUTPUT_SECURITY="${OUTPUT_SECURITY//$'\n'/'%0A'}"
-        OUTPUT_SECURITY="${OUTPUT_SECURITY//$'\r'/'%0D'}"
-        echo "$OUTPUT_SECURITY"
-        echo "::set-output name=security::$OUTPUT_SECURITY"
+          # - name: Diff
+          #   id: diff
+          #   run: |
+          #     nix profile diff-closures --profile /tmp/nix-profile | tee /tmp/diff.txt
+          #     OUTPUT_DIFF="$(cat /tmp/diff.txt)"
+          #     OUTPUT_DIFF="${OUTPUT_DIFF//'%'/'%25'}"
+          #     OUTPUT_DIFF="${OUTPUT_DIFF//$'\n'/'%0A'}"
+          #     OUTPUT_DIFF="${OUTPUT_DIFF//$'\r'/'%0D'}"
+          #     echo "$OUTPUT_DIFF"
+          #     echo "::set-output name=diff::$OUTPUT_DIFF"
 
-    - name: Post report
-      uses: peter-evans/commit-comment@v1.3.2
-      with:
-        body: |
-          # Summary of changes
+          # - name: Scan for security issues
+          #   id: security
+          #   run: |
+          #     nix run nixpkgs/nixos-20.09#vulnix -- -w https://raw.githubusercontent.com/ckauhaus/nixos-vulnerability-roundup/master/whitelists/nixos-20.09.toml /tmp/nix-profile | tee /tmp/security.txt
+          #     OUTPUT_SECURITY="$(cat /tmp/security.txt)"
+          #     OUTPUT_SECURITY="${OUTPUT_SECURITY//'%'/'%25'}"
+          #     OUTPUT_SECURITY="${OUTPUT_SECURITY//$'\n'/'%0A'}"
+          #     OUTPUT_SECURITY="${OUTPUT_SECURITY//$'\r'/'%0D'}"
+          #     echo "$OUTPUT_SECURITY"
+          #     echo "::set-output name=security::$OUTPUT_SECURITY"
 
-          For your information, I have made the following summary of changes.
-          Please use this in your assement whether this commit should be merged.
+          # - name: Post report
+          #   uses: peter-evans/commit-comment@v1.3.2
+          #   with:
+          #     body: |
+          #       # Summary of changes
 
-          ## Version report
+          #       For your information, I have made the following summary of changes.
+          #       Please use this in your assement whether this commit should be merged.
 
-          ```
-          ${{ steps.diff.outputs.diff }}
-          ```
+          #       ## Version report
 
-          ## Vulnerability report
-          ```
-          ${{ steps.security.outputs.security }}
-          ```
+          #       ```
+          #       ${{ steps.diff.outputs.diff }}
+          #       ```
+
+          #       ## Vulnerability report
+          #       ```
+          #       ${{ steps.security.outputs.security }}
+          #       ```

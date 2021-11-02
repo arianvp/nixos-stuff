@@ -12,10 +12,11 @@
   config = {
     boot.kernelPackages = pkgs.linuxPackages_5_4;
     boot.kernelParams = [ "quiet" "loglevel=3" "vga=current" ];
+    boot.plymouth.enable = true;
     nix.extraOptions = ''
       experimental-features = nix-command flakes
     '';
-    nix.package = pkgs.nixFlakes;
+    nix.package = pkgs.nix_2_4;
     nix.distributedBuilds = true;
     nix.buildMachines = [
       {
