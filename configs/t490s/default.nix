@@ -10,9 +10,9 @@
     (modulesPath + "/installer/scan/not-detected.nix")
   ];
   config = {
+    systemd.package = pkgs.systemdPatched;
     boot.kernelPackages = pkgs.linuxPackages_5_4;
     boot.kernelParams = [ "quiet" "loglevel=3" "vga=current" ];
-    boot.plymouth.enable = true;
     nix.extraOptions = ''
       experimental-features = nix-command flakes
     '';
@@ -38,6 +38,12 @@
     services.avahi.nssmdns = true;
     services.nginx.enable = true;
     networking.firewall.allowedTCPPorts = [ 80 ];
+
+    systemd.additionalUpstreamSystemUnits = [
+      "systemd-userdbd.socket"
+      "systemd-userdbd.service"
+    ];
+    systemd.sockets.systemd-userdbd.wantedBy = [ "sockets.target" ];
 
 
     services.tailscale.enable = true;

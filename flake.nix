@@ -22,6 +22,7 @@
                 ./overlays/fonts.nix
                 ./overlays/neovim.nix
                 ./overlays/vscodium.nix
+                ./overlays/pkgs.nix
                 # ./overlays/systemd-initrd.nix
               ];
             };
