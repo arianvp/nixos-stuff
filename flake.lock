@@ -16,21 +16,6 @@
         "type": "github"
       }
     },
-    "fork": {
-      "locked": {
-        "lastModified": 1635682791,
-        "narHash": "sha256-bIcuNAs3wPCv/uYPD7VljLMB4rDyLtO3IEPST6fo5j4=",
-        "ref": "systemd-userdb",
-        "rev": "6846754eb2194f93a5744b31f66b036abadd32c3",
-        "revCount": 326326,
-        "type": "git",
-        "url": "file:///home/arian/Projects/nixos/nixpkgs"
-      },
-      "original": {
-        "type": "git",
-        "url": "file:///home/arian/Projects/nixos/nixpkgs"
-      }
-    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1632728069,
@@ -48,7 +33,6 @@
     "root": {
       "inputs": {
         "andir": "andir",
-        "fork": "fork",
         "stable": "stable",
         "unstable": "unstable",
         "webauthn": "webauthn"

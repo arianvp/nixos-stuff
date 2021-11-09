@@ -1,14 +1,14 @@
 {
   description = "Arian's computers";
 
-  inputs.fork.url = "/home/arian/Projects/nixos/nixpkgs";
   inputs.andir.url = "github:andir/nixpkgs/systemdv249";
   inputs.unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
   inputs.stable.url = "github:NixOS/nixpkgs/nixos-21.05";
   inputs.webauthn.url = "github:arianvp/webauthn-oidc";
 
-  outputs = { self, webauthn, andir, stable, unstable, fork }: {
+  outputs = { self, webauthn, andir, stable, unstable}: {
 
+    legacyPackages = stable.legacyPackages;
     nixosModules = {
       cachix = import ./modules/cachix.nix;
       direnv = import ./modules/direnv.nix;
@@ -55,7 +55,6 @@
       in
       {
         t490s = unstable.lib.nixosSystem configNew;
-        t490s-fork = fork.lib.nixosSystem configNew;
         t490s-unstable = unstable.lib.nixosSystem configNew;
         ryzen = unstable.lib.nixosSystem {
           system = "x86_64-linux";

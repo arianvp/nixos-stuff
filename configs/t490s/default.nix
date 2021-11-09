@@ -68,6 +68,7 @@
       pkgs.gnome3.gnome-tweaks
       pkgs.gnome3.gnome-shell-extensions
       pkgs.tailscale
+      pkgs.wire-desktop-internal
     ];
     environment.interactiveShellInit = ''
       if [[ "$VTE_VERSION" > 3405 ]]; then
