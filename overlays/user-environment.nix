@@ -3,54 +3,40 @@ self: super: {
     name = "my-user-environment";
     paths = with self; [
       ag
-      arandr
       nixpkgs-fmt
       asciinema
       bitwarden-cli
       cabal2nix
       compton
       ctags
+      chromium
       discord
-      dmenu
-      dzen2
-      elm2nix
       evince
-      taskwarrior
-      timewarrior
-      feh
-      feh.man
       firefox
       fzf
       git
       gnupg
       graphviz
       htop
-      j4-dmenu-desktop
       jq
-      libreoffice
       neovim
       obs-studio
       pavucontrol
       gnome-builder
       gnome3.glade
       gnome3.gnome-boxes
-      scrot
       signal-desktop
       tmux
       tmate
-      mono
       tmux.man
       transmission-gtk
       vlc
       vscode
-      fsharp
-      dotnet-sdk
       zlib
       pkg-config
       win-virtio
       gmp
       awscli
-      fractal
       ncurses
     ];
   };
