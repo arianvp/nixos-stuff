@@ -15,61 +15,61 @@ jobs:
           - t490s
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2.4.0
-    - uses: cachix/install-nix-action@v14.1
-      with:
-        install_url: https://releases.nixos.org/nix/nix-2.4/install
-        extra_nix_config: |
-          experimental-features = nix-command flakes
-          access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v2.4.0
+      - uses: cachix/install-nix-action@v14.1
+        with:
+          install_url: https://releases.nixos.org/nix/nix-2.4/install
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
 
-    - uses: cachix/cachix-action@v10
-      with:
-        name: arianvp
-        signingKey: '${{ secrets.CACHIX_SIGNING_KEY }}'
-        authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
+      - uses: cachix/cachix-action@v10
+        with:
+          name: arianvp
+          signingKey: "${{ secrets.CACHIX_SIGNING_KEY }}"
+          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
 
-    - name: Build
-      run: |
-        nix build -L .?ref={{ github.event.pull_request.base.sha }}#nixosConfigurations.${{ matrix.deployment }}.config.system.build.toplevel --out-link base
-        nix build -L .#nixosConfigurations.${{ matrix.deployment }}.config.system.build.toplevel
-    - name: Diff
-      run: |
-        nix store diff-closuers ./result ./base
-        OUTPUT_DIFF="$(cat /tmp/diff.txt)"
-        OUTPUT_DIFF="${OUTPUT_DIFF//'%'/'%25'}"
-        OUTPUT_DIFF="${OUTPUT_DIFF//$'\n'/'%0A'}"
-        OUTPUT_DIFF="${OUTPUT_DIFF//$'\r'/'%0D'}"
-        echo "$OUTPUT_DIFF"
-        echo "::set-output name=diff::$OUTPUT_DIFF"
+      - name: Build
+        run: |
+          nix build -L .?ref={{ github.event.pull_request.base.sha }}#nixosConfigurations.${{ matrix.deployment }}.config.system.build.toplevel --out-link base
+          nix build -L .#nixosConfigurations.${{ matrix.deployment }}.config.system.build.toplevel
+      - name: Diff
+        run: |
+          nix store diff-closuers ./result ./base
+          OUTPUT_DIFF="$(cat /tmp/diff.txt)"
+          OUTPUT_DIFF="${OUTPUT_DIFF//'%'/'%25'}"
+          OUTPUT_DIFF="${OUTPUT_DIFF//$'\n'/'%0A'}"
+          OUTPUT_DIFF="${OUTPUT_DIFF//$'\r'/'%0D'}"
+          echo "$OUTPUT_DIFF"
+          echo "::set-output name=diff::$OUTPUT_DIFF"
 
-   - name: Scan for security issues
-     id: security
-     run: |
-       nix run nixpkgs/nixos-unstable#vulnix -- -w https://raw.githubusercontent.com/ckauhaus/nixos-vulnerability-roundup/master/whitelists/nixos-unstable.toml ./result | tee /tmp/security.txt
-       OUTPUT_SECURITY="$(cat /tmp/security.txt)"
-       OUTPUT_SECURITY="${OUTPUT_SECURITY//'%'/'%25'}"
-       OUTPUT_SECURITY="${OUTPUT_SECURITY//$'\n'/'%0A'}"
-       OUTPUT_SECURITY="${OUTPUT_SECURITY//$'\r'/'%0D'}"
-       echo "$OUTPUT_SECURITY"
-       echo "::set-output name=security::$OUTPUT_SECURITY"
+      - name: Scan for security issues
+        id: security
+        run: |
+          nix run nixpkgs/nixos-unstable#vulnix -- -w https://raw.githubusercontent.com/ckauhaus/nixos-vulnerability-roundup/master/whitelists/nixos-unstable.toml ./result | tee /tmp/security.txt
+          OUTPUT_SECURITY="$(cat /tmp/security.txt)"
+          OUTPUT_SECURITY="${OUTPUT_SECURITY//'%'/'%25'}"
+          OUTPUT_SECURITY="${OUTPUT_SECURITY//$'\n'/'%0A'}"
+          OUTPUT_SECURITY="${OUTPUT_SECURITY//$'\r'/'%0D'}"
+          echo "$OUTPUT_SECURITY"
+          echo "::set-output name=security::$OUTPUT_SECURITY"
 
-    - name: Post report
-      uses: peter-evans/commit-comment@v1.3.2
-      with:
-        body: |
-          # Summary of changes
+      - name: Post report
+        uses: peter-evans/commit-comment@v1.3.2
+        with:
+          body: |
+            # Summary of changes
 
-          For your information, I have made the following summary of changes.
-          Please use this in your assement whether this commit should be merged.
+            For your information, I have made the following summary of changes.
+            Please use this in your assement whether this commit should be merged.
 
-          ## Diff report
+            ## Diff report
 
-          ```
-          ${{ steps.diff.outputs.diff }}
-          ```
+            ```
+            ${{ steps.diff.outputs.diff }}
+            ```
 
-          ## Vulnerability report
-          ```
-          ${{ steps.security.outputs.security }}
-          ```
+            ## Vulnerability report
+            ```
+            ${{ steps.security.outputs.security }}
+            ```
