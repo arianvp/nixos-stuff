@@ -40,11 +40,11 @@
     },
     "stable": {
       "locked": {
-        "lastModified": 1635719588,
-        "narHash": "sha256-pWjdy0NheM97NsPE6+jUnr5LYyeA0sBGTdw4mfXMGZQ=",
+        "lastModified": 1636552551,
+        "narHash": "sha256-k7Hq/bvUnRlAfFjPGuw3FsSqqspQdRHsCHpgadw6UkQ=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "f0869b1a2c0b150aac26e10bb5c2364ffb2e804f",
+        "rev": "9e86f5f7a19db6da2445f07bafa6694b556f9c6d",
         "type": "github"
       },
       "original": {
@@ -56,11 +56,11 @@
     },
     "unstable": {
       "locked": {
-        "lastModified": 1635781173,
-        "narHash": "sha256-nTA2y2jIJiVj5RawHUNhlZUIy5J/Q2CA6YP4T1qBkLo=",
+        "lastModified": 1636470166,
+        "narHash": "sha256-0tyWSS5rgMtML5p41ZdE5ocuAnRdtOGvdsqQyMUBYAI=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "7053541084bf5ce2921ef307e5585d39d7ba8b3f",
+        "rev": "f096b7122ab08e93c8b052c92461ca71b80c0cc8",
         "type": "github"
       },
       "original": {
@@ -91,11 +91,11 @@
         "utils": "utils"
       },
       "locked": {
-        "lastModified": 1635163120,
-        "narHash": "sha256-wBp6i2W6O3AuahmeUfGoh1NBcOKkB6aCJ+a3WVqJwDc=",
+        "lastModified": 1636654020,
+        "narHash": "sha256-yYU+B85I2iyGTe7v/WbOr5niX2Wd7lH5pd6CZ0zwaA0=",
         "owner": "arianvp",
         "repo": "webauthn-oidc",
-        "rev": "26fc1f1df3100d1abc7a6e2241c29e2b914d1589",
+        "rev": "966010ece3a535ea9cf73cdaf31d0556d5ac5527",
         "type": "github"
       },
       "original": {
