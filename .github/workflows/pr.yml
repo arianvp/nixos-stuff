@@ -29,9 +29,12 @@ jobs:
           signingKey: "${{ secrets.CACHIX_SIGNING_KEY }}"
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
 
-      - name: Build
+      - name: Build base
         run: |
           nix build -L .?ref=${{ github.event.pull_request.base.sha }}#nixosConfigurations.${{ matrix.deployment }}.config.system.build.toplevel --out-link base
+        if: github.ref != 'refs/heads/master'
+      - name: Build
+        run: |
           nix build -L .#nixosConfigurations.${{ matrix.deployment }}.config.system.build.toplevel
       - name: Diff
         run: |
@@ -42,9 +45,11 @@ jobs:
           OUTPUT_DIFF="${OUTPUT_DIFF//$'\r'/'%0D'}"
           echo "$OUTPUT_DIFF"
           echo "::set-output name=diff::$OUTPUT_DIFF"
+        if: github.ref != 'refs/heads/master'
 
       - name: Scan for security issues
         id: security
+        if: github.ref != 'refs/heads/master'
         run: |
           nix run nixpkgs/nixos-unstable#vulnix -- -w https://raw.githubusercontent.com/ckauhaus/nixos-vulnerability-roundup/master/whitelists/nixos-unstable.toml ./result | tee /tmp/security.txt
           OUTPUT_SECURITY="$(cat /tmp/security.txt)"
@@ -56,6 +61,7 @@ jobs:
 
       - name: Post report
         uses: peter-evans/commit-comment@v1.3.2
+        if: github.ref != 'refs/heads/master'
         with:
           body: |
             # Summary of changes
