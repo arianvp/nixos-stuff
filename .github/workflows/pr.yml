@@ -43,17 +43,16 @@ jobs:
         echo "$OUTPUT_DIFF"
         echo "::set-output name=diff::$OUTPUT_DIFF"
 
-     # TODO make dependent on input
-     - name: Scan for security issues
-       id: security
-       run: |
-         nix run nixpkgs/nixos-unstable#vulnix -- -w https://raw.githubusercontent.com/ckauhaus/nixos-vulnerability-roundup/master/whitelists/nixos-unstable.toml ./result | tee /tmp/security.txt
-         OUTPUT_SECURITY="$(cat /tmp/security.txt)"
-         OUTPUT_SECURITY="${OUTPUT_SECURITY//'%'/'%25'}"
-         OUTPUT_SECURITY="${OUTPUT_SECURITY//$'\n'/'%0A'}"
-         OUTPUT_SECURITY="${OUTPUT_SECURITY//$'\r'/'%0D'}"
-         echo "$OUTPUT_SECURITY"
-         echo "::set-output name=security::$OUTPUT_SECURITY"
+   - name: Scan for security issues
+     id: security
+     run: |
+       nix run nixpkgs/nixos-unstable#vulnix -- -w https://raw.githubusercontent.com/ckauhaus/nixos-vulnerability-roundup/master/whitelists/nixos-unstable.toml ./result | tee /tmp/security.txt
+       OUTPUT_SECURITY="$(cat /tmp/security.txt)"
+       OUTPUT_SECURITY="${OUTPUT_SECURITY//'%'/'%25'}"
+       OUTPUT_SECURITY="${OUTPUT_SECURITY//$'\n'/'%0A'}"
+       OUTPUT_SECURITY="${OUTPUT_SECURITY//$'\r'/'%0D'}"
+       echo "$OUTPUT_SECURITY"
+       echo "::set-output name=security::$OUTPUT_SECURITY"
 
     - name: Post report
       uses: peter-evans/commit-comment@v1.3.2
