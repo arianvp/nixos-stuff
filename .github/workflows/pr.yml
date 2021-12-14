@@ -29,9 +29,9 @@ jobs:
           nix-env -if https://github.com/cachix/cachix/tarball/master --substituters 'https://cache.nixos.org https://cachix.cachix.org' --trusted-public-keys 'cachix.cachix.org-1:eWNHQldwUO7G2VkjpnjDbWwy4KQ/HNxht7H4SSoMckM= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY='
       - name: Deploy
         run: |
-          spec=$(nix build -L .#cachixDeploys --json | jq '.outputs.out')
-          cachix push arianvp $spec
-          cachix deploy activate $spec
+          nix build -L .#cachixDeploys
+          cachix push arianvp ./result
+          cachix deploy activate ./result
         env:
           CACHIX_ACTIVATE_TOKEN: "${{ secrets.CACHIX_ACTIVATE_TOKEN }}"
         if: github.ref == 'refs/heads/master'
