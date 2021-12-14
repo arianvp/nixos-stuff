@@ -29,23 +29,23 @@ jobs:
           signingKey: "${{ secrets.CACHIX_SIGNING_KEY }}"
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
 
-      - name: Build base
-        run: |
-          nix build -L .?ref=${{ github.event.pull_request.base.sha }}#nixosConfigurations.${{ matrix.deployment }}.config.system.build.toplevel --out-link base
-        if: github.ref != 'refs/heads/master'
+      # - name: Build base
+      #   run: |
+      #     nix build -L .?ref=${{ github.event.pull_request.base.sha }}#nixosConfigurations.${{ matrix.deployment }}.config.system.build.toplevel --out-link base
+      #   if: github.ref != 'refs/heads/master'
       - name: Build
         run: |
           nix build -L .#nixosConfigurations.${{ matrix.deployment }}.config.system.build.toplevel
-      - name: Diff
-        run: |
-          nix store diff-closuers ./result ./base
-          OUTPUT_DIFF="$(cat /tmp/diff.txt)"
-          OUTPUT_DIFF="${OUTPUT_DIFF//'%'/'%25'}"
-          OUTPUT_DIFF="${OUTPUT_DIFF//$'\n'/'%0A'}"
-          OUTPUT_DIFF="${OUTPUT_DIFF//$'\r'/'%0D'}"
-          echo "$OUTPUT_DIFF"
-          echo "::set-output name=diff::$OUTPUT_DIFF"
-        if: github.ref != 'refs/heads/master'
+      # - name: Diff
+      #   run: |
+      #     nix store diff-closuers ./result ./base
+      #     OUTPUT_DIFF="$(cat /tmp/diff.txt)"
+      #     OUTPUT_DIFF="${OUTPUT_DIFF//'%'/'%25'}"
+      #     OUTPUT_DIFF="${OUTPUT_DIFF//$'\n'/'%0A'}"
+      #     OUTPUT_DIFF="${OUTPUT_DIFF//$'\r'/'%0D'}"
+      #     echo "$OUTPUT_DIFF"
+      #     echo "::set-output name=diff::$OUTPUT_DIFF"
+      #   if: github.ref != 'refs/heads/master'
 
       - name: Scan for security issues
         id: security
@@ -68,12 +68,6 @@ jobs:
 
             For your information, I have made the following summary of changes.
             Please use this in your assement whether this commit should be merged.
-
-            ## Diff report
-
-            ```
-            ${{ steps.diff.outputs.diff }}
-            ```
 
             ## Vulnerability report
             ```
