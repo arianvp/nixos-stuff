@@ -65,6 +65,15 @@
         };
       in
       {
+        t430s = unstable.lib.nixosSystem {
+          system = "x86_64-linux";
+          modules = with self.nixosModules; [
+            cachix
+            direnv
+            overlays
+            ./configs/t430s
+          ];
+        };
         t490s = unstable.lib.nixosSystem configNew;
         t490s-unstable = unstable.lib.nixosSystem configNew;
         ryzen = unstable.lib.nixosSystem {

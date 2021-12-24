@@ -9,6 +9,7 @@
   ];
   config = {
     time.timeZone = "Europe/Amsterdam";
+    boot.kernelPackages = pkgs.linuxPackages_latest;
     programs.bash.enableCompletion = true;
     hardware.pulseaudio.enable = true;
     virtualisation.docker.enable = true;
@@ -19,6 +20,8 @@
     };
     environment.gnome3.excludePackages = with pkgs.gnome3; [ gnome-software ];
     environment.systemPackages = [ pkgs.vscode  pkgs.chromium pkgs.neovim ];
+
+    networking.networkmanager.wifi.scanRandMacAddress = false;
     services.xserver =  {
       enable = true;
       desktopManager.gnome3 = {

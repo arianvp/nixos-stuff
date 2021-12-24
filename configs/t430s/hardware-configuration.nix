@@ -11,6 +11,11 @@
   boot.kernelModules = [ "kvm-intel" ];
   boot.extraModulePackages = [ ];
 
+
+  # https://bugzilla.redhat.com/show_bug.cgi?id=1733807#c9
+  networking.networkmanager.wifi.scanRandMacAddress = false;
+
+
   boot.initrd.luks.devices.cryptroot = {
     device = "/dev/disk/by-uuid/44a0e451-421a-4f36-a183-39e0d3968304";
     allowDiscards = true;
