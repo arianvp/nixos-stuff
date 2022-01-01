@@ -21,8 +21,9 @@
         nix.registry.nixpkgs.flake = unstable;
         nix.nixPath = [ "nixpkgs=${unstable}" ];
       };
-      overlays = {
+      overlays = {pkgs, ...}: {
         nixpkgs.config.allowUnfree = true;
+	environment.systemPackages =  [ pkgs.user-environment ];
         nixpkgs.overlays = map import [
           ./overlays/user-environment.nix
           ./overlays/wire.nix
@@ -38,32 +39,11 @@
     cachixDeploys = stable.legacyPackages.x86_64-linux.writeText "cachix-deploy.json" (builtins.toJSON {
       agents = {
         arianvp-me = self.nixosConfigurations.arianvp-me.config.system.build.toplevel;
+        t430s = self.nixosConfigurations.t430s.config.system.build.toplevel;
       };
     });
 
     nixosConfigurations =
-      let
-        configNew = {
-          system = "x86_64-linux";
-          modules = with self.nixosModules; [
-            cachix
-            direnv
-            overlays
-            # systemd-initrd
-            # device-mapper
-            ./configs/t490s
-          ];
-        };
-        configOld = {
-          system = "x86_64-linux";
-          modules = with self.nixosModules; [
-            cachix
-            direnv
-            overlays
-            ./configs/t490s
-          ];
-        };
-      in
       {
         t430s = unstable.lib.nixosSystem {
           system = "x86_64-linux";
@@ -71,11 +51,10 @@
             cachix
             direnv
             overlays
+            nixFlakes
             ./configs/t430s
           ];
         };
-        t490s = unstable.lib.nixosSystem configNew;
-        t490s-unstable = unstable.lib.nixosSystem configNew;
         ryzen = unstable.lib.nixosSystem {
           system = "x86_64-linux";
           modules = with self.nixosModules; [
