@@ -55,6 +55,14 @@
             ./configs/t430s
           ];
         };
+        framework = unstable.lib.nixosSystem {
+          system = "x86_64-linux";
+          modules = with self.nixosModules; [
+            nixFlakes
+            overlays
+            ./configs/framework/configuration.nix
+          ];
+        };
         ryzen = unstable.lib.nixosSystem {
           system = "x86_64-linux";
           modules = with self.nixosModules; [

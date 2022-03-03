@@ -2,7 +2,7 @@ self: super: {
   user-environment = self.buildEnv {
     name = "my-user-environment";
     paths = with self; [
-      ag
+      silver-searcher
       nixpkgs-fmt
       asciinema
       bitwarden-cli
@@ -22,9 +22,6 @@ self: super: {
       neovim
       obs-studio
       pavucontrol
-      gnome-builder
-      gnome3.glade
-      gnome3.gnome-boxes
       signal-desktop
       tmux
       tmate
