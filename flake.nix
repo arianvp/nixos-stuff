@@ -5,8 +5,13 @@
   inputs.unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
   inputs.stable.url = "github:NixOS/nixpkgs/nixos-21.05";
   inputs.webauthn.url = "github:arianvp/webauthn-oidc";
+  inputs.nixos-hardware.url = "github:NixOS/nixos-hardware";
+  inputs.nixos-generators = {
+    url = "github:nix-community/nixos-generators";
+    inputs.nixpkgs.follows = "unstable";
+  };
 
-  outputs = { self, webauthn, andir, stable, unstable }: {
+  outputs = { self, webauthn, andir, stable, unstable, nixos-hardware, nixos-generators }: {
 
     nixosModules = {
       cachix = import ./modules/cachix.nix;
@@ -21,9 +26,9 @@
         nix.registry.nixpkgs.flake = unstable;
         nix.nixPath = [ "nixpkgs=${unstable}" ];
       };
-      overlays = {pkgs, ...}: {
+      overlays = { pkgs, ... }: {
         nixpkgs.config.allowUnfree = true;
-	environment.systemPackages =  [ pkgs.user-environment ];
+        environment.systemPackages = [ pkgs.user-environment ];
         nixpkgs.overlays = map import [
           ./overlays/user-environment.nix
           ./overlays/wire.nix
@@ -43,6 +48,12 @@
       };
     });
 
+    packages.x86_64-linux.frameworkISO = nixos-generators.nixosGenerate {
+      pkgs = unstable.legacyPackages.x86_64-linux;
+      modules = [ nixos-hardware.nixosModules.framework ];
+      format = "iso";
+    };
+
     nixosConfigurations =
       {
         t430s = unstable.lib.nixosSystem {
@@ -58,7 +69,9 @@
         framework = unstable.lib.nixosSystem {
           system = "x86_64-linux";
           modules = with self.nixosModules; [
+            nixos-hardware.nixosModules.framework
             nixFlakes
+            direnv
             overlays
             ./configs/framework/configuration.nix
           ];
