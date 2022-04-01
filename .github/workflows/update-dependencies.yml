@@ -22,7 +22,7 @@ jobs:
         nix flake update
         echo hello
 
-    - uses: peter-evans/create-pull-request@v3.12.0
+    - uses: peter-evans/create-pull-request@v4.0.1
       with:
         token: ${{ secrets.PAT }} # needed so that this triggers further flows. not ideal.
         title: "chore: nix flake update"
