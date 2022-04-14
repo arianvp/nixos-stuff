@@ -1,7 +1,6 @@
 {
   description = "Arian's computers";
 
-  inputs.andir.url = "github:andir/nixpkgs/systemdv249";
   inputs.unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
   inputs.stable.url = "github:NixOS/nixpkgs/nixos-21.05";
   inputs.webauthn.url = "github:arianvp/webauthn-oidc";
@@ -11,7 +10,7 @@
     inputs.nixpkgs.follows = "unstable";
   };
 
-  outputs = { self, webauthn, andir, stable, unstable, nixos-hardware, nixos-generators }: {
+  outputs = { self, webauthn, stable, unstable, nixos-hardware, nixos-generators }: {
 
     nixosModules = {
       cachix = import ./modules/cachix.nix;
@@ -19,7 +18,7 @@
       systemd-initrd = import ./modules/systemd-initrd.nix;
       device-mapper = import ./modules/device-mapper.nix;
       nixFlakes = { pkgs, ... }: {
-        nix.package = pkgs.nix_2_4;
+        nix.package = pkgs.nix;
         nix.extraOptions = ''
           experimental-features = nix-command flakes
         '';
