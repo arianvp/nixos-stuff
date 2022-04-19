@@ -72,7 +72,7 @@
     ];
     environment.interactiveShellInit = ''
       if [[ "$VTE_VERSION" > 3405 ]]; then
-        source "${pkgs.gnome3.vte}/etc/profile.d/vte.sh"
+        source "${pkgs.vte}/etc/profile.d/vte.sh"
       fi
     '';
 

@@ -11,7 +11,7 @@
     inputs.nixpkgs.follows = "unstable";
   };
 
-  outputs = { self, webauthn, stable, unstable, nixos-hardware, nixos-generators , helsinki }: {
+  outputs = { self, webauthn, stable, unstable, nixos-hardware, nixos-generators, helsinki }: {
 
     nixosModules = {
       cachix = import ./modules/cachix.nix;
@@ -42,10 +42,7 @@
     };
 
     cachixDeploys = stable.legacyPackages.x86_64-linux.writeText "cachix-deploy.json" (builtins.toJSON {
-      agents = {
-        arianvp-me = self.nixosConfigurations.arianvp-me.config.system.build.toplevel;
-        t430s = self.nixosConfigurations.t430s.config.system.build.toplevel;
-      };
+      agents = unstable.lib.mapAttrs (_: x: x.config.system.build.toplevel) self.nixosConfigurations;
     });
 
     packages.x86_64-linux.frameworkISO = nixos-generators.nixosGenerate {

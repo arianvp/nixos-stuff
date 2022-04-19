@@ -3,6 +3,9 @@
     ./hardware-configuration.nix
   ];
 
+  services.cachix-agent.enable = true;
+  environment.systemPackages = [ pkgs.cachix ];
+
   boot.initrd.verbose = false;
   boot.initrd.systemd.enable = true;
   console.earlySetup = lib.mkForce false;
