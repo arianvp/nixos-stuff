@@ -1,12 +1,13 @@
-{ config, pkgs, ... }: {
+{ config, pkgs, lib, ... }: {
   imports = [
     ./hardware-configuration.nix
   ];
 
   boot.initrd.verbose = false;
-  boot.initrd.systemd.enable = false;
-  boot.consoleLogLevel = 0;
-  boot.kernelParams = [ "udev.log_level=3" ];
+  boot.initrd.systemd.enable = true;
+  console.earlySetup = lib.mkForce false;
+  boot.consoleLogLevel = 3;
+  boot.kernelParams = [ "quiet" "rd.systemd.show_status=auto" "rd.udev.log_level=3" "vt.global_cursor_default=0" ];
   boot.kernelPackages = pkgs.linuxPackages_latest;
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;

@@ -1,5 +1,21 @@
 {
   "nodes": {
+    "helsinki": {
+      "locked": {
+        "lastModified": 1650137866,
+        "narHash": "sha256-nhmWsNB2f7yRgUPD6VuIxXXghnqcTDFy/3beazJgxP4=",
+        "owner": "helsinki-systems",
+        "repo": "nixpkgs",
+        "rev": "76f39038a26ced714d1a3deac08f7e485b4a1b72",
+        "type": "github"
+      },
+      "original": {
+        "owner": "helsinki-systems",
+        "ref": "feat/systemd-stage-1-luks",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
     "nixlib": {
       "locked": {
         "lastModified": 1636849918,
@@ -67,6 +83,7 @@
     },
     "root": {
       "inputs": {
+        "helsinki": "helsinki",
         "nixos-generators": "nixos-generators",
         "nixos-hardware": "nixos-hardware",
         "stable": "stable",
@@ -92,11 +109,11 @@
     },
     "unstable": {
       "locked": {
-        "lastModified": 1649930986,
-        "narHash": "sha256-csbCr9UEgJxgpi1ud4k0rqg1qVS4FLHrhpkLVVgo8dM=",
+        "lastModified": 1650109093,
+        "narHash": "sha256-tqlnKrAdJktRLXTou9le0oTqrYBAFpGscV5RADdpArU=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "6361b4941a69395ebf15e6e56b142765fce850f9",
+        "rev": "faad370edcb37162401be50d45526f52bb16a713",
         "type": "github"
       },
       "original": {
