@@ -17,7 +17,6 @@
       cachix = import ./modules/cachix.nix;
       direnv = import ./modules/direnv.nix;
       systemd-initrd = import ./modules/systemd-initrd.nix;
-      device-mapper = import ./modules/device-mapper.nix;
       nixFlakes = { pkgs, ... }: {
         nix.package = pkgs.nix;
         nix.extraOptions = ''
