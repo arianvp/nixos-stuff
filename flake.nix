@@ -1,7 +1,7 @@
 {
   description = "Arian's computers";
 
-  inputs.helsinki.url = "github:helsinki-systems/nixpkgs/feat/systemd-stage-1-luks";
+  # inputs.helsinki.url = "github:helsinki-systems/nixpkgs/feat/systemd-stage-1-luks";
   inputs.unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
   inputs.stable.url = "github:NixOS/nixpkgs/nixos-21.05";
   inputs.webauthn.url = "github:arianvp/webauthn-oidc";
@@ -11,7 +11,7 @@
     inputs.nixpkgs.follows = "unstable";
   };
 
-  outputs = { self, webauthn, stable, unstable, nixos-hardware, nixos-generators, helsinki }: {
+  outputs = { self, webauthn, stable, unstable, nixos-hardware, nixos-generators}: {
 
     nixosModules = {
       cachix = import ./modules/cachix.nix;
@@ -62,7 +62,7 @@
             ./configs/t430s
           ];
         };
-        framework = helsinki.lib.nixosSystem {
+        framework = unstable.lib.nixosSystem {
           system = "x86_64-linux";
           modules = with self.nixosModules; [
             nixos-hardware.nixosModules.framework

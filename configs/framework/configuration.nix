@@ -4,7 +4,7 @@
   ];
 
   services.cachix-agent.enable = true;
-  environment.systemPackages = [ pkgs.cachix ];
+  environment.systemPackages = [ pkgs.cachix pkgs.tdesktop pkgs.mullvad-vpn ];
 
   boot.initrd.verbose = false;
   boot.initrd.systemd.enable = true;
@@ -20,6 +20,7 @@
   '';
 
   networking.hostName = "framework";
+  services.mullvad-vpn.enable = true;
   services.xserver.enable = true;
   services.xserver.displayManager.gdm.enable = true;
   services.xserver.desktopManager.gnome.enable = true;
