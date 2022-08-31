@@ -1,4 +1,4 @@
-name: Update dependencies
+name: update-dependencies
 on:
   schedule:
     - cron: '0 8 * * *'
@@ -24,7 +24,6 @@ jobs:
 
     - uses: peter-evans/create-pull-request@v3.12.0
       with:
-        token: ${{ secrets.PAT }} # needed so that this triggers further flows. not ideal.
         title: "chore: nix flake update"
         commit-message: "chore: nix flake update"
         branch: "chore/update-dependencies"
