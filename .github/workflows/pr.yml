@@ -23,10 +23,11 @@ jobs:
       - name: build
         run: |
           nix build .#frameworkISO
+      - run: echo "UPLOAD_PATH=$(readlink -f result)" >> $GITHUB_ENV
       - uses: actions/upload-artifact@v3
         with:
           name: iso
-          path: result
+          path: ${{ env.UPLOAD_PATH }}
           
 
  
