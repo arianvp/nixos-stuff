@@ -12,18 +12,10 @@
   time.timeZone = "Europe/Amsterdam";
 
   # Weechat
-  services.weechat.enable = true;
   networking.firewall.allowedTCPPorts = [
     80   # http
     443  # https
-    4443 # weechat relay
   ];
-
-
-  programs.screen.screenrc = ''
-    multiuser on
-    acladd normal_user
-  '';
 
   services.nginx = {
     enable = true;
@@ -57,23 +49,13 @@
         forceSSL = true;
         enableACME = true;
         locations."/".root = ../../website;
-        # locations."/chrome-reproducer".index = "${../../chrome-reproducer.html}";
       };
-      /*"techstock.photos" = {
-        forceSSL = true;
-        enableACME = true;
-        locations."/reproducer".root = pkgs.writeTextDir "index.html"
-        ''
-          ${../../chrome-reproducer.html}
-          '';
-      };*/
     };
   };
 
   # Needed to accept terms
   security.acme.email = "arian.vanputten@gmail.com";
   security.acme.acceptTerms = true;
-
 
   users.users.root.openssh.authorizedKeys.keyFiles = [
     (pkgs.fetchurl {
