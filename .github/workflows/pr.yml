@@ -25,7 +25,7 @@ jobs:
           path: ${{ env.UPLOAD_PATH }}
       - name: build
         run: |
-          nix build .#digitaloceanImage
+          nix build .#digitalOceanImage
       - run: echo "UPLOAD_PATH=$(readlink -f result)" >> $GITHUB_ENV
       - uses: actions/upload-artifact@v3
         with:
