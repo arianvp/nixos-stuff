@@ -39,14 +39,16 @@
       };
     };
 
-    cachixDeploys = stable.legacyPackages.x86_64-linux.writeText "cachix-deploy.json" (builtins.toJSON {
-      agents = unstable.lib.mapAttrs (_: x: x.config.system.build.toplevel) self.nixosConfigurations;
-    });
-
     packages.x86_64-linux.frameworkISO = nixos-generators.nixosGenerate {
       pkgs = unstable.legacyPackages.x86_64-linux;
       modules = [ nixos-hardware.nixosModules.framework ];
       format = "iso";
+    };
+
+    packages.x86_64-linux.digitalOceanImage = nixos-generators.nixosGenerate {
+      pkgs = unstable.legacyPackages.x86_64-linux;
+      modules = [ ./configs/arianvp.me ];
+      format = "do";
     };
 
     nixosConfigurations =
