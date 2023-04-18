@@ -16,7 +16,6 @@
     nixosModules = {
       cachix = import ./modules/cachix.nix;
       direnv = import ./modules/direnv.nix;
-      systemd-initrd = import ./modules/systemd-initrd.nix;
       nixFlakes = { pkgs, ... }: {
         nix.package = pkgs.nix;
         nix.extraOptions = ''
@@ -52,16 +51,6 @@
 
     nixosConfigurations =
       {
-        t430s = unstable.lib.nixosSystem {
-          system = "x86_64-linux";
-          modules = with self.nixosModules; [
-            cachix
-            direnv
-            overlays
-            nixFlakes
-            ./configs/t430s
-          ];
-        };
         framework = unstable.lib.nixosSystem {
           system = "x86_64-linux";
           modules = with self.nixosModules; [
@@ -84,7 +73,6 @@
           modules = with self.nixosModules; [
             webauthn.nixosModule
             {
-
               services.webauthn-oidc.host = "oidc.arianvp.me";
               services.webauthn-oidc.createNginxConfig = true;
             }
