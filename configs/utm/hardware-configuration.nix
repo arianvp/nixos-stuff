@@ -11,7 +11,19 @@
   boot.kernelModules = [ ];
   boot.extraModulePackages = [ ];
 
-  fileSystems."/" =
+  systemd.repart.partitions = {
+    "00-esp" = {
+      Type = "esp";
+      SizeMaxBytes = "1G";
+      Format = "fat";
+    };
+    "10-root" = {
+      Type = "root";
+      Format = "btrfs";
+    };
+  };
+  # Handled by gpt-auto-generator
+  /*fileSystems."/" =
     {
       device = "/dev/disk/by-partlabel/root-arm64";
       fsType = "btrfs";
@@ -21,7 +33,7 @@
     {
       device = "/dev/disk/by-partlabel/esp";
       fsType = "vfat";
-    };
+    };*/
 
   fileSystems."/mnt" =
     {
