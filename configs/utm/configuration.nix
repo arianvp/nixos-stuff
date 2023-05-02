@@ -38,7 +38,7 @@
 
   services.openssh.enable = true;
 
-  systemd.additionalUpstreamUnits = [
+  systemd.additionalUpstreamSystemUnits= [
     "boot-complete.target"
     "systemd-boot-check-no-failures.service"
   ];
