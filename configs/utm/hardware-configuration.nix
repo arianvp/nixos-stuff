@@ -23,13 +23,14 @@
     };
   };
   # Handled by gpt-auto-generator
-  /*fileSystems."/" =
+  # TODO: Can't leave empty because NixOS complains
+  fileSystems."/" =
     {
       device = "/dev/disk/by-partlabel/root-arm64";
       fsType = "btrfs";
     };
 
-  fileSystems."/boot" =
+  /*fileSystems."/boot" =
     {
       device = "/dev/disk/by-partlabel/esp";
       fsType = "vfat";
