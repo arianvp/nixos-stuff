@@ -38,13 +38,16 @@
 
   services.openssh.enable = true;
 
+  # Systemd conveniently ships with this service that will check if no services failed
+  # https://www.freedesktop.org/software/systemd/man/systemd-boot-check-no-failures.service.html
+  # This is part of https://systemd.io/AUTOMATIC_BOOT_ASSESSMENT/
   systemd.additionalUpstreamSystemUnits = [
     "boot-complete.target"
     "systemd-boot-check-no-failures.service"
   ];
 
   # TODO Fix upstream
-  systemd.targets.boot-complete.wants = [ "systemd-boot-check-no-failures.service" ];
+  systemd.targets.boot-complete.requires = [ "systemd-boot-check-no-failures.service" ];
 
   environment.systemPackages = [ pkgs.direnv ];
   programs.bash.interactiveShellInit = ''
