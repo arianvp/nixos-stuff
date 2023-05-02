@@ -73,6 +73,7 @@
         utm = unstable.lib.nixosSystem {
           system = "aarch64-linux";
           modules = with self.nixosModules; [
+            { networking.hostName = "utm"; }
             nixFlakes
             ./configs/utm/configuration.nix
           ];
