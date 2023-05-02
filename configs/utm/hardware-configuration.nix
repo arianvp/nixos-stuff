@@ -30,13 +30,11 @@
   fileSystems."/" =
     {
       device = "/dev/disk/by-partlabel/root-arm64";
-      fsType = "btrfs";
     };
 
   fileSystems."/boot" =
     {
       device = "/dev/disk/by-partlabel/esp";
-      fsType = "vfat";
     };
 
   fileSystems."/mnt" =
