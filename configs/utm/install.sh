@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+systemd-repart --definition ./repart.d --empty=create --dry-run=no
+mount /dev/disk/by-label/root /mnt
+mount /dev/disk/by-partlabel/esp /mnt/boot
+nixos-install --flake github:arianvp/nixos-stuff
+
+
