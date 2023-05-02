@@ -70,6 +70,13 @@
             ./configs/ryzen
           ];
         };
+        utm = unstable.lib.nixosSystem {
+          system = "aarch64-linux";
+          modules = with self.nixosModules; [
+            nixFlakes
+            ./configs/utm/configuration.nix
+          ];
+        };
         arianvp-me = unstable.lib.nixosSystem {
           system = "x86_64-linux";
           modules = with self.nixosModules; [
