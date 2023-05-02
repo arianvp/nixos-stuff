@@ -18,6 +18,9 @@
     isNormalUser = true;
     extraGroups = [ "wheel" ]; 
     packages = [ pkgs.vim ];
+    openssh.authorizedKeys.keys = [ 
+      "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBMaGVuvE+aNyuAu0E9m5scVhmnVgAutNqridbMnc261cHQwecih720LCqDwTgrI3zbMwixBuU422AK0N81DyekQ= arian@Arians-MacBook-Pro.local"
+    ];  
   };
 
   services.openssh.enable = true;
