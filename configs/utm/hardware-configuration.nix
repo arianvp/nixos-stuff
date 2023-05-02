@@ -11,17 +11,20 @@
   boot.kernelModules = [ ];
   boot.extraModulePackages = [ ];
 
+  boot.systemd.repart.device = "/dev/vda";
   systemd.repart.partitions = {
     "00-esp" = {
       Type = "esp";
       SizeMaxBytes = "1G";
-      Format = "fat";
+      Format = "vfat";
     };
     "10-root" = {
       Type = "root";
       Format = "btrfs";
     };
   };
+
+
   # Handled by gpt-auto-generator
   # TODO: Can't leave empty because NixOS complains
   fileSystems."/" =
@@ -30,11 +33,11 @@
       fsType = "btrfs";
     };
 
-  /*fileSystems."/boot" =
+  fileSystems."/boot" =
     {
       device = "/dev/disk/by-partlabel/esp";
       fsType = "vfat";
-    };*/
+    };
 
   fileSystems."/mnt" =
     {
