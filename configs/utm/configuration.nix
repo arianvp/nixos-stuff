@@ -38,10 +38,14 @@
 
   services.openssh.enable = true;
 
-  systemd.additionalUpstreamSystemUnits= [
+  systemd.additionalUpstreamSystemUnits = [
     "boot-complete.target"
     "systemd-boot-check-no-failures.service"
   ];
+
+  # TODO Fix upstream
+  systemd.targets.boot-complete.wants = [ "systemd-boot-check-no-failures.service" ];
+
   environment.systemPackages = [ pkgs.direnv ];
   programs.bash.interactiveShellInit = ''
     eval "$(direnv hook bash)"
