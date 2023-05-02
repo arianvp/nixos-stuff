@@ -15,6 +15,7 @@
   boot.initrd.compressor = "cat";
   boot.initrd.systemd.enable = true;
   virtualisation.rosetta.enable = true;
+   services.getty.autologinUser = "arian";
   # networking.hostName = "nixos"; # Define your hostname.
   # Pick only one of the below networking options.
   # Set your time zone.
