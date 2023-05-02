@@ -13,7 +13,7 @@
 
   fileSystems."/" =
     {
-      device = "/dev/disk/by-label/root";
+      device = "/dev/disk/by-partlabel/root-arm64";
       fsType = "btrfs";
     };
 
