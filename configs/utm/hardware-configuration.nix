@@ -11,7 +11,6 @@
   boot.kernelModules = [ ];
   boot.extraModulePackages = [ ];
 
-  boot.systemd.repart.device = "/dev/vda";
   systemd.repart.partitions = {
     "00-esp" = {
       Type = "esp";
