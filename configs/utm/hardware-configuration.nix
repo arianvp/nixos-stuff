@@ -12,17 +12,20 @@
   boot.extraModulePackages = [ ];
 
   fileSystems."/" =
-    { device = "/dev/disk/by-uuid/571d52f4-638c-4509-b833-7d8cfdad873f";
+    {
+      device = "/dev/disk/by-uuid/571d52f4-638c-4509-b833-7d8cfdad873f";
       fsType = "btrfs";
     };
 
   fileSystems."/boot" =
-    { device = "/dev/disk/by-uuid/BA1D-A1BC";
+    {
+      device = "/dev/disk/by-uuid/BA1D-A1BC";
       fsType = "vfat";
     };
 
   fileSystems."/mnt" =
-    { device = "share";
+    {
+      device = "share";
       fsType = "virtiofs";
     };
 
@@ -32,8 +35,16 @@
   # (the default) this is the recommended approach. When using systemd-networkd it's
   # still possible to use this option, but it's recommended to use it in conjunction
   # with explicit per-interface declarations with `networking.interfaces.<interface>.useDHCP`.
-  networking.interfaces.enp0s1.useDHCP = lib.mkDefault true;
+  networking.useDHCP = false;
   networking.useNetworkd = lib.mkDefault true;
+
+  systemd.network.networks.main = {
+    matchConfig.Name = "en*";
+    networkConfig = {
+      DHCP = "yes";
+      MulticastDNS = "yes";
+    };
+  };
 
   nixpkgs.hostPlatform = lib.mkDefault "aarch64-linux";
 }

@@ -10,8 +10,9 @@
     url = "github:nix-community/nixos-generators";
     inputs.nixpkgs.follows = "unstable";
   };
+  inputs.vscode-server.url = "github:nix-community/nixos-vscode-server";
 
-  outputs = { self, webauthn, stable, unstable, nixos-hardware, nixos-generators}: {
+  outputs = { self, webauthn, vscode-server, stable, unstable, nixos-hardware, nixos-generators }: {
 
     nixosModules = {
       cachix = import ./modules/cachix.nix;
@@ -76,6 +77,10 @@
             { networking.hostName = "utm"; }
             nixFlakes
             ./configs/utm/configuration.nix
+            vscode-server.nixosModule
+            ({ config, pkgs, ... }: {
+              services.vscode-server.enable = true;
+            })
           ];
         };
         arianvp-me = unstable.lib.nixosSystem {
