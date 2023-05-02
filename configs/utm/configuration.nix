@@ -38,6 +38,10 @@
 
   services.openssh.enable = true;
 
+  systemd.additionalUpstreamUnits = [
+    "boot-complete.target"
+    "systemd-boot-check-no-failures.service"
+  ];
   environment.systemPackages = [ pkgs.direnv ];
   programs.bash.interactiveShellInit = ''
     eval "$(direnv hook bash)"
@@ -51,9 +55,5 @@
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
   system.stateVersion = "22.11"; # Did you read the comment?
 
-  systemd.additionalUpstreamUnits = [
-    "boot-complete.target"
-    "systemd-boot-check-no-failures.service"
-  ];
 }
 
