@@ -8,6 +8,8 @@
   # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
   # Virtualization.framework EFI driver doesnt' seem to support graphics anyway
+  boot.consoleLogLevel = 3;
+  boot.kernelParams = ["quiet"];
   boot.loader.timeout = 5; 
   boot.loader.efi.canTouchEfiVariables = true;
   boot.initrd.compressor = "cat";
