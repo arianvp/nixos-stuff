@@ -18,7 +18,7 @@
       Format = "vfat";
     };
     "10-root" = {
-      Type = "root";
+      Type = "root-arm64";
       Format = "btrfs";
     };
   };
@@ -27,20 +27,18 @@
   # Handled by gpt-auto-generator
   # TODO: Can't leave empty because NixOS complains
   fileSystems."/" =
+    let
+      root = config.systemd.repart.partitions."10-root";
+    in
     {
-      device = "/dev/disk/by-partlabel/root-arm64";
+      device = "/dev/disk/by-partlabel/${root.Type}";
+      fsType = root.Format;
     };
 
-  fileSystems."/boot" =
-    {
-      device = "/dev/disk/by-partlabel/esp";
-    };
-
-  fileSystems."/mnt" =
-    {
-      device = "share";
-      fsType = "virtiofs";
-    };
+  fileSystems."/mnt" = {
+    device = "share";
+    fsType = "virtiofs";
+  };
 
   swapDevices = [ ];
 
