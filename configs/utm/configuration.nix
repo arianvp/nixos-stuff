@@ -12,7 +12,6 @@
   boot.loader.efi.canTouchEfiVariables = true;
   boot.initrd.compressor = "cat";
   boot.initrd.systemd.enable = true;
-  boot.initrd.systemd.emergencyAccess = true;
   virtualisation.rosetta.enable = true;
   # networking.hostName = "nixos"; # Define your hostname.
   # Pick only one of the below networking options.
