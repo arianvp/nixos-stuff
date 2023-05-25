@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - uses: cachix/install-nix-action@v20
+    - uses: cachix/install-nix-action@v21
     - uses: DeterminateSystems/update-flake-lock@v18
       with:
         pr-title: "Update flake.lock" # Title of PR to be created
