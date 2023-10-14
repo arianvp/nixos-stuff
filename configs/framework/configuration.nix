@@ -2,9 +2,7 @@
   imports = [
     ./hardware-configuration.nix
   ];
-
-  services.cachix-agent.enable = true;
-  environment.systemPackages = [ pkgs.cachix pkgs.tdesktop pkgs.mullvad-vpn ];
+  services.fwupd.enable = true;
 
   boot.initrd.verbose = false;
   boot.initrd.systemd.enable = true;
@@ -12,7 +10,9 @@
   boot.consoleLogLevel = 3;
   boot.kernelParams = [ "quiet" "rd.systemd.show_status=auto" "rd.udev.log_level=3" "vt.global_cursor_default=0" ];
   boot.kernelPackages = pkgs.linuxPackages_latest;
-  boot.loader.systemd-boot.enable = true;
+  # boot.loader.systemd-boot.enable = true;
+  boot.lanzaboote.enable = true;
+  boot.lanzaboote.pkiBundle = "/etc/secureboot";
   boot.loader.efi.canTouchEfiVariables = true;
 
   boot.extraModprobeConfig = ''
@@ -27,6 +27,7 @@
   environment.variables = {
     MOZ_ENABLE_WAYLAND = "1";
   };
+  environment.systemPackages = [ pkgs.openssl pkgs.pkg-config ];
   environment.gnome.excludePackages = with pkgs.gnome; [
     geary
     epiphany
@@ -34,16 +35,19 @@
     gnome-contacts
     gedit
   ];
+  virtualisation.waydroid.enable = true;
 
   users.users.arian = {
     isNormalUser = true;
     createHome = true;
-    extraGroups = [ "wheel" ];
+    extraGroups = [ "wheel"  "tss" ];
   };
-  virtualisation.podman.enable = true;
-  virtualisation.podman.dockerCompat = true;
-  virtualisation.podman.dockerSocket.enable = true;
-  virtualisation.cri-o.enable = true;
+
+  security.tpm2 = {
+    enable = true;
+    applyUdevRules = true;
+    abrmd.enable = true;
+  };
   system.stateVersion = "21.11"; # Did you read the comment?
 }
 

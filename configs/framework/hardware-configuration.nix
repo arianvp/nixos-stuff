@@ -14,22 +14,28 @@
   boot.extraModulePackages = [ ];
 
   fileSystems."/" =
-    { device = "/dev/mapper/cryptroot";
-      options = [ "noatime" "nodiratime" "compress=zstd" "discard" "defaults" ];
+    { device = "/dev/disk/by-uuid/17446d19-fb33-4929-8580-5a1424562aa7";
       fsType = "btrfs";
+      options = [ "subvol=@" ];
     };
 
-  boot.initrd.luks.devices."cryptroot".device = "/dev/disk/by-uuid/e0fc4ad5-1192-470e-be85-af712651b8cb";
+  boot.initrd.luks.devices."luks-31e89180-a13a-4afb-8b36-75d9dac50997".device = "/dev/disk/by-uuid/31e89180-a13a-4afb-8b36-75d9dac50997";
 
   fileSystems."/boot" =
-    { device = "/dev/disk/by-uuid/C4B1-66EA";
+    { device = "/dev/disk/by-uuid/D967-6278";
       fsType = "vfat";
     };
 
   swapDevices = [ ];
 
+  # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
+  # (the default) this is the recommended approach. When using systemd-networkd it's
+  # still possible to use this option, but it's recommended to use it in conjunction
+  # with explicit per-interface declarations with `networking.interfaces.<interface>.useDHCP`.
+  networking.useDHCP = lib.mkDefault true;
+  # networking.interfaces.wlp170s0.useDHCP = lib.mkDefault true;
+
+  nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
   powerManagement.cpuFreqGovernor = lib.mkDefault "powersave";
   hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
-  # high-resolution display
-  hardware.video.hidpi.enable = lib.mkDefault true;
 }

@@ -6,13 +6,17 @@
   inputs.stable.url = "github:NixOS/nixpkgs/nixos-21.05";
   inputs.webauthn.url = "github:arianvp/webauthn-oidc";
   inputs.nixos-hardware.url = "github:NixOS/nixos-hardware";
+  inputs.lanzaboote = {
+    url = "github:nix-community/lanzaboote/v0.3.0";
+    inputs.nixpkgs.follows = "unstable";
+  };
   inputs.nixos-generators = {
     url = "github:nix-community/nixos-generators";
     inputs.nixpkgs.follows = "unstable";
   };
   inputs.vscode-server.url = "github:nix-community/nixos-vscode-server";
 
-  outputs = { self, webauthn, vscode-server, stable, unstable, nixos-hardware, nixos-generators }: {
+  outputs = { self, webauthn, vscode-server, stable, unstable, nixos-hardware, nixos-generators, lanzaboote }: {
 
     nixosModules = {
       cachix = import ./modules/cachix.nix;
@@ -61,6 +65,7 @@
             nixFlakes
             direnv
             overlays
+            lanzaboote.nixosModules.lanzaboote
             ./configs/framework/configuration.nix
           ];
         };
