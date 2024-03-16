@@ -61,7 +61,7 @@
         framework = unstable.lib.nixosSystem {
           system = "x86_64-linux";
           modules = with self.nixosModules; [
-            nixos-hardware.nixosModules.framework
+            nixos-hardware.nixosModules.framework-11th-gen-intel
             nixFlakes
             direnv
             overlays

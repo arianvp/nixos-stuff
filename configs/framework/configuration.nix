@@ -20,8 +20,8 @@
   '';
 
   networking.hostName = "framework";
-  services.mullvad-vpn.enable = true;
   services.xserver.enable = true;
+  services.openssh.enable = true;
   services.xserver.displayManager.gdm.enable = true;
   services.xserver.desktopManager.gnome.enable = true;
   environment.variables = {
@@ -33,14 +33,16 @@
     epiphany
     gnome-calendar
     gnome-contacts
-    gedit
   ];
-  virtualisation.waydroid.enable = true;
 
   users.users.arian = {
     isNormalUser = true;
     createHome = true;
     extraGroups = [ "wheel"  "tss" ];
+    openssh.authorizedKeys.keys = [
+"ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBMaGVuvE+aNyuAu0E9m5scVhmnVgAutNqridbMnc261cHQwecih720LCqDwTgrI3zbMwixBuU422AK0N81DyekQ="
+"ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBGVpzxBOwLIuy/2jjNoec7YfRHtwImf8688srJXaIRiyA4ye6/Ik8lWDTzzB4+V3rfekK0cx7w5gCOrKaqDRvVc="
+    ];
   };
 
   security.tpm2 = {
