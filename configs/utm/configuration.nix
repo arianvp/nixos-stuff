@@ -5,6 +5,7 @@
     [
       # Include the results of the hardware scan.
       ./hardware-configuration.nix
+      ./reproducer.nix
     ];
   # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
@@ -16,6 +17,7 @@
   boot.initrd.compressor = "cat";
   boot.initrd.systemd.enable = true;
   virtualisation.rosetta.enable = true;
+  virtualisation.podman.enable = true;
   services.getty.autologinUser = "arian";
   # networking.hostName = "nixos"; # Define your hostname.
   # Pick only one of the below networking options.
@@ -37,10 +39,65 @@
   };
 
   services.openssh.enable = true;
+  services.openssh.startWhenNeeded = true;
+  services.grafana = {
+    enable = true;
+    settings = {
+      server.http_addr = "";
+    };
+    provision.enable = true;
+    provision.datasources = {
+      settings.datasources = [
+        {
+          name = "Prometheus";
+          type = "prometheus";
+          url = "http://utm.local:${toString config.services.prometheus.port}";
+        }
+        {
+          name = "AlertManager";
+          type = "alertmanager";
+          jsonData.implementation = "prometheus";
+          url = "http://utm.local:${toString config.services.prometheus.alertmanager.port}";
+        }
+      ];
+    };
+  };
+  services.prometheus = {
+    enable = true;
+    alertmanagers = [{
+      static_configs = [{
+        targets = [ "utm.local:${toString config.services.prometheus.alertmanager.port}" ];
+      }];
+    }];
+    scrapeConfigs = [{
+      job_name = "node_exporter";
+      static_configs = [{
+        targets = [ "utm.local:${toString config.services.prometheus.exporters.node.port}" ];
+      }];
+    }];
+  };
+
+  services.prometheus.alertmanager = {
+    configuration = {
+      receivers = [
+        {
+          name = "webhook";
+          webhook_configs = [ { url = "https://webhook.site/5539afb0-089b-4c8f-a726-3187a72bd474"; } ];
+        }
+      ];
+      route = {
+        group_by = [ "cluster" "alertname" ];
+        receiver = "webhook";
+      };
+    };
+    enable = true;
+  };
+  services.prometheus.exporters.node.enable = true;
 
   # Systemd conveniently ships with this service that will check if no services failed
   # https://www.freedesktop.org/software/systemd/man/systemd-boot-check-no-failures.service.html
   # This is part of https://systemd.io/AUTOMATIC_BOOT_ASSESSMENT/
+  systemd.services.systemd-binfmt.after = [ "systemd-tmpfiles-setup.service" ];
   systemd.additionalUpstreamSystemUnits = [
     "boot-complete.target"
     "systemd-boot-check-no-failures.service"
