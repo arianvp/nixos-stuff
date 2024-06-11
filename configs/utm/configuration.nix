@@ -5,7 +5,8 @@
     [
       # Include the results of the hardware scan.
       ./hardware-configuration.nix
-      ./reproducer.nix
+      ./imdstrace.nix
+      ../../modules/diff.nix
     ];
   # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
@@ -19,6 +20,7 @@
   virtualisation.rosetta.enable = true;
   virtualisation.podman.enable = true;
   services.getty.autologinUser = "arian";
+  services.amazon-ssm-agent.enable = true;
   # networking.hostName = "nixos"; # Define your hostname.
   # Pick only one of the below networking options.
   # Set your time zone.
@@ -32,6 +34,7 @@
       pkgs.vim
       pkgs.direnv
       pkgs.nixpkgs-fmt
+      pkgs.bpftrace
     ];
     openssh.authorizedKeys.keys = [
       "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBMaGVuvE+aNyuAu0E9m5scVhmnVgAutNqridbMnc261cHQwecih720LCqDwTgrI3zbMwixBuU422AK0N81DyekQ= arian@Arians-MacBook-Pro.local"
@@ -40,59 +43,7 @@
 
   services.openssh.enable = true;
   services.openssh.startWhenNeeded = true;
-  services.grafana = {
-    enable = true;
-    settings = {
-      server.http_addr = "";
-    };
-    provision.enable = true;
-    provision.datasources = {
-      settings.datasources = [
-        {
-          name = "Prometheus";
-          type = "prometheus";
-          url = "http://utm.local:${toString config.services.prometheus.port}";
-        }
-        {
-          name = "AlertManager";
-          type = "alertmanager";
-          jsonData.implementation = "prometheus";
-          url = "http://utm.local:${toString config.services.prometheus.alertmanager.port}";
-        }
-      ];
-    };
-  };
-  services.prometheus = {
-    enable = true;
-    alertmanagers = [{
-      static_configs = [{
-        targets = [ "utm.local:${toString config.services.prometheus.alertmanager.port}" ];
-      }];
-    }];
-    scrapeConfigs = [{
-      job_name = "node_exporter";
-      static_configs = [{
-        targets = [ "utm.local:${toString config.services.prometheus.exporters.node.port}" ];
-      }];
-    }];
-  };
 
-  services.prometheus.alertmanager = {
-    configuration = {
-      receivers = [
-        {
-          name = "webhook";
-          webhook_configs = [ { url = "https://webhook.site/5539afb0-089b-4c8f-a726-3187a72bd474"; } ];
-        }
-      ];
-      route = {
-        group_by = [ "cluster" "alertname" ];
-        receiver = "webhook";
-      };
-    };
-    enable = true;
-  };
-  services.prometheus.exporters.node.enable = true;
 
   # Systemd conveniently ships with this service that will check if no services failed
   # https://www.freedesktop.org/software/systemd/man/systemd-boot-check-no-failures.service.html
@@ -104,9 +55,19 @@
   ];
 
   # TODO Fix upstream
-  systemd.targets.boot-complete.requires = [ "systemd-boot-check-no-failures.service" ];
+  # systemd.targets.boot-complete.requires = [ "systemd-boot-check-no-failures.service" ];
+
+  services.nginx = {
+    enable = true;
+    virtualHosts."localhost" = {
+    };
+  };
+
+  systemd.oomd.enableSystemSlice = true;
+
 
   environment.systemPackages = [ pkgs.direnv ];
+  programs.zsh.enable = true;
   programs.bash.interactiveShellInit = ''
     eval "$(direnv hook bash)"
   '';
@@ -117,7 +78,8 @@
   # this value at the release version of the first install of this system.
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
-  system.stateVersion = "22.11"; # Did you read the comment?
+  system.stateVersion = "22.11"; # Did you read the comment?A
+
 
 }
 

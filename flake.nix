@@ -25,8 +25,6 @@
         nix.extraOptions = ''
           experimental-features = nix-command flakes
         '';
-        nix.registry.nixpkgs.flake = unstable;
-        nix.nixPath = [ "nixpkgs=${unstable}" ];
       };
       overlays = { pkgs, ... }: {
         nixpkgs.config.allowUnfree = true;
