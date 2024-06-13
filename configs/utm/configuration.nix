@@ -31,6 +31,7 @@
     extraGroups = [ "wheel" ];
     packages = [
       pkgs.vim
+      pkgs.git
       pkgs.direnv
       pkgs.bpftrace
     ];
