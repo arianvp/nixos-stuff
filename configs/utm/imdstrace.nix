@@ -2,8 +2,6 @@
 
 let
   imdstrace = pkgs.writeText "imdstrace.bt" ''
-    #include <net/sock.h>
-
     kprobe:tcp_connect
     {
         $sock = (struct sock *)arg0;
@@ -14,7 +12,7 @@ let
         if ($daddr == 0XFEA9FEA9 && $dport == 0x5000)
         {
             // keep a counter per process name
-            @[comm] = count();
+            @[comm,pid] = count();
         }
     }
 
@@ -25,6 +23,7 @@ let
   '';
 in
 {
+  programs.bcc.enable = true;
   environment.systemPackages = [ pkgs.bpftrace ];
   systemd.services.imdstrace = {
     description = "Counts the number of IMDS calls per process";

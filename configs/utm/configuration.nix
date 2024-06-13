@@ -5,8 +5,6 @@
     [
       # Include the results of the hardware scan.
       ./hardware-configuration.nix
-      ./imdstrace.nix
-      ../../modules/diff.nix
     ];
   # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
@@ -17,14 +15,15 @@
   boot.loader.efi.canTouchEfiVariables = true;
   boot.initrd.compressor = "cat";
   boot.initrd.systemd.enable = true;
+  system.etc.overlay.enable = true;
   virtualisation.rosetta.enable = true;
   virtualisation.podman.enable = true;
   services.getty.autologinUser = "arian";
-  services.amazon-ssm-agent.enable = true;
   # networking.hostName = "nixos"; # Define your hostname.
   # Pick only one of the below networking options.
   # Set your time zone.
-  time.timeZone = "Europe/Amsterdam";
+  # See https://github.com/NixOS/nixpkgs/issues/311125 
+  # time.timeZone = "Europe/Amsterdam";
   networking.firewall.enable = false;
   programs.nix-ld.enable = true;
   users.users.arian = {
@@ -33,7 +32,6 @@
     packages = [
       pkgs.vim
       pkgs.direnv
-      pkgs.nixpkgs-fmt
       pkgs.bpftrace
     ];
     openssh.authorizedKeys.keys = [
@@ -44,11 +42,9 @@
   services.openssh.enable = true;
   services.openssh.startWhenNeeded = true;
 
-
   # Systemd conveniently ships with this service that will check if no services failed
   # https://www.freedesktop.org/software/systemd/man/systemd-boot-check-no-failures.service.html
   # This is part of https://systemd.io/AUTOMATIC_BOOT_ASSESSMENT/
-  systemd.services.systemd-binfmt.after = [ "systemd-tmpfiles-setup.service" ];
   systemd.additionalUpstreamSystemUnits = [
     "boot-complete.target"
     "systemd-boot-check-no-failures.service"
@@ -57,13 +53,6 @@
   # TODO Fix upstream
   # systemd.targets.boot-complete.requires = [ "systemd-boot-check-no-failures.service" ];
 
-  services.nginx = {
-    enable = true;
-    virtualHosts."localhost" = {
-    };
-  };
-
-  systemd.oomd.enableSystemSlice = true;
 
 
   environment.systemPackages = [ pkgs.direnv ];
