@@ -137,6 +137,22 @@
         "type": "github"
       }
     },
+    "nikstur": {
+      "locked": {
+        "lastModified": 1718397913,
+        "narHash": "sha256-omV+dq3GdXQQTaewxhkBgxM4Bbwqa4D9FVS4dTITxOQ=",
+        "owner": "nikstur",
+        "repo": "nixpkgs",
+        "rev": "962cf03fb8c782c5e00f465397e03dc84284acc9",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nikstur",
+        "ref": "systemd-256",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
     "nixlib": {
       "locked": {
         "lastModified": 1712450863,
@@ -252,6 +268,7 @@
     "root": {
       "inputs": {
         "lanzaboote": "lanzaboote",
+        "nikstur": "nikstur",
         "nixos-generators": "nixos-generators",
         "nixos-hardware": "nixos-hardware",
         "stable": "stable",

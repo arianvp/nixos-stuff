@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, inputs, ... }:
 
 {
   imports =
@@ -10,11 +10,11 @@
   boot.loader.systemd-boot.enable = true;
   # Virtualization.framework EFI driver doesnt' seem to support graphics anyway
   boot.consoleLogLevel = 3;
-  boot.kernelParams = [ "quiet" ];
-  boot.loader.timeout = 0;
+  boot.kernelParams = [ "debug1"  "console=ttyS0" ];
+  boot.loader.timeout = 20;
   boot.loader.efi.canTouchEfiVariables = true;
   boot.initrd.compressor = "cat";
-  boot.initrd.systemd.enable = true;
+  boot.initrd.systemd.enable = false;
   # system.etc.overlay.enable = true;
   virtualisation.rosetta.enable = true;
   virtualisation.podman.enable = true;
@@ -26,6 +26,7 @@
   # time.timeZone = "Europe/Amsterdam";
   networking.firewall.enable = false;
   programs.nix-ld.enable = true;
+  systemd.targets.network-online.wantedBy = lib.mkForce [ ];
   users.users.arian = {
     isNormalUser = true;
     extraGroups = [ "wheel" ];

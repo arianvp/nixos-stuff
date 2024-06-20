@@ -2,6 +2,7 @@
   description = "Arian's computers";
 
   # inputs.helsinki.url = "github:helsinki-systems/nixpkgs/feat/systemd-stage-1-luks";
+  inputs.nikstur.url = "github:nikstur/nixpkgs?ref=systemd-256";
   inputs.unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
   inputs.stable.url = "github:NixOS/nixpkgs/nixos-21.05";
   inputs.webauthn.url = "github:arianvp/webauthn-oidc";
@@ -15,7 +16,7 @@
     inputs.nixpkgs.follows = "unstable";
   };
 
-  outputs = { self, lanzaboote, webauthn, stable, unstable, nixos-hardware, nixos-generators }: {
+  outputs = inputs@{ self, lanzaboote, webauthn, stable, unstable, nixos-hardware, nixos-generators, nikstur, ...}: {
 
     nixosModules = {
       cachix = import ./modules/cachix.nix;
@@ -73,7 +74,7 @@
             ./configs/ryzen
           ];
         };
-        utm = unstable.lib.nixosSystem {
+        utm = nikstur.lib.nixosSystem {
           system = "aarch64-linux";
           modules = with self.nixosModules; [
             { networking.hostName = "utm"; }
