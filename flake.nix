@@ -3,6 +3,8 @@
 
   # inputs.helsinki.url = "github:helsinki-systems/nixpkgs/feat/systemd-stage-1-luks";
   inputs.nikstur.url = "github:nikstur/nixpkgs?ref=systemd-256";
+  inputs.local.url = "path:/mnt/Projects/nixpkgs";
+
   inputs.unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
   inputs.stable.url = "github:NixOS/nixpkgs/nixos-21.05";
   inputs.webauthn.url = "github:arianvp/webauthn-oidc";
@@ -16,7 +18,7 @@
     inputs.nixpkgs.follows = "unstable";
   };
 
-  outputs = inputs@{ self, lanzaboote, webauthn, stable, unstable, nixos-hardware, nixos-generators, nikstur, ...}: {
+  outputs = inputs@{ self, local, lanzaboote, webauthn, stable, unstable, nixos-hardware, nixos-generators, nikstur, ...}: {
 
     nixosModules = {
       cachix = import ./modules/cachix.nix;

@@ -5,12 +5,12 @@
     [
       # Include the results of the hardware scan.
       ./hardware-configuration.nix
+      ./monitoring.nix
     ];
   # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
   # Virtualization.framework EFI driver doesnt' seem to support graphics anyway
   boot.consoleLogLevel = 3;
-  boot.kernelParams = [ "debug1"  "console=ttyS0" ];
   boot.loader.timeout = 20;
   boot.loader.efi.canTouchEfiVariables = true;
   boot.initrd.compressor = "cat";
@@ -51,6 +51,13 @@
     "boot-complete.target"
     "systemd-boot-check-no-failures.service"
   ];
+
+  systemd.oomd.enableSystemSlice = true;
+
+  swapDevices = [{
+    device = "/var/lib/swap";
+    size = 4 * 1024; 
+  }];
 
   # TODO Fix upstream
   # systemd.targets.boot-complete.requires = [ "systemd-boot-check-no-failures.service" ];

@@ -1,5 +1,8 @@
-
+{ config, ... }:
 {
+
+  imports = [ ./dnssd.nix ];
+
   services.grafana = {
     enable = true;
     settings = {
@@ -22,17 +25,43 @@
       ];
     };
   };
+
   services.prometheus = {
     enable = true;
     alertmanagers = [{
       dns_sd_configs = [{ names = [ "alertmanager._http._tcp.local" ]; }];
-      static_configs = [{ targets = [ "utm.local:${toString config.services.prometheus.alertmanager.port}" ]; }];
     }];
-    scrapeConfigs = [{
-      job_name = "node_exporter";
-      dns_sd_configs = [{ names = [ "node-exporter._http._tcp.local" ]; }];
-      static_configs = [{ targets = [ "utm.local:${toString config.services.prometheus.exporters.node.port}" ]; }];
-    }];
+    scrapeConfigs = [
+      {
+        job_name = "node_exporter";
+        dns_sd_configs = [{ names = [ "node-exporter._http._tcp.local" ]; }];
+      }
+      {
+        job_name = "prometheus";
+        dns_sd_configs = [{ names = [ "prometheus._http._tcp.local" ]; }];
+      }
+      {
+        job_name = "alertmanager";
+        dns_sd_configs = [{ names = [ "alertmanager._http._tcp.local" ]; }];
+      }
+    ];
+
+    rules = [
+      ''
+        groups:
+          - name: Prometheus
+            rules:
+              - alert: PrometheusJobMissing
+                expr: absent(up{job="prometheus"})
+                for: 0m
+                labels:
+                  severity: warning
+                annotations:
+                  summary: Prometheus job missing (instance {{ $labels.instance }})
+                  description: "A Prometheus job has disappeared\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+      ''
+    ];
+
   };
 
   services.prometheus.alertmanager = {
@@ -48,11 +77,15 @@
     };
     enable = true;
   };
+
   services.prometheus.exporters.node.enable = true;
-  environment.etc."systemd/dnssd/node-exporter.dnssd".text = ''
-    [Service]
-    Name=node-exporter
-    Type=_http._tcp
-    Port=${toString config.services.prometheus.exporters.node.port}
-  '';
+
+  systemd.dnssd.services = {
+    prometheus = { type = "_http._tcp"; port = config.services.prometheus.port; };
+    alertmanager = { type = "_http._tcp"; port = config.services.prometheus.alertmanager.port; };
+    grafana = { type = "_http._tcp"; port = config.services.grafana.settings.server.http_port; };
+    node-exporter = { type = "_http._tcp"; port = config.services.prometheus.exporters.node.port; };
+  };
+
+
 }
