@@ -6,7 +6,7 @@
   inputs.local.url = "path:/mnt/Projects/nixpkgs";
 
   inputs.unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-  inputs.stable.url = "github:NixOS/nixpkgs/nixos-21.05";
+  inputs.stable.url = "github:NixOS/nixpkgs/nixos-24.05";
   inputs.webauthn.url = "github:arianvp/webauthn-oidc";
   inputs.nixos-hardware.url = "github:NixOS/nixos-hardware";
   inputs.lanzaboote = {
@@ -76,7 +76,7 @@
             ./configs/ryzen
           ];
         };
-        utm = nikstur.lib.nixosSystem {
+        utm = stable.lib.nixosSystem {
           system = "aarch64-linux";
           modules = with self.nixosModules; [
             { networking.hostName = "utm"; }

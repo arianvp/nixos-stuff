@@ -17,7 +17,7 @@
   boot.initrd.systemd.enable = false;
   # system.etc.overlay.enable = true;
   virtualisation.rosetta.enable = true;
-  virtualisation.podman.enable = true;
+  # virtualisation.podman.enable = true;
   services.getty.autologinUser = "arian";
   # networking.hostName = "nixos"; # Define your hostname.
   # Pick only one of the below networking options.
@@ -76,7 +76,16 @@
   # this value at the release version of the first install of this system.
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
-  system.stateVersion = "22.11"; # Did you read the comment?A
+  system.stateVersion = "24.05"; # Did you read the comment?A
+
+  systemd.package = pkgs.systemd.overrideAttrs (finalAttrs: previousAttrs: {
+    version = "255.9";
+    src = previousAttrs.src.override {
+      rev = "v${finalAttrs.version}";
+      hash = "sha256-fnMvBYyMRQrP2x//8ntGTSwoHOtFk2TQ4S5fwcsSLDU=";
+    };
+  });
+
 
 
 }
