@@ -40,10 +40,12 @@ in
   options.systemd.dnssd = {
     services = lib.mkOption {
       type = lib.types.attrsOf (lib.types.submodule serviceModule);
+      default = {};
     };
   };
 
   config.environment.etc = lib.mapAttrs' (_: v: lib.nameValuePair v.path { inherit (v) text; }) cfg.services;
+  config.services.resolved.enable = lib.mkDefault true;
   config.systemd.services.systemd-resolved = {
     stopIfChanged = false;
     reloadTriggers = lib.mapAttrsToList (_: v: config.environment.etc.${v.path}.source) cfg.services;

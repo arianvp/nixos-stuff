@@ -3,14 +3,13 @@
 
   # inputs.helsinki.url = "github:helsinki-systems/nixpkgs/feat/systemd-stage-1-luks";
   inputs.nikstur.url = "github:nikstur/nixpkgs?ref=systemd-256";
-  inputs.local.url = "path:/mnt/Projects/nixpkgs";
 
   inputs.unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
   inputs.stable.url = "github:NixOS/nixpkgs/nixos-24.05";
   inputs.webauthn.url = "github:arianvp/webauthn-oidc";
   inputs.nixos-hardware.url = "github:NixOS/nixos-hardware";
   inputs.lanzaboote = {
-    url = "github:nix-community/lanzaboote/v0.3.0";
+    url = "github:nix-community/lanzaboote/v0.4.1";
     inputs.nixpkgs.follows = "unstable";
   };
   inputs.nixos-generators = {
@@ -18,17 +17,20 @@
     inputs.nixpkgs.follows = "unstable";
   };
 
-  outputs = inputs@{ self, local, lanzaboote, webauthn, stable, unstable, nixos-hardware, nixos-generators, nikstur, ...}: {
+  outputs = inputs@{ self, lanzaboote, webauthn, stable, unstable, nixos-hardware, nixos-generators, nikstur, ...}: {
 
     nixosModules = {
-      cachix = import ./modules/cachix.nix;
-      direnv = import ./modules/direnv.nix;
+      cachix = ./modules/cachix.nix;
+      direnv = ./modules/direnv.nix;
       nixFlakes = { pkgs, ... }: {
         nix.package = pkgs.nix;
         nix.extraOptions = ''
           experimental-features = nix-command flakes
         '';
       };
+      dnssd = ./modules/dnssd.nix;
+      prometheus-rules = ./modules/prometheus-rules.nix;
+      monitoring = ./modules/monitoring.nix;
       overlays = { pkgs, ... }: {
         nixpkgs.config.allowUnfree = true;
         environment.systemPackages = [ pkgs.user-environment ];
@@ -64,6 +66,9 @@
             nixos-hardware.nixosModules.framework-11th-gen-intel
             nixFlakes
             direnv
+            dnssd
+            prometheus-rules
+            monitoring
             overlays
             lanzaboote.nixosModules.lanzaboote
             ./configs/framework/configuration.nix

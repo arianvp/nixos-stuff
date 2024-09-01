@@ -1,15 +1,11 @@
-{ config, ... }:
-{
-
-  imports = [ ./dnssd.nix ];
-
+{ config, ... }: {
   services.grafana = {
     enable = true;
     settings = {
       server.http_addr = "";
     };
     provision.enable = true;
-    provision.datasources = {
+    /*provision.datasources = {
       settings.datasources = [
         {
           name = "Prometheus";
@@ -23,7 +19,7 @@
           url = "http://utm.local:${toString config.services.prometheus.alertmanager.port}";
         }
       ];
-    };
+    };*/
   };
 
   services.prometheus = {
@@ -46,21 +42,25 @@
       }
     ];
 
-    rules = [
-      ''
-        groups:
-          - name: Prometheus
-            rules:
-              - alert: PrometheusJobMissing
-                expr: absent(up{job="prometheus"})
-                for: 0m
-                labels:
-                  severity: warning
-                annotations:
-                  summary: Prometheus job missing (instance {{ $labels.instance }})
-                  description: "A Prometheus job has disappeared\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
-      ''
-    ];
+    structuredRules = {
+      groups = [
+        {
+          name = "Prometheus";
+          rules = [
+            {
+              alert = "PrometheusJobMissing";
+              expr = "absent(up{job=\"prometheus\"})";
+              for = "0m";
+              labels = { severity = "warning"; };
+              annotations = {
+                summary = "Prometheus job missing (instance {{ $labels.instance }})";
+                description = "A Prometheus job has disappeared\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}";
+              };
+            }
+          ];
+        }
+      ];
+    };
 
   };
 

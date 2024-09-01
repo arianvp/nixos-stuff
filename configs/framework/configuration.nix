@@ -27,12 +27,11 @@
   environment.variables = {
     MOZ_ENABLE_WAYLAND = "1";
   };
-  environment.systemPackages = [ pkgs.openssl pkgs.pkg-config ];
-  environment.gnome.excludePackages = with pkgs.gnome; [
-    geary
-    epiphany
-    gnome-calendar
-    gnome-contacts
+  environment.systemPackages = with pkgs; [
+    chromium
+    neovim
+    gnome-builder
+    flatpak-builder
   ];
 
   users.users.arian = {
@@ -40,8 +39,8 @@
     createHome = true;
     extraGroups = [ "wheel"  "tss" ];
     openssh.authorizedKeys.keys = [
-"ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBMaGVuvE+aNyuAu0E9m5scVhmnVgAutNqridbMnc261cHQwecih720LCqDwTgrI3zbMwixBuU422AK0N81DyekQ="
-"ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBGVpzxBOwLIuy/2jjNoec7YfRHtwImf8688srJXaIRiyA4ye6/Ik8lWDTzzB4+V3rfekK0cx7w5gCOrKaqDRvVc="
+      "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBMaGVuvE+aNyuAu0E9m5scVhmnVgAutNqridbMnc261cHQwecih720LCqDwTgrI3zbMwixBuU422AK0N81DyekQ="
+      "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBGVpzxBOwLIuy/2jjNoec7YfRHtwImf8688srJXaIRiyA4ye6/Ik8lWDTzzB4+V3rfekK0cx7w5gCOrKaqDRvVc="
     ];
   };
 
@@ -50,6 +49,12 @@
     applyUdevRules = true;
     abrmd.enable = true;
   };
+
+  
+  services.hoogle.enable = true;
+
+  programs.chromium.enable = true;
+
   system.stateVersion = "21.11"; # Did you read the comment?
 }
 
