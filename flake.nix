@@ -17,7 +17,12 @@
     inputs.nixpkgs.follows = "unstable";
   };
 
-  outputs = inputs@{ self, lanzaboote, webauthn, stable, unstable, nixos-hardware, nixos-generators, nikstur, ...}: {
+  inputs.cgroup-exporter = {
+    url = "github:arianvp/cgroups-exporter";
+    inputs.nixpkgs.follows = "unstable";
+  };
+
+  outputs = inputs@{ self, cgroup-exporter, lanzaboote, webauthn, stable, unstable, nixos-hardware, nixos-generators, nikstur, ...}: {
 
     nixosModules = {
       cachix = ./modules/cachix.nix;
@@ -70,6 +75,7 @@
             prometheus-rules
             monitoring
             overlays
+            cgroup-exporter.nixosModules.default
             lanzaboote.nixosModules.lanzaboote
             ./configs/framework/configuration.nix
           ];

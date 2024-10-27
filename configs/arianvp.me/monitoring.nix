@@ -4,6 +4,9 @@ let
 in
 {
   services = {
+    netdata = {
+      enable = true;
+    };
     loki = {
       enable = false;
       configuration = {

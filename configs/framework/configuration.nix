@@ -1,11 +1,13 @@
 { config, pkgs, lib, ... }: {
   imports = [
     ./hardware-configuration.nix
+    ./tpm.nix
   ];
   services.fwupd.enable = true;
 
   boot.initrd.verbose = false;
   boot.initrd.systemd.enable = true;
+  boot.initrd.systemd.tpm2.enable = true;
   console.earlySetup = lib.mkForce false;
   boot.consoleLogLevel = 3;
   boot.kernelParams = [ "quiet" "rd.systemd.show_status=auto" "rd.udev.log_level=3" "vt.global_cursor_default=0" ];
@@ -32,7 +34,9 @@
     neovim
     gnome-builder
     flatpak-builder
+    yubioath-flutter
   ];
+  services.flatpak.enable = true;
 
   users.users.arian = {
     isNormalUser = true;
@@ -50,9 +54,9 @@
     abrmd.enable = true;
   };
 
-  
-  services.hoogle.enable = true;
+  services.fprintd.enable = false;
 
+  
   programs.chromium.enable = true;
 
   system.stateVersion = "21.11"; # Did you read the comment?
