@@ -1,4 +1,19 @@
+{config, ...}:
 {
+
+  boot.initrd.systemd.additionalUpstreamUnits = [
+    "systemd-pcrphase-initrd.service"
+  ];
+
+  boot.initrd.systemd.targets.initrd.wants = [
+    "systemd-pcrphase-initrd.service"
+  ];
+
+
+  boot.initrd.systemd.tpm2.enable = true;
+  boot.initrd.systemd.storePaths = [
+    "${config.boot.initrd.systemd.package}/lib/systemd/systemd-pcrextend"
+  ];
 
   systemd.additionalUpstreamSystemUnits = [
     "systemd-pcrextend@.service"
@@ -28,4 +43,5 @@
     "systemd-pcrlock-secureboot-authority.service"
     "systemd-pcrlock-secureboot-policy.service"
   ];
+  environment.etc."pcrlock.d".source = "${config.systemd.package}/lib/pcrlock.d";
 }

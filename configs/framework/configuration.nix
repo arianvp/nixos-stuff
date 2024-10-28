@@ -5,12 +5,20 @@
   ];
   services.fwupd.enable = true;
 
-  boot.initrd.verbose = false;
+  boot.initrd.systemd.emergencyAccess = "$y$j9T$CAENwELpqfvWMlt.m7S7J.$xATUkzP4oQwyaICYT/V3glxsdJI/46rEyNT1GRzOyp4";
   boot.initrd.systemd.enable = true;
   boot.initrd.systemd.tpm2.enable = true;
-  console.earlySetup = lib.mkForce false;
-  boot.consoleLogLevel = 3;
-  boot.kernelParams = [ "quiet" "rd.systemd.show_status=auto" "rd.udev.log_level=3" "vt.global_cursor_default=0" ];
+  # console.earlySetup = lib.mkForce false;
+  # boot.consoleLogLevel = 3;
+  boot.kernelParams = [
+    # "rd.systemd.show_status=auto" "rd.udev.log_level=3" "vt.global_cursor_default=0"
+  ];
+
+  boot.initrd.systemd.services.initrd-cleanup = {
+    serviceConfig.ExecStart = [ "" "/bin/true" ];
+    unitConfig.OnSuccess = "emergency.target";
+  };
+
   boot.kernelPackages = pkgs.linuxPackages_latest;
   # boot.loader.systemd-boot.enable = true;
   boot.lanzaboote.enable = true;
