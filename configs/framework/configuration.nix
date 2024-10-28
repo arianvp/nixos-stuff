@@ -1,13 +1,11 @@
-{ config, pkgs, lib, ... }: {
+  { pkgs, ... }: {
   imports = [
     ./hardware-configuration.nix
-    ./tpm.nix
+    ./pcrlock.nix
   ];
   services.fwupd.enable = true;
 
-  boot.initrd.systemd.emergencyAccess = "$y$j9T$CAENwELpqfvWMlt.m7S7J.$xATUkzP4oQwyaICYT/V3glxsdJI/46rEyNT1GRzOyp4";
   boot.initrd.systemd.enable = true;
-  boot.initrd.systemd.tpm2.enable = true;
   # console.earlySetup = lib.mkForce false;
   # boot.consoleLogLevel = 3;
   boot.kernelParams = [
@@ -56,11 +54,7 @@
     ];
   };
 
-  security.tpm2 = {
-    enable = true;
-    applyUdevRules = true;
-    abrmd.enable = true;
-  };
+
 
   services.fprintd.enable = false;
 
