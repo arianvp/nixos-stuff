@@ -1,12 +1,21 @@
 { config, lib, pkgs, inputs, ... }:
 
+let
+ hello = import ./blah/default.nix { pkgs = pkgs;};
+in
 {
-  imports =
-    [
-      # Include the results of the hardware scan.
-      ./hardware-configuration.nix
-      ./monitoring.nix
-    ];
+  systemd.services.hello = {
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${hello}/bin/hello";
+    };
+  };
+  imports = [
+    # Include the results of the hardware scan.
+    ./hardware-configuration.nix
+    ./monitoring.nix
+    ./soft-reboot.nix
+  ];
   # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
   # Virtualization.framework EFI driver doesnt' seem to support graphics anyway
@@ -25,17 +34,12 @@
   # See https://github.com/NixOS/nixpkgs/issues/311125 
   # time.timeZone = "Europe/Amsterdam";
   networking.firewall.enable = false;
-  programs.nix-ld.enable = true;
+  # programs.nix-ld.enable = true;
   systemd.targets.network-online.wantedBy = lib.mkForce [ ];
   users.users.arian = {
     isNormalUser = true;
     extraGroups = [ "wheel" ];
-    packages = [
-      pkgs.vim
-      pkgs.git
-      pkgs.direnv
-      pkgs.bpftrace
-    ];
+    packages = [ pkgs.vim pkgs.git pkgs.direnv pkgs.bpftrace ];
     openssh.authorizedKeys.keys = [
       "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBMaGVuvE+aNyuAu0E9m5scVhmnVgAutNqridbMnc261cHQwecih720LCqDwTgrI3zbMwixBuU422AK0N81DyekQ= arian@Arians-MacBook-Pro.local"
     ];
@@ -47,22 +51,21 @@
   # Systemd conveniently ships with this service that will check if no services failed
   # https://www.freedesktop.org/software/systemd/man/systemd-boot-check-no-failures.service.html
   # This is part of https://systemd.io/AUTOMATIC_BOOT_ASSESSMENT/
-  systemd.additionalUpstreamSystemUnits = [
-    "boot-complete.target"
-    "systemd-boot-check-no-failures.service"
-  ];
+  systemd.additionalUpstreamSystemUnits =
+    [ "systemd-boot-check-no-failures.service" ];
 
   systemd.oomd.enableSystemSlice = true;
 
   swapDevices = [{
     device = "/var/lib/swap";
-    size = 4 * 1024; 
+    size = 4 * 1024;
   }];
 
   # TODO Fix upstream
   # systemd.targets.boot-complete.requires = [ "systemd-boot-check-no-failures.service" ];
 
-
+  boot.swraid.enable = true;
+  programs.bcc.enable = true;
 
   environment.systemPackages = [ pkgs.direnv ];
   programs.zsh.enable = true;
@@ -77,16 +80,6 @@
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
   system.stateVersion = "24.05"; # Did you read the comment?A
-
-  systemd.package = pkgs.systemd.overrideAttrs (finalAttrs: previousAttrs: {
-    version = "255.9";
-    src = previousAttrs.src.override {
-      rev = "v${finalAttrs.version}";
-      hash = "sha256-fnMvBYyMRQrP2x//8ntGTSwoHOtFk2TQ4S5fwcsSLDU=";
-    };
-  });
-
-
 
 }
 
