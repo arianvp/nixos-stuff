@@ -1,4 +1,11 @@
-{ pkgs, config, ... }: {
+{ pkgs, config, ... }:
+
+let bootLoaderLock = pkgs.runCommand "240-boot-loader.pcrlock" { } ''
+  ${config.systemd.package}/lib/systemd-pcrlock lock-pe 
+'';
+
+in {
+
 
   boot.initrd.systemd.additionalUpstreamUnits =
     [ "systemd-pcrphase-initrd.service" ];
