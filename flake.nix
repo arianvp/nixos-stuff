@@ -3,7 +3,7 @@
 
   # inputs.helsinki.url = "github:helsinki-systems/nixpkgs/feat/systemd-stage-1-luks";
   inputs.nikstur.url = "github:nikstur/nixpkgs?ref=systemd-256";
-
+  inputs.local.url = "/home/arian/Projects/nixpkgs";
   inputs.unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
   inputs.stable.url = "github:NixOS/nixpkgs/nixos-24.05";
   inputs.webauthn.url = "github:arianvp/webauthn-oidc";
@@ -22,50 +22,67 @@
     inputs.nixpkgs.follows = "unstable";
   };
 
-  outputs = inputs@{ self, cgroup-exporter, lanzaboote, webauthn, stable, unstable, nixos-hardware, nixos-generators, nikstur, ...}: {
+  outputs =
+    inputs@{
+      self,
+      cgroup-exporter,
+      lanzaboote,
+      webauthn,
+      stable,
+      unstable,
+      nixos-hardware,
+      nixos-generators,
+      nikstur,
+      local,
+      ...
+    }:
+    {
 
-    nixosModules = {
-      cachix = ./modules/cachix.nix;
-      direnv = ./modules/direnv.nix;
-      nixFlakes = { pkgs, ... }: {
-        nix.package = pkgs.nix;
-        nix.extraOptions = ''
-          experimental-features = nix-command flakes
-        '';
+      nixosModules = {
+        cachix = ./modules/cachix.nix;
+        direnv = ./modules/direnv.nix;
+        nixFlakes =
+          { pkgs, ... }:
+          {
+            nix.package = pkgs.nix;
+            nix.extraOptions = ''
+              experimental-features = nix-command flakes
+            '';
+          };
+        dnssd = ./modules/dnssd.nix;
+        prometheus-rules = ./modules/prometheus-rules.nix;
+        monitoring = ./modules/monitoring.nix;
+        overlays =
+          { pkgs, ... }:
+          {
+            nixpkgs.config.allowUnfree = true;
+            environment.systemPackages = [ pkgs.user-environment ];
+            nixpkgs.overlays = map import [
+              ./overlays/user-environment.nix
+              ./overlays/wire.nix
+              ./overlays/fonts.nix
+              ./overlays/neovim.nix
+              ./overlays/vscodium.nix
+              ./overlays/pkgs.nix
+              # ./overlays/systemd-initrd.nix
+            ];
+          };
       };
-      dnssd = ./modules/dnssd.nix;
-      prometheus-rules = ./modules/prometheus-rules.nix;
-      monitoring = ./modules/monitoring.nix;
-      overlays = { pkgs, ... }: {
-        nixpkgs.config.allowUnfree = true;
-        environment.systemPackages = [ pkgs.user-environment ];
-        nixpkgs.overlays = map import [
-          ./overlays/user-environment.nix
-          ./overlays/wire.nix
-          ./overlays/fonts.nix
-          ./overlays/neovim.nix
-          ./overlays/vscodium.nix
-          ./overlays/pkgs.nix
-          # ./overlays/systemd-initrd.nix
-        ];
+
+      packages.x86_64-linux.frameworkISO = nixos-generators.nixosGenerate {
+        pkgs = unstable.legacyPackages.x86_64-linux;
+        modules = [ nixos-hardware.nixosModules.framework ];
+        format = "iso";
       };
-    };
 
-    packages.x86_64-linux.frameworkISO = nixos-generators.nixosGenerate {
-      pkgs = unstable.legacyPackages.x86_64-linux;
-      modules = [ nixos-hardware.nixosModules.framework ];
-      format = "iso";
-    };
+      packages.x86_64-linux.digitalOceanImage = nixos-generators.nixosGenerate {
+        pkgs = unstable.legacyPackages.x86_64-linux;
+        modules = [ ./configs/arianvp.me ];
+        format = "do";
+      };
 
-    packages.x86_64-linux.digitalOceanImage = nixos-generators.nixosGenerate {
-      pkgs = unstable.legacyPackages.x86_64-linux;
-      modules = [ ./configs/arianvp.me ];
-      format = "do";
-    };
-
-    nixosConfigurations =
-      {
-        framework = unstable.lib.nixosSystem {
+      nixosConfigurations = {
+        framework = local.lib.nixosSystem {
           system = "x86_64-linux";
           modules = with self.nixosModules; [
             nixos-hardware.nixosModules.framework-11th-gen-intel
@@ -107,5 +124,5 @@
           ];
         };
       };
-  };
+    };
 }

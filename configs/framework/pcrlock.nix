@@ -1,21 +1,21 @@
 { pkgs, config, ... }:
 
-let bootLoaderLock = pkgs.runCommand "240-boot-loader.pcrlock" { } ''
-  ${config.systemd.package}/lib/systemd-pcrlock lock-pe 
-'';
+let
+  bootLoaderLock = pkgs.runCommand "240-boot-loader.pcrlock" { } ''
+    ${config.systemd.package}/lib/systemd-pcrlock lock-pe 
+  '';
 
-in {
+in
+{
 
+  boot.initrd.systemd.additionalUpstreamUnits = [ "systemd-pcrphase-initrd.service" ];
 
-  boot.initrd.systemd.additionalUpstreamUnits =
-    [ "systemd-pcrphase-initrd.service" ];
-
-  boot.initrd.systemd.targets.initrd.wants =
-    [ "systemd-pcrphase-initrd.service" ];
+  boot.initrd.systemd.targets.initrd.wants = [ "systemd-pcrphase-initrd.service" ];
 
   boot.initrd.systemd.tpm2.enable = true;
-  boot.initrd.systemd.storePaths =
-    [ "${config.boot.initrd.systemd.package}/lib/systemd/systemd-pcrextend" ];
+  boot.initrd.systemd.storePaths = [
+    "${config.boot.initrd.systemd.package}/lib/systemd/systemd-pcrextend"
+  ];
 
   systemd.additionalUpstreamSystemUnits = [
     "systemd-pcrextend@.service"
@@ -45,7 +45,6 @@ in {
     "systemd-pcrlock-secureboot-authority.service"
     "systemd-pcrlock-secureboot-policy.service"
   ];
-  environment.etc."pcrlock.d".source =
-    "${config.systemd.package}/lib/pcrlock.d";
+  environment.etc."pcrlock.d".source = "${config.systemd.package}/lib/pcrlock.d";
 
 }
