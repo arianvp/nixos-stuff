@@ -20,8 +20,10 @@
   '';
 
   nix.settings.substituters = [ "https://nixos.tvix.store" ];
+  nix.settings.trusted-users = [ "@wheel" ];
 
   networking.hostName = "framework";
+  networking.firewall.allowedTCPPorts = [ 443 ];
   services.xserver.enable = true;
   services.openssh.enable = true;
   services.smartd.enable = true;
