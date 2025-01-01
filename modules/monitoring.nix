@@ -1,12 +1,4 @@
 { config, ... }: {
-  services.netdata ={
-    enable = true;
-    config = {
-      plugins = {
-        systemd-journal = "yes";
-      };
-    };
-  };
   services.grafana = {
     enable = true;
     settings = {
