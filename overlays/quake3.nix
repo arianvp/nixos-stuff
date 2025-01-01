@@ -7,6 +7,9 @@ self: super: {
     '';
   };
   quake3 = super.quake3wrapper {
-    paks = [ self.quake3_assets self.quake3pointrelease ];
+    paks = [
+      self.quake3_assets
+      self.quake3pointrelease
+    ];
   };
 }

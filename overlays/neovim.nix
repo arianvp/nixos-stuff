@@ -55,7 +55,18 @@ self: super: {
         EOF
       '';
       packages.myPackages = with self.vimPlugins; {
-        start = [ nvim-lspconfig tagbar nerdtree fugitive fzfWrapper fzf-vim vim-jsonnet vim-nix vim-terraform vim-tmux-navigator ];
+        start = [
+          nvim-lspconfig
+          tagbar
+          nerdtree
+          fugitive
+          fzfWrapper
+          fzf-vim
+          vim-jsonnet
+          vim-nix
+          vim-terraform
+          vim-tmux-navigator
+        ];
       };
     };
   };

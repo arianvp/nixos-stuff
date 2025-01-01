@@ -7,7 +7,7 @@
   };
   services.nginx = {
     upstreams."mattermost".servers = {
-        "${config.services.mattermost.listenAddress}" = {};
+      "${config.services.mattermost.listenAddress}" = { };
     };
     virtualHosts = {
       "mattermost.arianvp.me" = {

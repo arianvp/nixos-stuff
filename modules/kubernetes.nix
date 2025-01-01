@@ -1,4 +1,9 @@
-{ pkgs, lib, config, ... }:
+{
+  pkgs,
+  lib,
+  config,
+  ...
+}:
 let
   cfg = config.cluster.kubernetes;
   ip = "192.168.0.23";
@@ -50,8 +55,18 @@ in
     systemd.services.kubeadm-init = {
       wantedBy = [ "multi-user.target" ];
 
-      wants = [ "etcd.service" "kube-scheduler.service" "kube-apiserver.service" "kube-controller-manager.service" ];
-      before = [ "etcd.service" "kube-scheduler.service" "kube-apiserver.service" "kube-controller-manager.service" ];
+      wants = [
+        "etcd.service"
+        "kube-scheduler.service"
+        "kube-apiserver.service"
+        "kube-controller-manager.service"
+      ];
+      before = [
+        "etcd.service"
+        "kube-scheduler.service"
+        "kube-apiserver.service"
+        "kube-controller-manager.service"
+      ];
 
       script = ''
         ${pkgs.kubernetes}/bin/kubeadm init phase certs all
@@ -68,8 +83,18 @@ in
     # Idempotent; but renews token expiration every time it starts. Need to think if this is desired
     systemd.services.kubeadm-init-finalize = {
       wantedBy = [ "multi-user.target" ];
-      wants = [ "etcd.service" "kube-scheduler.service" "kube-apiserver.service" "kube-controller-manager.service" ];
-      after = [ "etcd.service" "kube-scheduler.service" "kube-apiserver.service" "kube-controller-manager.service" ];
+      wants = [
+        "etcd.service"
+        "kube-scheduler.service"
+        "kube-apiserver.service"
+        "kube-controller-manager.service"
+      ];
+      after = [
+        "etcd.service"
+        "kube-scheduler.service"
+        "kube-apiserver.service"
+        "kube-controller-manager.service"
+      ];
       script = ''
         ${pkgs.kubernetes}/bin/kubeadm init phase bootstrap-token --config ${initConfig}
       '';
@@ -147,10 +172,12 @@ in
         '';
       };
     };
-    /*systemd.paths.kube-controller-manager = {
-      wantedBy = [ "paths.target" ];
-      pathConfig.PathExists = [ "/etc/kubernetes/controller-manager.conf" ];
-    };*/
+    /*
+      systemd.paths.kube-controller-manager = {
+        wantedBy = [ "paths.target" ];
+        pathConfig.PathExists = [ "/etc/kubernetes/controller-manager.conf" ];
+      };
+    */
     systemd.services.kube-controller-manager = {
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {
@@ -176,10 +203,12 @@ in
         '';
       };
     };
-    /*systemd.paths.kube-scheduler = {
-      wantedBy = [ "paths.target" ];
-      pathConfig.PathExists = [ "/etc/kubernetes/scheduler.conf" ];
-    };*/
+    /*
+      systemd.paths.kube-scheduler = {
+        wantedBy = [ "paths.target" ];
+        pathConfig.PathExists = [ "/etc/kubernetes/scheduler.conf" ];
+      };
+    */
     systemd.services.kube-scheduler = {
       wantedBy = [ "multi-user.target" ];
       unitConfig.ConditionPathExists = [ "/etc/kubernetes/scheduler.conf" ];
@@ -198,13 +227,15 @@ in
       };
     };
 
-    /*systemd.paths.kubelet = {
-      wantedBy = [ "paths.target" ];
-      pathConfig.PathExists = [
-        "/etc/kubernetes/kubelet.conf"
-        "/etc/kubernetes/bootstrap-kubelet.conf"
-      ];
-    };*/
+    /*
+      systemd.paths.kubelet = {
+        wantedBy = [ "paths.target" ];
+        pathConfig.PathExists = [
+          "/etc/kubernetes/kubelet.conf"
+          "/etc/kubernetes/bootstrap-kubelet.conf"
+        ];
+      };
+    */
 
     systemd.services.kubelet =
       let

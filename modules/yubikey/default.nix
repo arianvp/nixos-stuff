@@ -1,4 +1,5 @@
-{ pkgs, lib, ... }: {
+{ pkgs, lib, ... }:
+{
   environment.systemPackages = with pkgs; [
     yubico-piv-tool # superseded by
     yubioath-desktop

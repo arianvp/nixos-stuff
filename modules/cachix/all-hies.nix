@@ -1,4 +1,3 @@
-
 {
   nix = {
     binaryCaches = [
@@ -7,7 +6,9 @@
     binaryCachePublicKeys = [
       "all-hies.cachix.org-1:JjrzAOEUsD9ZMt8fdFbzo3jNAyEWlPAwdVuHw4RD43k="
     ];
-    trustedUsers = [ "root" "arian" ];
+    trustedUsers = [
+      "root"
+      "arian"
+    ];
   };
 }
-    

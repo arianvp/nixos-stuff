@@ -1,7 +1,13 @@
-{ config, lib, pkgs, inputs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
+}:
 
 let
- hello = import ./blah/default.nix { pkgs = pkgs;};
+  hello = import ./blah/default.nix { pkgs = pkgs; };
 in
 {
   systemd.services.hello = {
@@ -31,7 +37,7 @@ in
   # networking.hostName = "nixos"; # Define your hostname.
   # Pick only one of the below networking options.
   # Set your time zone.
-  # See https://github.com/NixOS/nixpkgs/issues/311125 
+  # See https://github.com/NixOS/nixpkgs/issues/311125
   # time.timeZone = "Europe/Amsterdam";
   networking.firewall.enable = false;
   # programs.nix-ld.enable = true;
@@ -39,7 +45,12 @@ in
   users.users.arian = {
     isNormalUser = true;
     extraGroups = [ "wheel" ];
-    packages = [ pkgs.vim pkgs.git pkgs.direnv pkgs.bpftrace ];
+    packages = [
+      pkgs.vim
+      pkgs.git
+      pkgs.direnv
+      pkgs.bpftrace
+    ];
     openssh.authorizedKeys.keys = [
       "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBMaGVuvE+aNyuAu0E9m5scVhmnVgAutNqridbMnc261cHQwecih720LCqDwTgrI3zbMwixBuU422AK0N81DyekQ= arian@Arians-MacBook-Pro.local"
     ];
@@ -51,15 +62,16 @@ in
   # Systemd conveniently ships with this service that will check if no services failed
   # https://www.freedesktop.org/software/systemd/man/systemd-boot-check-no-failures.service.html
   # This is part of https://systemd.io/AUTOMATIC_BOOT_ASSESSMENT/
-  systemd.additionalUpstreamSystemUnits =
-    [ "systemd-boot-check-no-failures.service" ];
+  systemd.additionalUpstreamSystemUnits = [ "systemd-boot-check-no-failures.service" ];
 
   systemd.oomd.enableSystemSlice = true;
 
-  swapDevices = [{
-    device = "/var/lib/swap";
-    size = 4 * 1024;
-  }];
+  swapDevices = [
+    {
+      device = "/var/lib/swap";
+      size = 4 * 1024;
+    }
+  ];
 
   # TODO Fix upstream
   # systemd.targets.boot-complete.requires = [ "systemd-boot-check-no-failures.service" ];
@@ -82,4 +94,3 @@ in
   system.stateVersion = "24.05"; # Did you read the comment?A
 
 }
-

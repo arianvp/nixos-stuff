@@ -8,7 +8,10 @@ with pkgs;
 
   programs.ssh.startAgent = true;
 
-  boot.kernelModules = [ "kvm-intel" "kvm-amd" ];
+  boot.kernelModules = [
+    "kvm-intel"
+    "kvm-amd"
+  ];
 
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
@@ -47,14 +50,15 @@ with pkgs;
   users.extraUsers.arian = {
     isNormalUser = true;
     uid = 1000;
-    extraGroups = [ "wheel" "audio" ];
+    extraGroups = [
+      "wheel"
+      "audio"
+    ];
     openssh.authorizedKeys.keyFiles = [
-      (
-        pkgs.fetchurl {
-          url = "https://github.com/arianvp.keys";
-          sha256 = "sha256-EJbct8hEuAPddSS1+6GMNBd9yXTqnRYTI7iBoNY927s=";
-        }
-      )
+      (pkgs.fetchurl {
+        url = "https://github.com/arianvp.keys";
+        sha256 = "sha256-EJbct8hEuAPddSS1+6GMNBd9yXTqnRYTI7iBoNY927s=";
+      })
     ];
   };
 

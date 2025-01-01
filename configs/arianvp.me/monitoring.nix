@@ -16,9 +16,16 @@ in
     };
     prometheus = {
       enable = true;
-      scrapeConfigs = [ { job_name = "local"; static_configs = [ {
-        targets = [ "localhost:9100" ];
-      } ]; } ];
+      scrapeConfigs = [
+        {
+          job_name = "local";
+          static_configs = [
+            {
+              targets = [ "localhost:9100" ];
+            }
+          ];
+        }
+      ];
       exporters.node = {
         enable = true;
       };
@@ -36,19 +43,19 @@ in
         }
       ];
 
-
       # TODO grafana should be provisioned through a NixOS module
-      /*provision = {
-        datasources =         dashboards = [
-          {
-            name = "NixOS generated provider";
-            folder = "NiXOS generated provider";
-            disableDeletion = true;
-            # editable = false; Not supported :/
-            options.path = "${dashboards}";
-          };
-        ];
-      };
+      /*
+        provision = {
+          datasources =         dashboards = [
+            {
+              name = "NixOS generated provider";
+              folder = "NiXOS generated provider";
+              disableDeletion = true;
+              # editable = false; Not supported :/
+              options.path = "${dashboards}";
+            };
+          ];
+        };
       */
     };
   };

@@ -1,24 +1,31 @@
-let 
+let
   tagFromPackage = drv: drv.passthru.imageTag;
-  imageOptions = {name, pkgs, config, ...}: {
-    options = {
-      image = mkOption {
-        type = package;
-      };
-      contents = mkOption {
-        type = listOf package;
-      };
-    };
-    config = mkMerge [
-      rec {
-        image = pkgs.buildLayeredImage {
-          inherit name;
-          inherit contents;
+  imageOptions =
+    {
+      name,
+      pkgs,
+      config,
+      ...
+    }:
+    {
+      options = {
+        image = mkOption {
+          type = package;
         };
-        tag = image.passthru.imageTag;
-      }
-    ];
-  };
+        contents = mkOption {
+          type = listOf package;
+        };
+      };
+      config = mkMerge [
+        rec {
+          image = pkgs.buildLayeredImage {
+            inherit name;
+            inherit contents;
+          };
+          tag = image.passthru.imageTag;
+        }
+      ];
+    };
 in
 {
   options = {
@@ -30,6 +37,3 @@ in
   config = {
   };
 }
-
-
-

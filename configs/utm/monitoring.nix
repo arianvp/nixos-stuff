@@ -1,7 +1,11 @@
 { pkgs, config, ... }:
 {
 
-  imports = [ ./dnssd.nix  ./systemd-utils.nix ../../modules/workload.nix ];
+  imports = [
+    ./dnssd.nix
+    ./systemd-utils.nix
+    ../../modules/workload.nix
+  ];
 
   systemd.services.grafana.serviceConfig.Slice = "workload.slice";
   systemd.services.prometheus.serviceConfig.Slice = "workload.slice";
@@ -31,21 +35,23 @@
 
   services.prometheus = {
     enable = true;
-    alertmanagers = [{
-      dns_sd_configs = [{ names = [ "alertmanager._http._tcp.local" ]; }];
-    }];
+    alertmanagers = [
+      {
+        dns_sd_configs = [ { names = [ "alertmanager._http._tcp.local" ]; } ];
+      }
+    ];
     scrapeConfigs = [
       {
         job_name = "node_exporter";
-        dns_sd_configs = [{ names = [ "node-exporter._http._tcp.local" ]; }];
+        dns_sd_configs = [ { names = [ "node-exporter._http._tcp.local" ]; } ];
       }
       {
         job_name = "prometheus";
-        dns_sd_configs = [{ names = [ "prometheus._http._tcp.local" ]; }];
+        dns_sd_configs = [ { names = [ "prometheus._http._tcp.local" ]; } ];
       }
       {
         job_name = "alertmanager";
-        dns_sd_configs = [{ names = [ "alertmanager._http._tcp.local" ]; }];
+        dns_sd_configs = [ { names = [ "alertmanager._http._tcp.local" ]; } ];
       }
     ];
 
@@ -69,12 +75,17 @@
 
   services.prometheus.alertmanager = {
     configuration = {
-      receivers = [{
-        name = "webhook";
-        webhook_configs = [{ url = "https://webhook.site/5539afb0-089b-4c8f-a726-3187a72bd474"; }];
-      }];
+      receivers = [
+        {
+          name = "webhook";
+          webhook_configs = [ { url = "https://webhook.site/5539afb0-089b-4c8f-a726-3187a72bd474"; } ];
+        }
+      ];
       route = {
-        group_by = [ "cluster" "alertname" ];
+        group_by = [
+          "cluster"
+          "alertname"
+        ];
         receiver = "webhook";
       };
     };
@@ -83,36 +94,50 @@
 
   services.prometheus.exporters.node.enable = true;
 
-
-
   systemd.dnssd.services = {
-    prometheus = { type = "_http._tcp"; port = config.services.prometheus.port; };
-    alertmanager = { type = "_http._tcp"; port = config.services.prometheus.alertmanager.port; };
-    grafana = { type = "_http._tcp"; port = config.services.grafana.settings.server.http_port; };
-    node-exporter = { type = "_http._tcp"; port = config.services.prometheus.exporters.node.port; };
+    prometheus = {
+      type = "_http._tcp";
+      port = config.services.prometheus.port;
+    };
+    alertmanager = {
+      type = "_http._tcp";
+      port = config.services.prometheus.alertmanager.port;
+    };
+    grafana = {
+      type = "_http._tcp";
+      port = config.services.grafana.settings.server.http_port;
+    };
+    node-exporter = {
+      type = "_http._tcp";
+      port = config.services.prometheus.exporters.node.port;
+    };
   };
 
-
-  /*systemd.services.socket-activated = {
-    listenStream = [ "9999" ];
-    unitConfig = {
-      Requires = [ "not-socket-activated.service" ];
-      After = [ "not-socket-activated.service" ];
+  /*
+    systemd.services.socket-activated = {
+      listenStream = [ "9999" ];
+      unitConfig = {
+        Requires = [ "not-socket-activated.service" ];
+        After = [ "not-socket-activated.service" ];
+      };
+      serviceConfig = {
+        Type = "notify";
+        ExecStart = "${config.systemd.package}/lib/systemd/systemd-socket-proxyd 127.0.0.1:8000";
+      };
     };
-    serviceConfig = {
-      Type = "notify";
-      ExecStart = "${config.systemd.package}/lib/systemd/systemd-socket-proxyd 127.0.0.1:8000";
-    };
-  };*/
+  */
   systemd.socketProxies.not-socket-activated = {
     listenStream = [ "9999" ];
-    address =  "127.0.0.1:8000";
+    address = "127.0.0.1:8000";
   };
   systemd.services.not-socket-activated =
     let
       slowDaemon = pkgs.writeShellApplication {
         name = "slow-daemon";
-        runtimeInputs = [ pkgs.coreutils pkgs.python3 ];
+        runtimeInputs = [
+          pkgs.coreutils
+          pkgs.python3
+        ];
         text = ''
           sleep 5
           exec python3 -m http.server
@@ -120,7 +145,10 @@
       };
       waitSlowDaemonRunning = pkgs.writeShellApplication {
         name = "wait-slow-daemon-running";
-        runtimeInputs = [ pkgs.coreutils pkgs.curl ];
+        runtimeInputs = [
+          pkgs.coreutils
+          pkgs.curl
+        ];
         text = ''
           while ! curl -s http://localhost:8000 ; do
             sleep 1

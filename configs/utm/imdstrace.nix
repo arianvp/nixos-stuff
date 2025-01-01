@@ -28,7 +28,10 @@ in
   systemd.services.imdstrace = {
     description = "Counts the number of IMDS calls per process";
     wantedBy = [ "multi-user.target" ];
-    path = [ pkgs.bpftrace pkgs.jq ];
+    path = [
+      pkgs.bpftrace
+      pkgs.jq
+    ];
     script = ''
       mkdir -p /etc/metrics
       bpftrace -f json "${imdstrace}" | while read -r metric; do

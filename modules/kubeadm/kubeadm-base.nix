@@ -1,10 +1,21 @@
-{ pkgs, lib, config, ... }: 
-let 
+{
+  pkgs,
+  lib,
+  config,
+  ...
+}:
+let
   cfg = config.services.kubeadm.kubelet;
   path = with pkgs; [
-    docker utillinux iproute ethtool iptables socat
+    docker
+    utillinux
+    iproute
+    ethtool
+    iptables
+    socat
   ];
-in {
+in
+{
   # TODO conflicts services.kubernetes.kubelet
   options.services.kubeadm.kubelet = {
     enable = lib.mkEnableOption ''
@@ -28,7 +39,7 @@ in {
 
     boot.kernel.sysctl = {
       # TODO IPV6/DualStack
-      "net.ipv4.ip_forward" = 1;  
+      "net.ipv4.ip_forward" = 1;
       "net.bridge.bridge-nf-call-iptables" = 1;
     };
 
@@ -40,7 +51,16 @@ in {
       description = "Kubernetes Kubelet Service";
       wantedBy = [ "multi-user.target" ];
 
-      path = with pkgs; [ openssh docker utillinux iproute ethtool thin-provisioning-tools iptables socat ];
+      path = with pkgs; [
+        openssh
+        docker
+        utillinux
+        iproute
+        ethtool
+        thin-provisioning-tools
+        iptables
+        socat
+      ];
 
       serviceConfig = {
         StateDirectory = "kubelet";
@@ -51,7 +71,7 @@ in {
         EnvironmentFile = "-/var/lib/kubelet/kubeadm-flags.env";
 
         Restart = "always";
-        StartLimitInterval= 0;
+        StartLimitInterval = 0;
         RestartSec = 10;
 
         ExecStart = ''

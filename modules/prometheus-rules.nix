@@ -1,4 +1,9 @@
-{ pkgs, lib, config, ... }:
+{
+  pkgs,
+  lib,
+  config,
+  ...
+}:
 let
   fmt = pkgs.formats.yaml { };
 in
@@ -10,5 +15,7 @@ in
     default = { };
   };
 
-  config.services.prometheus.ruleFiles = [ (fmt.generate "rules.yml" config.services.prometheus.structuredRules) ];
+  config.services.prometheus.ruleFiles = [
+    (fmt.generate "rules.yml" config.services.prometheus.structuredRules)
+  ];
 }

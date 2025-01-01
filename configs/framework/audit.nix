@@ -7,7 +7,7 @@
 # audit any execution of nix store paths that are outside of /ru/current-system's closure
 
 let
-  inherit  (config.nixpkgs.hostPlatform) linuxArch;
+  inherit (config.nixpkgs.hostPlatform) linuxArch;
   rules =
     pkgs.runCommand "closure.rules"
       {
@@ -41,15 +41,16 @@ in
 
   # audit usage of any  suid/guid binaries.
   # On NixOS it is guaranteed that no suid binaries are present out side of /run/wrappers
-  security.audit.rules = (
-    lib.mapAttrsToList (_: wrap:
+  security.audit.rules =
+    (lib.mapAttrsToList (
+      _: wrap:
       "-a always,exit -F arch=${linuxArch} -F path=${config.security.wrapperDir}/${wrap.program} -F perm=x -F auid>=1000 -F auid!=unset -k security.wrappers.${wrap.program}"
-    ) config.security.wrappers
-  ) ++ [
-    # Audit usage of nix
-    "-a always,exit -F arch=${linuxArch} -F perm=x -F dir=${config.nix.package} -F auid>=1000 -F auid!=unset -key nix"
-    "-a always,exit -F arch=${linuxArch} -S connect -F name=/nix/var/nix/daemon-socket/socket -F auid>=1000 -F auid!=unset -k nix"
-  ];
+    ) config.security.wrappers)
+    ++ [
+      # Audit usage of nix
+      "-a always,exit -F arch=${linuxArch} -F perm=x -F dir=${config.nix.package} -F auid>=1000 -F auid!=unset -key nix"
+      "-a always,exit -F arch=${linuxArch} -S connect -F name=/nix/var/nix/daemon-socket/socket -F auid>=1000 -F auid!=unset -k nix"
+    ];
 
   systemd.sockets."systemd-journald-audit".wantedBy = [ "sockets.target" ];
 

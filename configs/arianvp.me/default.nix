@@ -1,7 +1,13 @@
-{ lib, pkgs, config, modulesPath, ...}:
+{
+  lib,
+  pkgs,
+  config,
+  modulesPath,
+  ...
+}:
 {
   imports = [
-     (modulesPath + "/virtualisation/digital-ocean-image.nix")
+    (modulesPath + "/virtualisation/digital-ocean-image.nix")
     ../../modules/containers-v2.nix
     ./network.nix
   ];
@@ -13,8 +19,8 @@
 
   # Weechat
   networking.firewall.allowedTCPPorts = [
-    80   # http
-    443  # https
+    80 # http
+    443 # https
   ];
 
   services.nginx = {

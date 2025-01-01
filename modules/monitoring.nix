@@ -1,4 +1,5 @@
-{ config, ... }: {
+{ config, ... }:
+{
   services.grafana = {
     enable = true;
     settings = {
@@ -8,10 +9,12 @@
     provision.enable = true;
     provision.datasources = {
       settings.deleteDatasources = [
-        /*{
-          name = "AlertManager";
-          orgId = 1;
-        }*/
+        /*
+          {
+            name = "AlertManager";
+            orgId = 1;
+          }
+        */
       ];
       settings.datasources = [
         {
@@ -34,26 +37,28 @@
 
   services.prometheus = {
     enable = true;
-    alertmanagers = [{
-      dns_sd_configs = [{ names = [ "alertmanager._http._tcp.local" ]; }];
-    }];
+    alertmanagers = [
+      {
+        dns_sd_configs = [ { names = [ "alertmanager._http._tcp.local" ]; } ];
+      }
+    ];
     globalConfig.scrape_interval = "15s";
     scrapeConfigs = [
       {
         job_name = "cgroups";
-        dns_sd_configs = [{ names = [ "cgroup-exporter._http._tcp.local" ]; }];
+        dns_sd_configs = [ { names = [ "cgroup-exporter._http._tcp.local" ]; } ];
       }
       {
         job_name = "node_exporter";
-        dns_sd_configs = [{ names = [ "node-exporter._http._tcp.local" ]; }];
+        dns_sd_configs = [ { names = [ "node-exporter._http._tcp.local" ]; } ];
       }
       {
         job_name = "prometheus";
-        dns_sd_configs = [{ names = [ "prometheus._http._tcp.local" ]; }];
+        dns_sd_configs = [ { names = [ "prometheus._http._tcp.local" ]; } ];
       }
       {
         job_name = "alertmanager";
-        dns_sd_configs = [{ names = [ "alertmanager._http._tcp.local" ]; }];
+        dns_sd_configs = [ { names = [ "alertmanager._http._tcp.local" ]; } ];
       }
     ];
 
@@ -145,12 +150,17 @@
 
   services.prometheus.alertmanager = {
     configuration = {
-      receivers = [{
-        name = "webhook";
-        webhook_configs = [{ url = "https://webhook.site/e26048d0-866a-4722-adda-06c9b65d8f32"; }];
-      }];
+      receivers = [
+        {
+          name = "webhook";
+          webhook_configs = [ { url = "https://webhook.site/e26048d0-866a-4722-adda-06c9b65d8f32"; } ];
+        }
+      ];
       route = {
-        group_by = [ "cluster" "alertname" ];
+        group_by = [
+          "cluster"
+          "alertname"
+        ];
         receiver = "webhook";
       };
     };
@@ -161,12 +171,26 @@
   services.prometheus.exporters.cgroup.enable = true;
 
   systemd.dnssd.services = {
-    prometheus = { type = "_http._tcp"; port = config.services.prometheus.port; };
-    alertmanager = { type = "_http._tcp"; port = config.services.prometheus.alertmanager.port; };
-    grafana = { type = "_http._tcp"; port = config.services.grafana.settings.server.http_port; };
-    node-exporter = { type = "_http._tcp"; port = config.services.prometheus.exporters.node.port; };
-    cgroup-exporter = { type = "_http._tcp"; port = config.services.prometheus.exporters.cgroup.port; };
+    prometheus = {
+      type = "_http._tcp";
+      port = config.services.prometheus.port;
+    };
+    alertmanager = {
+      type = "_http._tcp";
+      port = config.services.prometheus.alertmanager.port;
+    };
+    grafana = {
+      type = "_http._tcp";
+      port = config.services.grafana.settings.server.http_port;
+    };
+    node-exporter = {
+      type = "_http._tcp";
+      port = config.services.prometheus.exporters.node.port;
+    };
+    cgroup-exporter = {
+      type = "_http._tcp";
+      port = config.services.prometheus.exporters.cgroup.port;
+    };
   };
-
 
 }
