@@ -1,13 +1,11 @@
 {
   description = "Arian's computers";
-
-  # inputs.helsinki.url = "github:helsinki-systems/nixpkgs/feat/systemd-stage-1-luks";
   inputs.unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
   inputs.stable.url = "github:NixOS/nixpkgs/nixos-24.11";
   inputs.webauthn.url = "github:arianvp/webauthn-oidc";
   inputs.nixos-hardware.url = "github:NixOS/nixos-hardware";
   inputs.lanzaboote = {
-    url = "github:nix-community/lanzaboote/v0.4.1";
+    url = "github:nix-community/lanzaboote/v0.4.2";
     inputs.nixpkgs.follows = "unstable";
   };
   inputs.nixos-generators = {
