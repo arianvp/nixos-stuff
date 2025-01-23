@@ -7,6 +7,14 @@
   ];
   services.fwupd.enable = true;
 
+  fileSystems = {
+    "/tmp" = {
+      device = "tmpfs";
+      fsType = "tmpfs";
+      options = [ "nosuid" "nodev" "noexec" "size=4G" ];
+    };
+  };
+
   boot.initrd.systemd.enable = true;
   # console.earlySetup = lib.mkForce false;
   # boot.consoleLogLevel = 3;
@@ -62,19 +70,4 @@
   programs.chromium.enable = true;
 
   system.stateVersion = "24.11"; # Did you read the comment?
-
-  /*
-    (nixpkgs.overlays = [
-      (self: super: {
-        # 5.78 breaks bluetooth pairing with my logitech mouse.
-        bluez = super.bluez.overrideAttrs (old: {
-          version = "5.76";
-          src = pkgs.fetchurl {
-            url = "mirror://kernel/linux/bluetooth/bluez-5.76.tar.xz";
-            hash = "sha256-VeLGRZCa2C2DPELOhewgQ04O8AcJQbHqtz+s3SQLvWM=";
-          };
-        });
-      })
-    ];
-  */
 }
