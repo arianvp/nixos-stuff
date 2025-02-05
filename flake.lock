@@ -145,37 +145,6 @@
         "type": "github"
       }
     },
-    "local": {
-      "locked": {
-        "lastModified": 1735678464,
-        "narHash": "sha256-iB5Oun4o6hdPChYPAkx3SGFtswEi9k2DPFmGPzn6pTg=",
-        "ref": "refs/heads/master",
-        "rev": "6658599c511657c0ed945cb737bec7cfc0bcfcea",
-        "revCount": 731172,
-        "type": "git",
-        "url": "file:///home/arian/Projects/nixpkgs"
-      },
-      "original": {
-        "type": "git",
-        "url": "file:///home/arian/Projects/nixpkgs"
-      }
-    },
-    "nikstur": {
-      "locked": {
-        "lastModified": 1721557902,
-        "narHash": "sha256-hrspUhjq//6+mgsRVqrhi1Dj4/jovqOFYDHjcUodrbw=",
-        "owner": "nikstur",
-        "repo": "nixpkgs",
-        "rev": "6f959a9e9607defbabdbd2c5c77096f205989eef",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nikstur",
-        "ref": "systemd-256",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
     "nixlib": {
       "locked": {
         "lastModified": 1734829460,
@@ -288,8 +257,6 @@
       "inputs": {
         "cgroup-exporter": "cgroup-exporter",
         "lanzaboote": "lanzaboote",
-        "local": "local",
-        "nikstur": "nikstur",
         "nixos-generators": "nixos-generators",
         "nixos-hardware": "nixos-hardware",
         "stable": "stable",

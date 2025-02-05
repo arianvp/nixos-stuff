@@ -2,8 +2,6 @@
   description = "Arian's computers";
 
   # inputs.helsinki.url = "github:helsinki-systems/nixpkgs/feat/systemd-stage-1-luks";
-  inputs.nikstur.url = "github:nikstur/nixpkgs?ref=systemd-256";
-  inputs.local.url = "/home/arian/Projects/nixpkgs";
   inputs.unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
   inputs.stable.url = "github:NixOS/nixpkgs/nixos-24.05";
   inputs.webauthn.url = "github:arianvp/webauthn-oidc";
@@ -32,8 +30,6 @@
       unstable,
       nixos-hardware,
       nixos-generators,
-      nikstur,
-      local,
       ...
     }:
     {
@@ -82,7 +78,7 @@
       };
 
       nixosConfigurations = {
-        framework = local.lib.nixosSystem {
+        framework = unstable.lib.nixosSystem {
           system = "x86_64-linux";
           modules = with self.nixosModules; [
             nixos-hardware.nixosModules.framework-11th-gen-intel
