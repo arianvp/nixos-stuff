@@ -5,23 +5,17 @@
   inputs,
   ...
 }:
-
-let
-  hello = import ./blah/default.nix { pkgs = pkgs; };
-in
 {
-  systemd.services.hello = {
-    serviceConfig = {
-      Type = "oneshot";
-      ExecStart = "${hello}/bin/hello";
-    };
-  };
   imports = [
     # Include the results of the hardware scan.
     ./hardware-configuration.nix
-    ./monitoring.nix
+    # ../../modules/monitoring.nix
     ./soft-reboot.nix
+    ../../modules/repro.nix
+    ./coredump-upload.nix
   ];
+
+  coredump-upload.bucket = "s3://my-bucket";
   # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
   # Virtualization.framework EFI driver doesnt' seem to support graphics anyway
@@ -49,7 +43,7 @@ in
       pkgs.vim
       pkgs.git
       pkgs.direnv
-      pkgs.bpftrace
+      # pkgs.bpftrace
     ];
     openssh.authorizedKeys.keys = [
       "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBMaGVuvE+aNyuAu0E9m5scVhmnVgAutNqridbMnc261cHQwecih720LCqDwTgrI3zbMwixBuU422AK0N81DyekQ= arian@Arians-MacBook-Pro.local"
@@ -84,6 +78,7 @@ in
   programs.bash.interactiveShellInit = ''
     eval "$(direnv hook bash)"
   '';
+ nix.settings.trusted-users = ["@wheel"];
 
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions
