@@ -3,7 +3,7 @@
 
   # inputs.helsinki.url = "github:helsinki-systems/nixpkgs/feat/systemd-stage-1-luks";
   inputs.unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-  inputs.stable.url = "github:NixOS/nixpkgs/nixos-24.05";
+  inputs.stable.url = "github:NixOS/nixpkgs/nixos-24.11";
   inputs.webauthn.url = "github:arianvp/webauthn-oidc";
   inputs.nixos-hardware.url = "github:NixOS/nixos-hardware";
   inputs.lanzaboote = {

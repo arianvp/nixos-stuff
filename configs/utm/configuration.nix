@@ -12,10 +12,10 @@
     # ../../modules/monitoring.nix
     ./soft-reboot.nix
     ../../modules/repro.nix
-    ./coredump-upload.nix
   ];
 
-  coredump-upload.bucket = "s3://my-bucket";
+  security.auditd.enable = true;
+
   # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
   # Virtualization.framework EFI driver doesnt' seem to support graphics anyway
