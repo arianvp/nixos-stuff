@@ -10,6 +10,7 @@
     # Include the results of the hardware scan.
     ./hardware-configuration.nix
     # ../../modules/monitoring.nix
+    ../../modules/vmspawn.nix
     ./soft-reboot.nix
     ../../modules/repro.nix
     ../../modules/spire/agent.nix
