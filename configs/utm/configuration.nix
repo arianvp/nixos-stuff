@@ -79,6 +79,7 @@
     eval "$(direnv hook bash)"
   '';
  nix.settings.trusted-users = ["@wheel"];
+ nix.settings.experimental-features = [ "nix-command" "flakes" "fetch-closure" ];
 
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions

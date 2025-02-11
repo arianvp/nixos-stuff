@@ -37,14 +37,6 @@
       nixosModules = {
         cachix = ./modules/cachix.nix;
         direnv = ./modules/direnv.nix;
-        nixFlakes =
-          { pkgs, ... }:
-          {
-            nix.package = pkgs.nix;
-            nix.extraOptions = ''
-              experimental-features = nix-command flakes
-            '';
-          };
         dnssd = ./modules/dnssd.nix;
         prometheus-rules = ./modules/prometheus-rules.nix;
         monitoring = ./modules/monitoring.nix;
@@ -82,7 +74,6 @@
           system = "x86_64-linux";
           modules = with self.nixosModules; [
             nixos-hardware.nixosModules.framework-11th-gen-intel
-            nixFlakes
             direnv
             dnssd
             prometheus-rules
@@ -104,7 +95,6 @@
           system = "aarch64-linux";
           modules = with self.nixosModules; [
             { networking.hostName = "utm"; }
-            nixFlakes
             ./configs/utm/configuration.nix
           ];
         };
