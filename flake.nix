@@ -98,6 +98,12 @@
             ./configs/utm/configuration.nix
           ];
         };
+        spire = stable.lib.nixosSystem {
+          system = "aarch64-linux";
+          modules = with self.nixosModules; [
+            ./configs/spire/configuration.nix
+          ];
+        };
         arianvp-me = unstable.lib.nixosSystem {
           system = "x86_64-linux";
           modules = with self.nixosModules; [
