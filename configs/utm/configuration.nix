@@ -12,6 +12,8 @@
     # ../../modules/monitoring.nix
     ./soft-reboot.nix
     ../../modules/repro.nix
+    ../../modules/spire/agent.nix
+    ../../modules/spire/server.nix
   ];
 
   security.auditd.enable = true;
@@ -78,8 +80,12 @@
   programs.bash.interactiveShellInit = ''
     eval "$(direnv hook bash)"
   '';
- nix.settings.trusted-users = ["@wheel"];
- nix.settings.experimental-features = [ "nix-command" "flakes" "fetch-closure" ];
+  nix.settings.trusted-users = [ "@wheel" ];
+  nix.settings.experimental-features = [
+    "nix-command"
+    "flakes"
+    "fetch-closure"
+  ];
 
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions
@@ -88,5 +94,73 @@
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
   system.stateVersion = "24.05"; # Did you read the comment?A
+
+  spire.agent = {
+    enable = true;
+    trustDomain = "arianvp.me";
+    trustBundleUrl = "https://spire.arianvp.me/bundle.json";
+    serverAddress = "127.0.0.1";
+    config = ''
+      plugins {
+        KeyManager "memory" {
+          plugin_data {
+          }
+        }
+        NodeAttestor "http_challenge" {
+          plugin_data {
+          }
+        }
+        WorkloadAttestor "systemd" {
+          plugin_data {
+          }
+        }
+        WorkloadAttestor "unix" {
+          plugin_data {
+          }
+        }
+      }
+    '';
+  };
+  spire.server = {
+    enable = true;
+    trustDomain = "arianvp.me";
+    config = ''
+      server {
+        federation {
+          bundle_endpoint {
+            address = "0.0.0.0"
+            port = 443
+            profile "https_web" {
+              acme {
+                domain_name = "spire.arianvp.me"
+                email = "spire@arianvp.me"
+                tos_accepted = true
+              }
+            }
+          }
+        }
+      }
+      plugins {
+        KeyManager "memory" {
+          plugin_data {
+          }
+        }
+        DataStore "sql" {
+          plugin_data {
+            database_type = "sqlite3"
+            connection_string = "$STATE_DIRECTORY/datastore.sqlite3"
+          }
+        }
+        NodeAttestor "http_challenge" {
+          plugin_data {
+          }
+        }
+        NodeAttestor "join_token" {
+          plugin_data {
+          }
+        }
+      }
+    '';
+  };
 
 }
