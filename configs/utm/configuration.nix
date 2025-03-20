@@ -97,10 +97,8 @@
 
   spire.agent = {
     enable = true;
-    trustDomain = "spire.arianvp.me";
-  };
-  spire.server = {
-    enable = true;
-    trustDomain = "spire.arianvp.me";
+    trustDomain = "frickel.consulting";
+    trustBundleFormat = "spiffe";
+    joinToken = "61cdef30-7ee0-4b51-81aa-c8cb2007df3b";
   };
 }

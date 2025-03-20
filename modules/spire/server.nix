@@ -12,7 +12,7 @@
     bindAddress = lib.mkOption {
       type = lib.types.str;
       description = "IP address or DNS name of the SPIRE server";
-      default = "127.0.0.1";
+      default = "0.0.0.0";
     };
 
     config = lib.mkOption {
@@ -32,6 +32,7 @@
               }
             }
           }
+          jwt_issuer = "https://${config.spire.server.trustDomain}"
         }
         plugins {
           KeyManager "memory" {
@@ -92,9 +93,9 @@
     };
 
     socketPath = lib.mkOption {
-      type = lib.types.str;
+      type = lib.types.nullOr lib.types.str;
       description = "Path to bind the SPIRE Server API socket to";
-      default = "/run/spire-server.sock";
+      default = null;
     };
 
     trustDomain = lib.mkOption {
@@ -105,10 +106,15 @@
   };
   config = lib.mkIf config.spire.server.enable {
     environment.systemPackages = [ pkgs.spire ];
+    networking.firewall.allowedTCPPorts = [
+      443
+      8081
+    ];
     systemd.services.spire-server = {
       description = "Spire Server";
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {
+        Restart = "on-failure";
         RuntimeDirectory = "spire-server";
         StateDirectory = "spire-server";
         ExecStart =

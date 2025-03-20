@@ -24,16 +24,22 @@
             plugin_data {
             }
           }
-          NodeAttestor "http_challenge" {
-            plugin_data {
-            }
+
+          NodeAttestor "join_token" {
+            plugin_data { }
           }
+
+          # NodeAttestor "http_challenge" {
+          #   plugin_data {
+          #   }
+          # }
           WorkloadAttestor "systemd" {
             plugin_data {
             }
           }
           WorkloadAttestor "unix" {
             plugin_data {
+              discover_workload_path = true
             }
           }
         }
@@ -106,8 +112,8 @@
     };
 
     socketPath = lib.mkOption {
-      type = lib.types.str;
-      default = "/run/spire-agent.sock";
+      type = lib.types.nullOr lib.types.str;
+      default = "/tmp/spire-agent/public/api.sock";
       description = "Path to bind the SPIRE Agent API socket to";
     };
 
@@ -130,7 +136,7 @@
 
     trustBundleUrl = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
-      default = "https://${config.spire.agent.serverAddress}/bundle.json";
+      default = "https://${config.spire.agent.serverAddress}";
       description = "URL to download the SPIRE server CA bundle";
     };
 
@@ -146,6 +152,7 @@
       description = "Spire agent";
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {
+        Restart = "always";
         RuntimeDirectory = "spire-agent";
         StateDirectory = "spire-agent";
         ExecStart =
