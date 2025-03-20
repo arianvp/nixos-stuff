@@ -18,6 +18,26 @@
     config = lib.mkOption {
       type = lib.types.str;
       description = "SPIRE plugin config";
+      default = ''
+        plugins {
+          KeyManager "memory" {
+            plugin_data {
+            }
+          }
+          NodeAttestor "http_challenge" {
+            plugin_data {
+            }
+          }
+          WorkloadAttestor "systemd" {
+            plugin_data {
+            }
+          }
+          WorkloadAttestor "unix" {
+            plugin_data {
+            }
+          }
+        }
+      '';
     };
 
     expandEnv = lib.mkOption {
@@ -75,6 +95,7 @@
 
     serverAddress = lib.mkOption {
       type = lib.types.str;
+      default = "${config.spire.agent.trustDomain}";
       description = "IP address or DNS name of the SPIRE server";
     };
 
@@ -109,7 +130,7 @@
 
     trustBundleUrl = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
-      default = null;
+      default = "https://${config.spire.agent.serverAddress}/bundle.json";
       description = "URL to download the SPIRE server CA bundle";
     };
 
@@ -121,7 +142,7 @@
   };
   config = lib.mkIf config.spire.agent.enable {
     environment.systemPackages = [ pkgs.spire ];
-    systemd.services.spire-agrnt = {
+    systemd.services.spire-agent = {
       description = "Spire agent";
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {

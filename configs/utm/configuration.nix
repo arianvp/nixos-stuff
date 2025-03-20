@@ -97,70 +97,10 @@
 
   spire.agent = {
     enable = true;
-    trustDomain = "arianvp.me";
-    trustBundleUrl = "https://spire.arianvp.me/bundle.json";
-    serverAddress = "127.0.0.1";
-    config = ''
-      plugins {
-        KeyManager "memory" {
-          plugin_data {
-          }
-        }
-        NodeAttestor "http_challenge" {
-          plugin_data {
-          }
-        }
-        WorkloadAttestor "systemd" {
-          plugin_data {
-          }
-        }
-        WorkloadAttestor "unix" {
-          plugin_data {
-          }
-        }
-      }
-    '';
+    trustDomain = "spire.arianvp.me";
   };
   spire.server = {
     enable = true;
-    trustDomain = "arianvp.me";
-    config = ''
-      server {
-        federation {
-          bundle_endpoint {
-            address = "0.0.0.0"
-            port = 443
-            profile "https_web" {
-              acme {
-                domain_name = "spire.arianvp.me"
-                email = "spire@arianvp.me"
-                tos_accepted = true
-              }
-            }
-          }
-        }
-      }
-      plugins {
-        KeyManager "memory" {
-          plugin_data {
-          }
-        }
-        DataStore "sql" {
-          plugin_data {
-            database_type = "sqlite3"
-            connection_string = "$STATE_DIRECTORY/datastore.sqlite3"
-          }
-        }
-        NodeAttestor "http_challenge" {
-          plugin_data {
-          }
-        }
-        NodeAttestor "join_token" {
-          plugin_data {
-          }
-        }
-      }
-    '';
+    trustDomain = "spire.arianvp.me";
   };
-
 }
