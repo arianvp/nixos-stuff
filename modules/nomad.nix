@@ -1,56 +1,31 @@
 {
   config,
-  pkgs,
   lib,
+  pkgs,
   ...
 }:
-with lib;
 let
-  dataDir = "/var/lib/nomad";
-  cfg = config.services.nomad;
+  cfg = config.services.nomad2;
+  format = pkgs.formats.json { };
 in
 {
-  options = {
-    services.nomad = {
-      enable = mkOption {
-        type = types.bool;
-        default = false;
-        description = "enable nomad cluster";
-
-      };
-      extraConfig = mkOption {
-        default = { };
-        description = ''
-          Extra configuration options which are serialized to json and added
-          to the config.json file.
-        '';
+  options.services.nomad2 = {
+    enable = lib.mkEnableOption "nomad";
+    package = lib.mkPackageOption pkgs "nomad" { };
+    settings = lib.mkOption {
+      type = format.type;
+      default = {
+        data_dir = "/var/lib/nomad";
       };
     };
   };
-  config =
-    let
-      nomadFile = config.environment.etc."nomad.json".source;
-    in
-    mkIf cfg.enable {
-      environment.etc."nomad.json".text = builtins.toJSON ({ data_dir = dataDir; } // cfg.extraConfig);
-      environment.systemPackages = [ pkgs.nomad ];
-      systemd.services.nomad = {
-        path = with pkgs; [
-          iproute
-          gnugrep
-          gawk
-          nomad
-        ];
-        wantedBy = [ "multi-user.target" ];
-        after = [ "network.target" ];
-        restartTriggers = [ config.environment.etc."nomad.json".source ];
-        serviceConfig = {
-          ExecStart = "@${pkgs.nomad}/bin/nomad nomad agent -config=${nomadFile}";
-          Restart = "on-failure";
-        };
-        preStart = ''
-          mkdir -m 0700 -p ${dataDir}
-        '';
-      };
+
+  config.systemd.services.nomad = {
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "notify"; # TODO: notify-reload
+      ExecStart = "${cfg.package}/bin/nomad agent -config ${format.generate "nomad.json" cfg.settings}";
+      StateDirectory = "nomad";
     };
+  };
 }

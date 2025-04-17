@@ -16,6 +16,7 @@
     ../../modules/spire/agent.nix
     ../../modules/spire/server.nix
     ./ci.nix
+    ../../modules/nomad.nix
   ];
 
   security.auditd.enable = true;
@@ -102,5 +103,12 @@
     trustDomain = "frickel.consulting";
     trustBundleFormat = "spiffe";
     joinToken = "61cdef30-7ee0-4b51-81aa-c8cb2007df3b";
+  };
+
+  services.nomad2 = {
+    enable = true;
+    settings = {
+
+    };
   };
 }
