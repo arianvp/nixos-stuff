@@ -28,4 +28,5 @@ in
       StateDirectory = "nomad";
     };
   };
+  config.nixpkgs.config.allowUnfreePredicate = pkg: lib.getName pkg == "nomad";
 }

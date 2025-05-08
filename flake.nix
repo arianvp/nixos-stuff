@@ -19,7 +19,7 @@
   };
 
   outputs =
-    inputs@{
+    {
       self,
       cgroup-exporter,
       lanzaboote,
@@ -70,41 +70,43 @@
       nixosConfigurations = {
         framework = unstable.lib.nixosSystem {
           system = "x86_64-linux";
-          modules = with self.nixosModules; [
+          modules = [
             nixos-hardware.nixosModules.framework-11th-gen-intel
-            direnv
-            dnssd
-            prometheus-rules
-            monitoring
-            overlays
+            self.nixosModules.direnv
+            self.nixosModules.dnssd
+            self.nixosModules.prometheus-rules
+            self.nixosModules.monitoring
+            self.nixosModules.overlays
             cgroup-exporter.nixosModules.default
             lanzaboote.nixosModules.lanzaboote
             ./configs/framework/configuration.nix
           ];
         };
-        ryzen = unstable.lib.nixosSystem {
+        /*
+          ryzen = unstable.lib.nixosSystem {
           system = "x86_64-linux";
           modules = with self.nixosModules; [
             cachix
             ./configs/ryzen
           ];
-        };
+          };
+        */
         utm = stable.lib.nixosSystem {
           system = "aarch64-linux";
-          modules = with self.nixosModules; [
+          modules = [
             { networking.hostName = "utm"; }
             ./configs/utm/configuration.nix
           ];
         };
         spire = stable.lib.nixosSystem {
           system = "aarch64-linux";
-          modules = with self.nixosModules; [
+          modules = [
             ./configs/spire/configuration.nix
           ];
         };
         arianvp-me = unstable.lib.nixosSystem {
           system = "x86_64-linux";
-          modules = with self.nixosModules; [
+          modules = [
             webauthn.nixosModule
             {
               services.webauthn-oidc.host = "oidc.arianvp.me";
