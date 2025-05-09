@@ -7,11 +7,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1736508617,
-        "narHash": "sha256-YV49EvJWc+uae6R3REuk/XWZfKBKzfwx1Mu0/SlmBWE=",
+        "lastModified": 1746700253,
+        "narHash": "sha256-MP45mdfhZ3MjpL0sJolZ0GkY3Le8QoUDqS+loPtxu2I=",
         "owner": "arianvp",
         "repo": "cgroups-exporter",
-        "rev": "30eca88d60087e2cc7e9339acbaa6fae1f167d81",
+        "rev": "97b83d6d495b3cb6f959a4368fd93ac342d23706",
         "type": "github"
       },
       "original": {
