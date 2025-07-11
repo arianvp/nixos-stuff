@@ -104,6 +104,10 @@
             ./configs/spire/configuration.nix
           ];
         };
+        altra = unstable.lib.nixosSystem {
+          system = "aarch64-linux";
+          modules = [ ./configs/altra/configuration.nix ];
+        };
         arianvp-me = unstable.lib.nixosSystem {
           system = "x86_64-linux";
           modules = [
