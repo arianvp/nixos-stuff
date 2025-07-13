@@ -8,6 +8,7 @@
 {
   imports = [
     ./hardware-configuration.nix
+    ./yggdrasil.nix
   ];
 
   # Use the systemd-boot EFI boot loader.
