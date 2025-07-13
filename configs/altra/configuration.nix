@@ -25,9 +25,13 @@
       pkgs.vim
       pkgs.git
       pkgs.direnv
+      pkgs.btop
+      pkgs.tmux
+      pkgs.nix-output-monitor
     ];
     openssh.authorizedKeys.keys = [
       "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBMaGVuvE+aNyuAu0E9m5scVhmnVgAutNqridbMnc261cHQwecih720LCqDwTgrI3zbMwixBuU422AK0N81DyekQ= arian@Arians-MacBook-Pro.local"
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHdERauixCGEk0oxLB+725k2M3McKHM0hjOjOWS+Dxdf arian@Mac"
     ];
   };
 
@@ -39,12 +43,16 @@
     eval "$(direnv hook bash)"
   '';
 
+  system.name = "altra";
+
   nix.settings.trusted-users = [ "@wheel" ];
   nix.settings.experimental-features = [
     "nix-command"
     "flakes"
     "fetch-closure"
   ];
+
+  services.tailscale.enable = true;
 
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions
