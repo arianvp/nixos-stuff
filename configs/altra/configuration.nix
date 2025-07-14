@@ -36,6 +36,22 @@
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHdERauixCGEk0oxLB+725k2M3McKHM0hjOjOWS+Dxdf arian@Mac"
     ];
   };
+  users.users.flokli = {
+    isNormalUser = true;
+    extraGroups = [ "wheel" ];
+    packages = [
+      pkgs.vim
+      pkgs.git
+      pkgs.direnv
+      pkgs.btop
+      pkgs.tmux
+      pkgs.nix-output-monitor
+    ];
+    openssh.authorizedKeys.keys = [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPTVTXOutUZZjXLB0lUSgeKcSY/8mxKkC0ingGK1whD2"
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE6a15p9HLSrawsMTd2UQGAiM7r7VdyrfSRyzwRYTgWT"
+    ];
+  };
 
   services.openssh.enable = true;
 
