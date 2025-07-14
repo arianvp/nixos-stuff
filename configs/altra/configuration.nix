@@ -56,7 +56,7 @@
   services.openssh.enable = true;
   services.openssh.settings.PasswordAuthentication = false;
 
-  environment.systemPackages = [ pkgs.direnv ];
+  environment.systemPackages = [ pkgs.direnv pkgs.kitty.terminfo ];
   programs.zsh.enable = true;
   programs.bash.interactiveShellInit = ''
     eval "$(direnv hook bash)"
