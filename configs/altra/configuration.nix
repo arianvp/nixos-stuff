@@ -54,6 +54,7 @@
   };
 
   services.openssh.enable = true;
+  services.openssh.settings.PasswordAuthentication = false;
 
   environment.systemPackages = [ pkgs.direnv ];
   programs.zsh.enable = true;
