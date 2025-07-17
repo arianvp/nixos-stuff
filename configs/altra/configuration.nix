@@ -30,6 +30,8 @@
       pkgs.btop
       pkgs.tmux
       pkgs.nix-output-monitor
+      pkgs.nixfmt-rfc-style
+      pkgs.nixd
     ];
     openssh.authorizedKeys.keys = [
       "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBMaGVuvE+aNyuAu0E9m5scVhmnVgAutNqridbMnc261cHQwecih720LCqDwTgrI3zbMwixBuU422AK0N81DyekQ= arian@Arians-MacBook-Pro.local"
@@ -70,6 +72,7 @@
     "flakes"
     "fetch-closure"
   ];
+  nix.settings.system-features = ["nixos-test" "benchmark" "big-parallel" "kvm"];
 
   services.tailscale.enable = true;
 
