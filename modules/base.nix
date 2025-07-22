@@ -7,6 +7,22 @@
 
   services.openssh.settings.PasswordAuthentication = false;
 
+  environment.systemPackages = [ pkgs.direnv ];
+  programs.bash.interactiveShellInit = ''
+    eval "$(direnv hook bash)"
+  '';
+
+  nix.settings.trusted-users = [
+    "@wheel"
+    "@nix-trusted-users"
+  ];
+
+  nix.settings.experimental-features = [
+    "nix-command"
+    "flakes"
+    "fetch-closure"
+  ];
+
   users.users.arian = {
     isNormalUser = true;
     extraGroups = [ "@wheel" ];

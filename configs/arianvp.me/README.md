@@ -1,0 +1,5 @@
+# Deploying
+
+```
+nix build .#digitalOceanImage
+```

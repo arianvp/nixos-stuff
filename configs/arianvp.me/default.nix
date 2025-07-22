@@ -8,11 +8,10 @@
 {
   imports = [
     (modulesPath + "/virtualisation/digital-ocean-image.nix")
-    ../../modules/old/containers-v2.nix
     ./network.nix
   ];
 
-  system.stateVersion = "19.03";
+  system.stateVersion = "25.05";
 
   # needed for networkd to function. obscure
   time.timeZone = "Europe/Amsterdam";

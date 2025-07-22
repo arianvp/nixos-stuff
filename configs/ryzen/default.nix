@@ -63,5 +63,5 @@ with pkgs;
   };
 
   # Never change this value unless instructed to.
-  system.stateVersion = "18.03";
+  system.stateVersion = "25.05";
 }

@@ -26,7 +26,6 @@
     packages = [
       pkgs.vim
       pkgs.git
-      pkgs.direnv
       pkgs.btop
       pkgs.tmux
       pkgs.nix-output-monitor
@@ -44,7 +43,6 @@
     packages = [
       pkgs.vim
       pkgs.git
-      pkgs.direnv
       pkgs.btop
       pkgs.tmux
       pkgs.nix-output-monitor
@@ -58,11 +56,10 @@
   services.openssh.enable = true;
   services.openssh.settings.PasswordAuthentication = false;
 
-  environment.systemPackages = [ pkgs.direnv pkgs.kitty.terminfo ];
+  environment.systemPackages = [
+    pkgs.kitty.terminfo
+  ];
   programs.zsh.enable = true;
-  programs.bash.interactiveShellInit = ''
-    eval "$(direnv hook bash)"
-  '';
 
   system.name = "altra";
 
@@ -72,7 +69,12 @@
     "flakes"
     "fetch-closure"
   ];
-  nix.settings.system-features = ["nixos-test" "benchmark" "big-parallel" "kvm"];
+  nix.settings.system-features = [
+    "nixos-test"
+    "benchmark"
+    "big-parallel"
+    "kvm"
+  ];
 
   services.tailscale.enable = true;
 
@@ -82,5 +84,5 @@
   # this value at the release version of the first install of this system.
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
-  system.stateVersion = "24.05"; # Did you read the comment?A
+  system.stateVersion = "25.05"; # Did you read the comment?A
 }

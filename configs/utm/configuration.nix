@@ -45,7 +45,6 @@
     packages = [
       pkgs.vim
       pkgs.git
-      pkgs.direnv
       # pkgs.bpftrace
     ];
     openssh.authorizedKeys.keys = [
@@ -73,20 +72,9 @@
   # TODO Fix upstream
   # systemd.targets.boot-complete.requires = [ "systemd-boot-check-no-failures.service" ];
 
-  boot.swraid.enable = true;
+  # TODO: Don't remember why I enabled swraid
+  # boot.swraid.enable = true;
   programs.bcc.enable = true;
-
-  environment.systemPackages = [ pkgs.direnv ];
-  programs.zsh.enable = true;
-  programs.bash.interactiveShellInit = ''
-    eval "$(direnv hook bash)"
-  '';
-  nix.settings.trusted-users = [ "@wheel" ];
-  nix.settings.experimental-features = [
-    "nix-command"
-    "flakes"
-    "fetch-closure"
-  ];
 
   # This value determines the NixOS release from which the default
   # settings for stateful data, like file locations and database versions
@@ -94,7 +82,7 @@
   # this value at the release version of the first install of this system.
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
-  system.stateVersion = "24.05"; # Did you read the comment?A
+  system.stateVersion = "25.05"; # Did you read the comment?
 
   spire.agent = {
     enable = true;

@@ -30,6 +30,17 @@
     }:
     {
 
+      devShells.default = unstable.lib.genAttrs [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ] (
+        system:
+        with unstable.legacyPackages.${system};
+        mkShell {
+          packages = [
+            doctl
+            opentofu
+          ];
+        }
+      );
+
       nixosModules = {
         base = ./modules/base.nix;
         cachix = ./modules/cachix.nix;
@@ -57,11 +68,14 @@
           };
       };
 
-      packages.x86_64-linux.frameworkISO = nixos-generators.nixosGenerate {
+      # TODO: use?
+      /*
+        packages.x86_64-linux.frameworkISO = nixos-generators.nixosGenerate {
         pkgs = unstable.legacyPackages.x86_64-linux;
         modules = [ nixos-hardware.nixosModules.framework-11th-gen-intel ];
         format = "iso";
-      };
+        };
+      */
 
       # TODO: move to Phaer's thing
       packages.x86_64-linux.digitalOceanImage = nixos-generators.nixosGenerate {
@@ -78,6 +92,7 @@
             base
             cgroup-exporter.nixosModules.default
             dnssd
+            direnv
             overlays
           ];
         in
