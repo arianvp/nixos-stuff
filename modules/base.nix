@@ -58,6 +58,10 @@
         let
           checkout-build-and-commit = pkgs.writeShellApplication {
             name = "checkout-build-and-commit";
+            runtimeInputs = [
+              pkgs.nix
+              pkgs.git
+            ];
             text = ''
               git clone git@github.com:arianvp/nixos-stuff.git "$STATE_DIRECTORY" || true
               git checkout -B "flake-update-${config.system.name}" "${inputs.self.rev}"
@@ -72,6 +76,7 @@
           };
           push = pkgs.writeShellApplication {
             name = "push";
+            runtimeInputs = [ pkgs.git ];
             text = ''
               git push -f origin "flake-update-${config.system.name}"
             '';
