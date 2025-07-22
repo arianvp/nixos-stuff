@@ -41,6 +41,8 @@
         }
       );
 
+      lol = self;
+
       nixosModules = {
         base = ./modules/base.nix;
         cachix = ./modules/cachix.nix;

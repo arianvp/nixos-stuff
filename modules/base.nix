@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ inputs, pkgs, ... }:
 {
   imports = [
     ./dnssd.nix
@@ -7,10 +7,10 @@
 
   services.openssh.settings.PasswordAuthentication = false;
 
-  environment.systemPackages = [ pkgs.direnv ];
-  programs.bash.interactiveShellInit = ''
-    eval "$(direnv hook bash)"
-  '';
+  nix.settings.substituters = [
+    "https://nixos.tvix.store?priority=39"
+    "https://cache.nixos.org?priority=40"
+  ];
 
   nix.settings.trusted-users = [
     "@wheel"
@@ -35,4 +35,29 @@
       })
     ];
   };
+
+  systemd.services.auto-upgrade = {
+    description = "Auto upgrade NixOS";
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = pkgs.writeShellApplication {
+        name = "auto-upgrade";
+        text = ''
+        '';
+      }
+    };
+  };
+
+  /*
+    system.autoUpgrade = {
+    enable = true;
+    flake = "/etc/nixos";
+    flags = [
+      "--update-input"
+      "unstable"
+      "--commit-lock-file"
+    ];
+    };
+  */
 }
