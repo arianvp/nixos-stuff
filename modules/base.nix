@@ -68,12 +68,13 @@
               git fetch origin
               git checkout -B "flake-update-${config.system.name}" "${inputs.self.rev}"
               nix flake update --commit-lock-file --flake "$STATE_DIRECTORY"
-              nix build "$STATE_DIRECTORY#nixosConfigurations.${config.system.name}".config.system.build.toplevel --profile /nix/var/nix/profiles/system
+              nix build "$STATE_DIRECTORY#nixosConfigurations.${config.system.name}".config.system.build.toplevel
             '';
           };
           upgrade = pkgs.writeShellApplication {
             name = "upgrade";
             text = ''
+              nix build "$STATE_DIRECTORY/result" --profile /nix/var/nix/profiles/system
               /nix/var/nix/profiles/system/system/bin/switch-to-configuration boot
             '';
           };
