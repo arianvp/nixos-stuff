@@ -68,7 +68,7 @@
               git fetch origin
               git checkout -B "flake-update-${config.system.name}" "${inputs.self.rev}"
               nix flake update --commit-lock-file --flake "$STATE_DIRECTORY"
-              nix build "$STATE_DIRECTORY#nixosConfigurations.${config.system.name}".config.system.build.toplevel unstable --commit-lock-file --profile /nix/var/nix/profiles/system
+              nix build "$STATE_DIRECTORY#nixosConfigurations.${config.system.name}".config.system.build.toplevel --profile /nix/var/nix/profiles/system
             '';
           };
           upgrade = pkgs.writeShellApplication {
