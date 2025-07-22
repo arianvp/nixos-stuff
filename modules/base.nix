@@ -61,6 +61,7 @@
             runtimeInputs = [
               pkgs.nix
               pkgs.git
+              pkgs.openssh
             ];
             text = ''
               git clone git@github.com:arianvp/nixos-stuff.git "$STATE_DIRECTORY" || true
