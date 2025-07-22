@@ -41,8 +41,6 @@
         }
       );
 
-      lol = self;
-
       nixosModules = {
         base = ./modules/base.nix;
         cachix = ./modules/cachix.nix;
@@ -53,6 +51,9 @@
         prometheus = ./modules/prometheus.nix;
         alertmanager = ./modules/alertmanager.nix;
         grafana = ./modules/grafana.nix;
+        inputs = {
+          _module.args.inputs.self = self;
+        };
         overlays =
           { pkgs, ... }:
           {
@@ -92,6 +93,7 @@
         let
           modules = with self.nixosModules; [
             base
+            inputs
             cgroup-exporter.nixosModules.default
             dnssd
             direnv

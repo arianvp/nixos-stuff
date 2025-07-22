@@ -1,4 +1,10 @@
-{ inputs, pkgs, ... }:
+{
+  inputs,
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 {
   imports = [
     ./dnssd.nix
@@ -36,16 +42,46 @@
     ];
   };
 
-  systemd.services.auto-upgrade = {
+  systemd.timers.auto-upgrade = {
+    wantedBy = [ "timers.target" ];
+    timerConfig.OnCalendar = "daily";
+  };
+
+  systemd.services.auto-upgrade = lib.mkIf (lib.hasAttr "rev" inputs.self) {
     description = "Auto upgrade NixOS";
-    wantedBy = [ "multi-user.target" ];
     serviceConfig = {
       Type = "oneshot";
-      ExecStart = pkgs.writeShellApplication {
-        name = "auto-upgrade";
-        text = ''
-        '';
-      }
+      User = "arian";
+      StateDirectory = "auto-upgrade";
+      WorkingDirectory = "%S/auto-upgrade";
+      ExecStart =
+        let
+          checkout-build-and-commit = pkgs.writeShellApplication {
+            name = "checkout-build-and-commit";
+            text = ''
+              git clone git@github.com:arianvp/nixos-stuff.git "$STATE_DIRECTORY" || true
+              git checkout -B "flake-update-${config.system.name}" "${inputs.self.rev}"
+              nix build --update-input unstable --commit-lock-file --profile /nix/var/nix/profiles/system
+            '';
+          };
+          upgrade = pkgs.writeShellApplication {
+            name = "upgrade";
+            text = ''
+              /nix/var/nix/profiles/system/system/bin/switch-to-configuration boot
+            '';
+          };
+          push = pkgs.writeShellApplication {
+            name = "push";
+            text = ''
+              git push -f origin "flake-update-${config.system.name}"
+            '';
+          };
+        in
+        [
+          (lib.getExe checkout-build-and-commit)
+          "!${(lib.getExe upgrade)}"
+          "-${(lib.getExe push)}"
+        ];
     };
   };
 
