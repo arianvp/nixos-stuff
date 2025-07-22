@@ -65,6 +65,7 @@
             ];
             text = ''
               git clone git@github.com:arianvp/nixos-stuff.git "$STATE_DIRECTORY" || true
+              git fetch origin
               git checkout -B "flake-update-${config.system.name}" "${inputs.self.rev}"
               nix build --update-input unstable --commit-lock-file --profile /nix/var/nix/profiles/system
             '';
