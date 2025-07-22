@@ -12,11 +12,9 @@
     # ../../modules/monitoring.nix
     ../../modules/vmspawn.nix
     ./soft-reboot.nix
-    ../../modules/repro.nix
     ../../modules/spire/agent.nix
     ../../modules/spire/server.nix
     ./ci.nix
-    ../../modules/nomad.nix
   ];
 
   security.auditd.enable = true;
@@ -106,49 +104,49 @@
   };
 
   systemd.services.teleport.serviceConfig.StateDirectory = "teleport";
-/*
-version: v3
-teleport:
-  nodename: utm
-  data_dir: /var/lib/teleport
-  log:
-    output: stderr
-    severity: INFO
-    format:
-      output: text
-  ca_pin: ""
-  diag_addr: ""
-auth_service:
-  enabled: "yes"
-  listen_addr: 0.0.0.0:3025
-  cluster_name: utm-1.bunny-minnow.ts.net
-  proxy_listener_mode: multiplex
-ssh_service:
-  enabled: "yes"
-proxy_service:
-  enabled: "yes"
-  web_listen_addr: 0.0.0.0:443
-  public_addr: utm-1.bunny-minnow.ts.net:443
-  https_keypairs: []
-  https_keypairs_reload_interval: 0s
-  acme:
-    enabled: "yes"
-*/
+  /*
+    version: v3
+    teleport:
+      nodename: utm
+      data_dir: /var/lib/teleport
+      log:
+        output: stderr
+        severity: INFO
+        format:
+          output: text
+      ca_pin: ""
+      diag_addr: ""
+    auth_service:
+      enabled: "yes"
+      listen_addr: 0.0.0.0:3025
+      cluster_name: utm-1.bunny-minnow.ts.net
+      proxy_listener_mode: multiplex
+    ssh_service:
+      enabled: "yes"
+    proxy_service:
+      enabled: "yes"
+      web_listen_addr: 0.0.0.0:443
+      public_addr: utm-1.bunny-minnow.ts.net:443
+      https_keypairs: []
+      https_keypairs_reload_interval: 0s
+      acme:
+        enabled: "yes"
+  */
   services.teleport = {
     enable = true;
     settings = {
       version = "v3";
       teleport.data_dir = "/var/lib/teleport";
       auth_service = {
-       enabled = true;
-       cluster_name = "utm-1.bunny-minnow.ts.net";
-       proxy_listener_mode = "multiplex";
+        enabled = true;
+        cluster_name = "utm-1.bunny-minnow.ts.net";
+        proxy_listener_mode = "multiplex";
       };
       proxy_service = {
         enabled = true;
         public_addr = "utm-1.bunny-minnow.ts.net:443";
       };
-  
+
       ssh_service.enabled = true;
     };
   };

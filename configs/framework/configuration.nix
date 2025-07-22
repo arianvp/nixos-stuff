@@ -4,6 +4,7 @@
     ./hardware-configuration.nix
     ./pcrlock.nix
     ./audit.nix
+    ../../modules/vmspawn.nix
   ];
   services.fwupd.enable = true;
 
@@ -11,9 +12,11 @@
     "/tmp" = {
       device = "tmpfs";
       fsType = "tmpfs";
-      options = [ "nosuid" "nodev" "noexec" "size=4G" ];
+      # options = [ "nosuid" "nodev" "size=4G" ];
     };
   };
+
+  services.tailscale.enable = true;
 
   boot.initrd.systemd.enable = true;
   # console.earlySetup = lib.mkForce false;
@@ -34,14 +37,18 @@
 
   nix.settings.substituters = [ "https://nixos.tvix.store" ];
   nix.settings.trusted-users = [ "@wheel" ];
+  nix.settings.experimental-features = [
+    "flakes"
+    "nix-command"
+    "fetch-closure"
+  ];
 
   networking.hostName = "framework";
   networking.firewall.allowedTCPPorts = [ 443 ];
-  services.xserver.enable = true;
   services.openssh.enable = true;
   services.smartd.enable = true;
-  services.xserver.displayManager.gdm.enable = true;
-  services.xserver.desktopManager.gnome.enable = true;
+  services.displayManager.gdm.enable = true;
+  services.desktopManager.gnome.enable = true;
   environment.variables = {
     MOZ_ENABLE_WAYLAND = "1";
   };
@@ -50,6 +57,9 @@
     cntr
     neovim
     yubioath-flutter
+    zed-editor
+    live-server
+    nix-output-monitor
   ];
 
   users.users.arian = {

@@ -8,7 +8,7 @@
 {
   imports = [
     (modulesPath + "/virtualisation/digital-ocean-image.nix")
-    ../../modules/containers-v2.nix
+    ../../modules/old/containers-v2.nix
     ./network.nix
   ];
 
@@ -60,14 +60,17 @@
   };
 
   # Needed to accept terms
-  security.acme.email = "arian.vanputten@gmail.com";
+  security.acme.defaults.email = "arian.vanputten@gmail.com";
   security.acme.acceptTerms = true;
 
   users.users.root.openssh.authorizedKeys.keyFiles = [
     (pkgs.fetchurl {
       url = "https://github.com/arianvp.keys";
-      sha256 = "sha256-r2r9oL10AVX/gQcA8doQgIOb3YS53BJM3kSx2RwiTAY=";
+      sha256 = "sha256-HyJKxLYTQC4ZG9Xh91bCUVzkC1TBzvFkZR1XqT7aD7o=";
     })
   ];
+  nixpkgs.hostPlatform = {
+    system = "x86_64-linux";
+  };
 
 }

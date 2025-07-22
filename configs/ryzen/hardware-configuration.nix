@@ -28,4 +28,8 @@
 
   nix.maxJobs = lib.mkDefault 16;
   nix.buildCores = lib.mkDefault 16;
+
+  nixpkgs.hostPlatform = {
+    system = "x86_64-linux";
+  };
 }
