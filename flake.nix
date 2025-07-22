@@ -30,14 +30,14 @@
     }:
     {
 
-      devShells.default = unstable.lib.genAttrs [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ] (
-        system:
-        with unstable.legacyPackages.${system};
-        mkShell {
-          packages = [
-            doctl
-            opentofu
-          ];
+      devShells = unstable.lib.genAttrs [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ] (
+        system: with unstable.legacyPackages.${system}; {
+          default = mkShell {
+            packages = [
+              doctl
+              opentofu
+            ];
+          };
         }
       );
 
