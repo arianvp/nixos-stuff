@@ -67,7 +67,7 @@
               git clone git@github.com:arianvp/nixos-stuff.git "$STATE_DIRECTORY" || true
               git fetch origin
               git checkout -B "flake-update-${config.system.name}" "${inputs.self.rev}"
-              nix flake update unstable --commit-lock-file "$STATE_DIRECTORY"
+              nix flake update unstable --commit-lock-file --flake "$STATE_DIRECTORY"
               nix build "$STATE_DIRECTORY#nixosConfigurations.${config.system.name}".config.system.build.toplevel unstable --commit-lock-file --profile /nix/var/nix/profiles/system
             '';
           };
