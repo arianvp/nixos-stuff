@@ -76,7 +76,7 @@
             runtimeInputs = [ pkgs.nix ];
             text = ''
               nix build "$STATE_DIRECTORY/result" --profile /nix/var/nix/profiles/system
-              /nix/var/nix/profiles/system/system/bin/switch-to-configuration boot
+              /nix/var/nix/profiles/system/bin/switch-to-configuration boot
             '';
           };
           push = pkgs.writeShellApplication {
