@@ -81,7 +81,10 @@
           };
           push = pkgs.writeShellApplication {
             name = "push";
-            runtimeInputs = [ pkgs.git ];
+            runtimeInputs = [
+              pkgs.git
+              pkgs.openssh
+            ];
             text = ''
               git push -f origin "flake-update-${config.system.name}"
             '';
