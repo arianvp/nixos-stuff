@@ -17,6 +17,8 @@
         receiver = "webhook";
       };
     };
+
+    # TODO: how to discover these?  mDNS discovery is *NOT* supported by alertmanager
     clusterPeers = [
 
     ];

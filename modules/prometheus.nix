@@ -6,11 +6,11 @@
     globalConfig.scrape_interval = "15s";
     scrapeConfigs = [
       {
-        job_name = "cgroups";
+        job_name = "cgroup";
         dns_sd_configs = [ { names = [ "cgroup-exporter._http._tcp.local" ]; } ];
       }
       {
-        job_name = "node_exporter";
+        job_name = "node";
         dns_sd_configs = [ { names = [ "node-exporter._http._tcp.local" ]; } ];
       }
       {
