@@ -44,7 +44,6 @@
       fsType = root.Format;
     };
 
-
   swapDevices = [ ];
 
   # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
@@ -54,8 +53,9 @@
   networking.useDHCP = false;
   networking.useNetworkd = lib.mkDefault true;
 
-  systemd.network.networks.main = {
-    matchConfig.Name = "en*";
+  systemd.network.networks.main-10G = {
+    # TODO: bonding
+    matchConfig.Name = "enP3p3s0f0";
     networkConfig = {
       DHCP = "yes";
       MulticastDNS = "yes";

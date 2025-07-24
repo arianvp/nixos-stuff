@@ -10,6 +10,8 @@
     ./hardware-configuration.nix
     ./yggdrasil.nix
     ../../modules/tailscale.nix
+    ../../modules/prometheus.nix
+    ../../modules/alertmanager.nix
   ];
 
   networking.hostName = "altra";

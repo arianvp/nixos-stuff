@@ -1,5 +1,13 @@
+{ lib, config, ... }:
 {
   imports = [ ./prometheus-rules.nix ];
+
+  # advertise the service on LAN
+  systemd.dnssd.services.prometheus = {
+    type = "_http._tcp";
+    port = config.services.prometheus.port;
+  };
+
   services.prometheus = {
     enable = true;
     alertmanagers = [ { dns_sd_configs = [ { names = [ "alertmanager._http._tcp.local" ]; } ]; } ];
@@ -12,6 +20,14 @@
       {
         job_name = "node";
         dns_sd_configs = [ { names = [ "node-exporter._http._tcp.local" ]; } ];
+      }
+      {
+        job_name = "smartctl";
+        dns_sd_configs = [ { names = [ "smartctl-exporter._http._tcp.local" ]; } ];
+      }
+      {
+        job_name = "systemd";
+        dns_sd_configs = [ { names = [ "systemd-exporter._http._tcp.local" ]; } ];
       }
       {
         job_name = "prometheus";
@@ -40,70 +56,68 @@
             }
             {
               alert = "PrometheusJobMissing";
-              expr = ''absent(up{job="prometheus"})'';
+              expr = ''absent(up{job=~"prometheus|alertmanager"})'';
               labels.severity = "warning";
               annotations = {
-                summary = "Prometheus job missing (instance {{ $labels.instance }})";
-                description = "A Prometheus job has disappeared\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}";
               };
             }
             {
-              alert = "MemoryStalled60";
-              expr = "rate(cgroup_memory_pressure_stalled_seconds[1m]) > 0.6";
+              alert = "PrometheusAllTargetsMissing";
+              expr = "sum by (job) (up) == 0";
+              labels.severity = "critical";
+            }
+
+            {
+              alert = "PrometheusConfigurationReloadFailure";
+              expr = "prometheus_config_last_reload_successful != 1";
               labels.severity = "warning";
-              annotations = {
-                summary = "Memory pressure stalled for 60% of the time";
-              };
             }
             {
-              alert = "MemoryStalled90";
-              expr = "rate(cgroup_memory_pressure_stalled_seconds[1m]) > 0.9";
-              labels.severity = "critical";
-              annotations = {
-                summary = "Memory stalled for 90% of the time";
-              };
-            }
-            {
-              alert = "IOStalled60";
-              expr = "rate(cgroup_io_pressure_stalled_seconds[1m]) > 0.6";
+              alert = "AlertmanagerConfigurationReloadFailure";
+              expr = "alertmanager_config_last_reload_successful != 1";
               labels.severity = "warning";
-              annotations = {
-                summary = "IO pressure stalled for 60% of the time";
-              };
             }
-            {
-              alert = "IOStalled90";
-              expr = "rate(cgroup_io_pressure_stalled_seconds[1m]) > 0.9";
-              labels.severity = "critical";
-              annotations = {
-                summary = "IO stalled for 90% of the time";
-              };
-            }
-            {
-              alert = "CPUStalled60";
-              expr = "rate(cgroup_cpu_pressure_stalled_seconds[1m]) > 0.6";
-              labels.severity = "warning";
-              annotations = {
-                summary = "CPU pressure stalled for 60% of the time";
-              };
-            }
-            {
-              alert = "CPUStalled60";
-              expr = "rate(cgroup_cpu_pressure_stalled_seconds[1m]) > 0.6";
-              labels.severity = "critical";
-              annotations = {
-                summary = "CPU stalled for 60% of the time";
-              };
-            }
-            {
-              alert = "CPUStalled90";
-              expr = "rate(cgroup_cpu_pressure_stalled_seconds[1m]) > 0.9";
-              labels.severity = "critical";
-              annotations = {
-                summary = "CPU stalled for 90% of the time";
-              };
-            }
-          ];
+          ]
+          ++
+
+            lib.pipe
+              {
+                metric = [
+                  "memory"
+                  "io"
+                  "cpu"
+                ];
+                type = [
+                  "stalled"
+                  "waiting"
+                ];
+                threshold = [
+                  60
+                  90
+                ];
+              }
+              [
+                lib.cartesianProduct
+                (map (
+                  {
+                    metric,
+                    type,
+                    threshold,
+                  }:
+                  {
+                    alert = "${metric}_${type}_${toString threshold}";
+                    expr = "rate(cgroup_${metric}_pressure_${type}_seconds_total[1m]) > ${toString (threshold / 100.0)}";
+                    labels.severity =
+                      if type == "waiting" then
+                        "notice"
+                      else if threshold == 60 then
+                        "warning"
+                      else
+                        "critical";
+                  }
+                ))
+              ];
+
         }
       ];
     };
