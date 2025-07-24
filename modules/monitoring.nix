@@ -19,6 +19,10 @@
       type = "_http._tcp";
       port = config.services.prometheus.exporters.node.port;
     };
+    systemd-exporter = {
+      type = "_http._tcp";
+      port = config.services.prometheus.exporters.systemd.port;
+    };
     cgroup-exporter = {
       type = "_http._tcp";
       port = config.services.prometheus.exporters.cgroup.port;
