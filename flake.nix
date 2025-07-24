@@ -57,16 +57,11 @@
         overlays =
           { pkgs, ... }:
           {
-            nixpkgs.config.allowUnfree = true;
-            environment.systemPackages = [ pkgs.user-environment ];
+            # nixpkgs.config.allowUnfree = true;
             nixpkgs.overlays = map import [
-              ./overlays/user-environment.nix
-              ./overlays/wire.nix
               ./overlays/fonts.nix
               ./overlays/neovim.nix
-              ./overlays/vscodium.nix
-              ./overlays/pkgs.nix
-              # ./overlays/systemd-initrd.nix
+              
             ];
           };
       };
