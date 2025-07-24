@@ -11,6 +11,7 @@
     ./yggdrasil.nix
     ../../modules/tailscale.nix
   ];
+
   networking.hostName = "altra";
 
   # Use the systemd-boot EFI boot loader.
@@ -21,23 +22,7 @@
   services.getty.autologinUser = "arian";
   time.timeZone = "Europe/Amsterdam";
   networking.firewall.enable = false;
-  users.users.arian = {
-    isNormalUser = true;
-    extraGroups = [ "wheel" ];
-    packages = [
-      pkgs.vim
-      pkgs.git
-      pkgs.btop
-      pkgs.tmux
-      pkgs.nix-output-monitor
-      pkgs.nixfmt-rfc-style
-      pkgs.nixd
-    ];
-    openssh.authorizedKeys.keys = [
-      "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBMaGVuvE+aNyuAu0E9m5scVhmnVgAutNqridbMnc261cHQwecih720LCqDwTgrI3zbMwixBuU422AK0N81DyekQ= arian@Arians-MacBook-Pro.local"
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHdERauixCGEk0oxLB+725k2M3McKHM0hjOjOWS+Dxdf arian@Mac"
-    ];
-  };
+
   users.users.flokli = {
     isNormalUser = true;
     extraGroups = [ "wheel" ];

@@ -16,6 +16,8 @@
     isNormalUser = true;
     extraGroups = [ "@wheel" ];
 
+    packages = [ pkgs.git pkgs.nixfmt ];
+
     # Until we have a proper SSH-CA this is what we do instead
     openssh.authorizedKeys.keyFiles = [
       (pkgs.fetchurl {
