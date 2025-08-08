@@ -3,7 +3,7 @@
   nix.package = pkgs.lix;
 
   nix.settings.substituters = [
-    "https://nixos.tvix.store?priority=39"
+    "https://nixos.snix.store?priority=39"
     "https://cache.nixos.org?priority=40"
   ];
 

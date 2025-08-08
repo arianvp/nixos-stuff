@@ -35,7 +35,7 @@
     options iwlwifi disable_11ax=Y
   '';
 
-  nix.settings.substituters = [ "https://nixos.tvix.store" ];
+  nix.settings.substituters = [ "https://nixos.snix.store" ];
   nix.settings.trusted-users = [ "@wheel" ];
   nix.settings.experimental-features = [
     "flakes"

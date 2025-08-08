@@ -14,7 +14,7 @@
 
   users.users.arian = {
     isNormalUser = true;
-    extraGroups = [ "@wheel" ];
+    extraGroups = [ "wheel" ];
 
     packages = [ pkgs.git pkgs.nixfmt ];
 

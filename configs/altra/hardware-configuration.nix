@@ -52,6 +52,14 @@
   # with explicit per-interface declarations with `networking.interfaces.<interface>.useDHCP`.
   networking.useDHCP = false;
   networking.useNetworkd = lib.mkDefault true;
+  
+  systemd.network.networks.bmc = {
+    matchConfig.Name = "usb0";
+    networkConfig = {
+      LinkLocalAddressing = "yes";
+      MulticastDNS = "yes";
+    };
+  };
 
   systemd.network.networks.main-10G = {
     # TODO: bonding
