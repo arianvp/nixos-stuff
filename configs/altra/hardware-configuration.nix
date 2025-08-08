@@ -61,13 +61,21 @@
     };
   };
 
-  systemd.network.networks.main-10G = {
+  systemd.network.networks.eth = {
     # TODO: bonding
     matchConfig.Name = "enP3p3s0f0";
     networkConfig = {
       DHCP = "yes";
       MulticastDNS = "yes";
     };
+  };
+
+  systemd.network.links."10-foo" = {
+    matchConfig.Driver = "ixgbe";
+    linkConfig.Advertise = ["100baset-full" "1000baset-full" "2500baset-full" "5000baset-full" "10000baset-full"];
+    linkConfig.NamePolicy = ["keep" "kernel" "database" "onbard" "slot" "path"];
+    linkConfig.AlternativeNamesPolicy = ["database" "onboard" "slot" "path" "mac"];
+    linkConfig.MACAddressPolicy = "persistent";
   };
 
   nixpkgs.hostPlatform = lib.mkDefault "aarch64-linux";
