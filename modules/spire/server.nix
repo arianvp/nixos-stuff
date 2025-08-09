@@ -13,12 +13,6 @@
   options.spire.server = {
     enable = lib.mkEnableOption "SPIRE server";
 
-    bindAddress = lib.mkOption {
-      type = lib.types.str;
-      description = "IP address or DNS name of the SPIRE server";
-      default = "0.0.0.0";
-    };
-
     config = lib.mkOption {
       type = lib.types.str;
       description = "SPIRE config";
@@ -53,18 +47,6 @@
       description = "Include source file, line number and function name in log lines";
     };
 
-    serverPort = lib.mkOption {
-      type = lib.types.port;
-      description = "Port number of the SPIRE server";
-      default = 8081;
-    };
-
-    socketPath = lib.mkOption {
-      type = lib.types.nullOr lib.types.str;
-      description = "Path to bind the SPIRE Server API socket to";
-      default = null;
-    };
-
     trustDomain = lib.mkOption {
       type = lib.types.str;
       description = "The trust domain that this server belongs to";
@@ -77,9 +59,27 @@
       443
       8081
     ];
+    systemd.sockets.spire-server = {
+      description = "Spire Server API Socket";
+      wantedBy = [ "sockets.target" ];
+      socketConfig = {
+        ListenStream = "8081";
+        FileDescriptorName = "spire-server";
+      };
+    };
+    systemd.sockets.spire-server-local = {
+      description = "Spire Server Local API Socket";
+      wantedBy = [ "sockets.target" ];
+      socketConfig = {
+        # TODO: FHS
+        ListenStream = "/tmp/spire-server/private.api.sock";
+        SocketMode = "0600";
+        FileDescriptorName = "spire-server-local";
+        Service = "spire-server.service";
+      };
+    };
     systemd.services.spire-server = {
       description = "Spire Server";
-      wantedBy = [ "multi-user.target" ];
       serviceConfig = {
         Restart = "on-failure";
         RuntimeDirectory = "spire-server";
@@ -92,15 +92,13 @@
             ]
             ++ (lib.cli.toGNUCommandLine { } {
               inherit (config.spire.server)
-                bindAddress
                 expandEnv
                 logFile
                 logLevel
                 logSourceLocation
-                serverPort
-                socketPath
                 trustDomain
                 ;
+              socketActivation = true;
               config = pkgs.writeText "server.hcl" config.spire.server.config;
             })
           )

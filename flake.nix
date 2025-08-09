@@ -61,7 +61,7 @@
             nixpkgs.overlays = map import [
               ./overlays/fonts.nix
               ./overlays/neovim.nix
-              
+              ./overlays/spire.nix
             ];
           };
       };

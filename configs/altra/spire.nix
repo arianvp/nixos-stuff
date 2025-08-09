@@ -15,32 +15,31 @@ in
     trustBundleFormat = "spiffe";
     serverAddress = "spire.nixos.sh";
     trustDomain = "nixos.sh";
-    joinToken = "a6211696-1d1b-4be7-9521-3a8b99961007";
+    joinToken = "64180d65-9c9b-4230-982b-4cf0070d7365";
   };
 
-  spire.server.entries = [
-    {
+  spire.server.entries = {
+    prometheus = {
       parent_id = "spiffe://nixos.sh/server/altra";
       spiffe_id = "spiffe://nixos.sh/service/prometheus";
       selectors = [
         {
           type = "systemd";
-          value = "prometheus";
+          value = "id:prometheus.service";
         }
       ];
-    }
-    {
+    };
+    alertmanager = {
       parent_id = "spiffe://nixos.sh/server/altra";
       spiffe_id = "spiffe://nixos.sh/service/alertmanager";
       selectors = [
         {
           type = "systemd";
-          value = "alertmanager";
+          value = "id:alertmanager.service";
         }
       ];
-    }
-
-  ];
+    };
+  };
 
   spire.server = {
     enable = true;

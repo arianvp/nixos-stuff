@@ -22,6 +22,7 @@
       pkgs.neovim
       pkgs.btop
       pkgs.nixd
+      pkgs.go
     ];
 
     # Until we have a proper SSH-CA this is what we do instead
