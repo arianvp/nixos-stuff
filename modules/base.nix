@@ -16,7 +16,12 @@
     isNormalUser = true;
     extraGroups = [ "wheel" ];
 
-    packages = [ pkgs.git pkgs.nixfmt pkgs.neovim ];
+    packages = [
+      pkgs.git
+      pkgs.nixfmt
+      pkgs.neovim
+      pkgs.btop
+    ];
 
     # Until we have a proper SSH-CA this is what we do instead
     openssh.authorizedKeys.keyFiles = [

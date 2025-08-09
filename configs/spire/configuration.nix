@@ -11,7 +11,6 @@
     443
     8081
   ];
-
   spire.server = {
     enable = true;
     trustDomain = "frickel.consulting";

@@ -9,6 +9,7 @@
   imports = [
     ./hardware-configuration.nix
     ./yggdrasil.nix
+    ./spire.nix
     ../../modules/tailscale.nix
     ../../modules/prometheus.nix
     ../../modules/alertmanager.nix
@@ -25,13 +26,31 @@
   services.getty.autologinUser = "arian";
   time.timeZone = "Europe/Amsterdam";
   networking.firewall.enable = true;
-  networking.firewall.allowedTCPPorts = [ 443 22 ];
+  networking.firewall.allowedTCPPorts = [
+    443
+    22
+  ];
 
-  users.groups.nix-trusted-users = {};
+  users.groups.nix-trusted-users = { };
   users.users.picnoir = {
     extraGroups = [ "nix-trusted-users" ];
     isNormalUser = true;
-    openssh.authorizedKeys.keyFiles = [ (pkgs.fetchurl { url =  "https://codeberg.org/picnoir.keys"; sha256 = "sha256-bS0BVP0K0KZ3vHyYcHpfRzOVQeO/7XlKWK+UYj1j6Fo="; }) ];
+    openssh.authorizedKeys.keyFiles = [
+      (pkgs.fetchurl {
+        url = "https://codeberg.org/picnoir.keys";
+        sha256 = "sha256-bS0BVP0K0KZ3vHyYcHpfRzOVQeO/7XlKWK+UYj1j6Fo=";
+      })
+    ];
+  };
+  users.users.butz = {
+    isNormalUser = true;
+    extraGroups = [ "wheel" ];
+    openssh.authorizedKeys.keyFiles = [
+      (pkgs.fetchurl {
+        url = "https://github.com/willibutz.keys";
+        sha256 = "sha256-+VU7unfOQ2wxKSXlIW351wmpBHqwgFf1nct7A0jVlaI=";
+      })
+    ];
   };
   users.users.flokli = {
     isNormalUser = true;

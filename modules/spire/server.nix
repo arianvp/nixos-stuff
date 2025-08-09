@@ -18,43 +18,6 @@
     config = lib.mkOption {
       type = lib.types.str;
       description = "SPIRE config";
-      default = ''
-        server {
-          federation {
-            bundle_endpoint {
-              address = "0.0.0.0"
-              port = 443
-              profile "https_web" {
-                acme {
-                  domain_name = "${config.spire.server.trustDomain}"
-                  tos_accepted = true
-                }
-              }
-            }
-          }
-          jwt_issuer = "https://${config.spire.server.trustDomain}"
-        }
-        plugins {
-          KeyManager "memory" {
-            plugin_data {
-            }
-          }
-          DataStore "sql" {
-            plugin_data {
-              database_type = "sqlite3"
-              connection_string = "$STATE_DIRECTORY/datastore.sqlite3"
-            }
-          }
-          NodeAttestor "http_challenge" {
-            plugin_data {
-            }
-          }
-          NodeAttestor "join_token" {
-            plugin_data {
-            }
-          }
-        }
-      '';
     };
 
     expandEnv = lib.mkOption {

@@ -6,7 +6,6 @@
     smartctl.enable = true;
     smartctl.group = "disk";
     systemd.enable = true;
-
   };
 
   # workaround for upstream bug. it only does it on ADD

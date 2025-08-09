@@ -1,0 +1,41 @@
+
+[arian@altra:~/Projects/nixos-stuff]$ sudo blockdev --getsz /dev/nvme0n1
+3907029168
+
+[arian@altra:~/Projects/nixos-stuff]$ sudo sfdisk --json /dev/nvme0n1
+{
+   "partitiontable": {
+      "label": "gpt",
+      "id": "D3EE0529-ED96-4B71-866C-DBA42D4F968A",
+      "device": "/dev/nvme0n1",
+      "unit": "sectors",
+      "firstlba": 2048,
+      "lastlba": 3907029134,
+      "sectorsize": 512,
+      "partitions": [
+         {
+            "node": "/dev/nvme0n1p1",
+            "start": 2048,
+            "size": 16777216,
+            "type": "C12A7328-F81F-11D2-BA4B-00A0C93EC93B",
+            "uuid": "B69BA7E4-6911-455D-8130-E0FFDF7C09FA",
+            "name": "esp"
+         },{
+            "node": "/dev/nvme0n1p2",
+            "start": 16779264,
+            "size": 3890249864,
+            "type": "B921B045-1DF0-41C3-AF44-4C6F280D3FAE",
+            "uuid": "65652114-1D75-4951-9157-E2A095F12CA8",
+            "name": "root-arm64",
+            "attrs": "GUID:59"
+         }
+      ]
+   }
+}
+
+[arian@altra:~/Projects/nixos-stuff]$ sudo cat /boot/loader/loader.conf
+timeout 20
+default nixos-generation-54.conf
+console-mode keep
+
+
