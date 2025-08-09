@@ -12,6 +12,7 @@
     ../../modules/tailscale.nix
     ../../modules/prometheus.nix
     ../../modules/alertmanager.nix
+    ../../websites/nixos.sh
   ];
 
   networking.hostName = "altra";
@@ -25,6 +26,10 @@
   time.timeZone = "Europe/Amsterdam";
   networking.firewall.enable = false;
 
+  users.users.picnoir = {
+    isNormalUser = true;
+    openssh.authorizedKeys.keyFiles = [ (pkgs.fetchurl { url =  "https://codeberg.org/picnoir.keys"; sha256 = "sha256-bS0BVP0K0KZ3vHyYcHpfRzOVQeO/7XlKWK+UYj1j6Fo="; }) ];
+  };
   users.users.flokli = {
     isNormalUser = true;
     extraGroups = [ "wheel" ];

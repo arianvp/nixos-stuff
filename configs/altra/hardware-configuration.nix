@@ -52,7 +52,7 @@
   # with explicit per-interface declarations with `networking.interfaces.<interface>.useDHCP`.
   networking.useDHCP = false;
   networking.useNetworkd = lib.mkDefault true;
-  
+
   systemd.network.networks.bmc = {
     matchConfig.Name = "usb0";
     networkConfig = {
@@ -64,6 +64,9 @@
   systemd.network.networks.eth = {
     # TODO: bonding
     matchConfig.Name = "enP3p3s0f0";
+    address = [
+      "2a05:2d01:2025:f000:dead:beef:cafe:babe"
+    ];
     networkConfig = {
       DHCP = "yes";
       MulticastDNS = "yes";
@@ -72,9 +75,28 @@
 
   systemd.network.links."10-foo" = {
     matchConfig.Driver = "ixgbe";
-    linkConfig.Advertise = ["100baset-full" "1000baset-full" "2500baset-full" "5000baset-full" "10000baset-full"];
-    linkConfig.NamePolicy = ["keep" "kernel" "database" "onbard" "slot" "path"];
-    linkConfig.AlternativeNamesPolicy = ["database" "onboard" "slot" "path" "mac"];
+    linkConfig.Advertise = [
+      "100baset-full"
+      "1000baset-full"
+      "2500baset-full"
+      "5000baset-full"
+      "10000baset-full"
+    ];
+    linkConfig.NamePolicy = [
+      "keep"
+      "kernel"
+      "database"
+      "onbard"
+      "slot"
+      "path"
+    ];
+    linkConfig.AlternativeNamesPolicy = [
+      "database"
+      "onboard"
+      "slot"
+      "path"
+      "mac"
+    ];
     linkConfig.MACAddressPolicy = "persistent";
   };
 
