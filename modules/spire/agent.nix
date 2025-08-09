@@ -29,14 +29,11 @@
             plugin_data { }
           }
 
-          # NodeAttestor "http_challenge" {
-          #   plugin_data {
-          #   }
-          # }
           WorkloadAttestor "systemd" {
             plugin_data {
             }
           }
+
           WorkloadAttestor "unix" {
             plugin_data {
               discover_workload_path = true
@@ -101,7 +98,6 @@
 
     serverAddress = lib.mkOption {
       type = lib.types.str;
-      default = "${config.spire.agent.trustDomain}";
       description = "IP address or DNS name of the SPIRE server";
     };
 
