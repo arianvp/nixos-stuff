@@ -24,9 +24,12 @@
   boot.initrd.systemd.enable = true;
   services.getty.autologinUser = "arian";
   time.timeZone = "Europe/Amsterdam";
-  networking.firewall.enable = false;
+  networking.firewall.enable = true;
+  networking.firewall.allowedTCPPorts = [ 443 22 ];
 
+  users.groups.nix-trusted-users = {};
   users.users.picnoir = {
+    extraGroups = [ "nix-trusted-users" ];
     isNormalUser = true;
     openssh.authorizedKeys.keyFiles = [ (pkgs.fetchurl { url =  "https://codeberg.org/picnoir.keys"; sha256 = "sha256-bS0BVP0K0KZ3vHyYcHpfRzOVQeO/7XlKWK+UYj1j6Fo="; }) ];
   };

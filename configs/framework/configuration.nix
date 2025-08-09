@@ -44,7 +44,7 @@
   ];
 
   networking.hostName = "framework";
-  networking.firewall.allowedTCPPorts = [ 443 ];
+  networking.firewall.enable = true;
   services.openssh.enable = true;
   services.smartd.enable = true;
   services.displayManager.gdm.enable = true;
