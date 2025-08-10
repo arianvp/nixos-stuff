@@ -88,7 +88,8 @@ in
             }
           ];
           parent_id = "spiffe://${trustDomain}/server/agent";
-          spiffe_id = "spiffe://${trustDomain}/user/root";
+          spiffe_id = "spiffe://${trustDomain}/service/agent";
+          dns_names = [ "agent.${trustDomain}" ];
         };
         entries.admin = {
           selectors = [
@@ -123,6 +124,11 @@ in
     };
 
     agent = {
+      environment.systemPackages = [ pkgs.openbao ];
+      environment.variables = {
+        VAULT_ADDR = "https://openbao.${trustDomain}:8200";
+        VAULT_FORMAT = "json";
+      };
     };
   };
 
@@ -173,10 +179,15 @@ in
     openbao.succeed("bao auth enable cert")
     openbao.succeed("bao write auth/cert/config enable_identity_alias_metadata=true")
     openbao.succeed("bao write auth/cert/certs/openbao certificate=@/run/credstore/spire-server-bundle allowed_uri_sans=spiffe://example.com/service/openbao token_policies=access-foo")
+    openbao.succeed("bao write auth/cert/certs/agent certificate=@/run/credstore/spire-server-bundle allowed_uri_sans=spiffe://example.com/service/agent token_policies=access-foo")
     openbao.succeed("bao write auth/cert/certs/admin certificate=@/run/credstore/spire-server-bundle allowed_uri_sans=spiffe://example.com/user/admin token_policies=access-foo")
 
     openbao.succeed("bao login -method=cert")
     openbao.succeed("bao kv get -mount=kv foo")
+
+    agent.succeed("spire-agent api fetch x509 -socketPath /run/spire-agent/public/api.sock -write .")
+    agent.succeed("bao login -method=cert -ca-cert=bundle.0.pem -client-cert=svid.0.pem -client-key=svid.0.key")
+    agent.succeed("VAULT_CACERT=bundle.0.pem bao kv get -mount=kv foo")
 
   '';
 
