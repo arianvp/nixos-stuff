@@ -84,6 +84,18 @@
         format = "do";
       };
 
+      checks = unstable.lib.genAttrs [ "x86_64-linux" "aarch64-linux" ] (
+        system:
+        let
+          pkgs = unstable.legacyPackages.${system}.extend (import ./overlays/spire.nix);
+        in
+        {
+          spire = pkgs.testers.runNixOSTest {
+            imports = [ ./tests/spire.nix ];
+          };
+        }
+      );
+
       nixosConfigurations =
         let
           modules = with self.nixosModules; [

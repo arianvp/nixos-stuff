@@ -18,29 +18,6 @@
     config = lib.mkOption {
       type = lib.types.str;
       description = "SPIRE plugin config";
-      default = ''
-        plugins {
-          KeyManager "memory" {
-            plugin_data {
-            }
-          }
-
-          NodeAttestor "join_token" {
-            plugin_data { }
-          }
-
-          WorkloadAttestor "systemd" {
-            plugin_data {
-            }
-          }
-
-          WorkloadAttestor "unix" {
-            plugin_data {
-              discover_workload_path = true
-            }
-          }
-        }
-      '';
     };
 
     expandEnv = lib.mkOption {
@@ -107,12 +84,6 @@
       description = "Port number of the SPIRE server";
     };
 
-    socketPath = lib.mkOption {
-      type = lib.types.nullOr lib.types.str;
-      default = "/tmp/spire-agent/public/api.sock";
-      description = "Path to bind the SPIRE Agent API socket to";
-    };
-
     trustBundle = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
@@ -132,7 +103,7 @@
 
     trustBundleUrl = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
-      default = "https://${config.spire.agent.serverAddress}";
+      default = null;
       description = "URL to download the SPIRE server CA bundle";
     };
 
@@ -144,9 +115,18 @@
   };
   config = lib.mkIf config.spire.agent.enable {
     environment.systemPackages = [ pkgs.spire ];
+
+    systemd.sockets.spire-agent = {
+      description = "Spire agent API socket";
+      wantedBy = [ "sockets.target" ];
+      socketConfig = {
+        FileDescriptorName = "spire-agent-workload";
+        ListenStream = "/tmp/spire-agent/public/api.sock";
+      };
+    };
+
     systemd.services.spire-agent = {
       description = "Spire agent";
-      wantedBy = [ "multi-user.target" ];
       serviceConfig = {
         Restart = "always";
         RuntimeDirectory = "spire-agent";
@@ -171,7 +151,6 @@
                 retryBootstrap
                 serverAddress
                 serverPort
-                socketPath
                 trustBundle
                 trustBundleFormat
                 trustBundleUrl

@@ -64,7 +64,8 @@
       wantedBy = [ "sockets.target" ];
       socketConfig = {
         ListenStream = "8081";
-        FileDescriptorName = "spire-server";
+        FileDescriptorName = "spire-server-tcp";
+        Service = "spire-server.service";
       };
     };
     systemd.sockets.spire-server-local = {
@@ -72,7 +73,7 @@
       wantedBy = [ "sockets.target" ];
       socketConfig = {
         # TODO: FHS
-        ListenStream = "/tmp/spire-server/private.api.sock";
+        ListenStream = "/tmp/spire-server/private/api.sock";
         SocketMode = "0600";
         FileDescriptorName = "spire-server-local";
         Service = "spire-server.service";
@@ -81,6 +82,7 @@
     systemd.services.spire-server = {
       description = "Spire Server";
       serviceConfig = {
+        Sockets = [ "spire-server.socket" "spire-server-local.socket" ];
         Restart = "on-failure";
         RuntimeDirectory = "spire-server";
         StateDirectory = "spire-server";
@@ -98,7 +100,6 @@
                 logSourceLocation
                 trustDomain
                 ;
-              socketActivation = true;
               config = pkgs.writeText "server.hcl" config.spire.server.config;
             })
           )

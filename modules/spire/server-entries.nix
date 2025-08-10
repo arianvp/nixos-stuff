@@ -130,7 +130,7 @@ in
 {
   options.spire.server.entries = lib.mkOption {
     type = lib.types.attrsOf (lib.types.submodule entrySubmodule);
-    default = [ ];
+    default = { };
     description = "SPIRE server entries. Currently can only create entries. updating and deleting is not supported.";
   };
 
