@@ -117,7 +117,7 @@ let
           name = "spire-server-create-entry-${entryID}";
           runtimeInputs = [ pkgs.spire ];
           text = ''
-            spire-server entry show -entryID "${entryID}"|| spire-server entry create -data "${
+            spire-server entry show -socketPath /run/spire-server/private/api.sock -entryID "${entryID}"|| spire-server entry create -socketPath /run/spire-server/private/api.sock -data "${
               entryFormat.generate "entries.json" {
                 entries = [ entry ];
               }

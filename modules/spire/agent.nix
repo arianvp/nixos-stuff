@@ -121,7 +121,7 @@
       wantedBy = [ "sockets.target" ];
       socketConfig = {
         FileDescriptorName = "spire-agent-workload";
-        ListenStream = "/tmp/spire-agent/public/api.sock";
+        ListenStream = "/run/spire-agent/public/api.sock";
       };
     };
 

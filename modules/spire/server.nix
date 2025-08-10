@@ -73,7 +73,7 @@
       wantedBy = [ "sockets.target" ];
       socketConfig = {
         # TODO: FHS
-        ListenStream = "/tmp/spire-server/private/api.sock";
+        ListenStream = "/run/spire-server/private/api.sock";
         SocketMode = "0600";
         FileDescriptorName = "spire-server-local";
         Service = "spire-server.service";
@@ -82,7 +82,10 @@
     systemd.services.spire-server = {
       description = "Spire Server";
       serviceConfig = {
-        Sockets = [ "spire-server.socket" "spire-server-local.socket" ];
+        Sockets = [
+          "spire-server.socket"
+          "spire-server-local.socket"
+        ];
         Restart = "on-failure";
         RuntimeDirectory = "spire-server";
         StateDirectory = "spire-server";

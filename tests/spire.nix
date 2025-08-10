@@ -1,19 +1,95 @@
 { pkgs, lib, ... }:
+let
+  trustDomain = "example.com";
+in
 {
   name = "spire";
 
+  interactive.sshBackdoor.enable = true;
+
+  defaults = {
+    imports = [
+      ../modules/spire/agent.nix
+      ./agent.nix
+    ];
+    networking.domain = trustDomain;
+    spire.agent.trustDomain = trustDomain;
+    spire.agent.serverAddress = "server.${trustDomain}";
+  };
+
   nodes = {
+    openbao =
+      { config, ... }:
+      {
+
+        networking.firewall.allowedTCPPorts = [ 8200 ];
+
+        virtualisation.forwardPorts = [
+          {
+            from = "host";
+            host.port = 8200;
+            guest.port = 8200;
+          }
+        ];
+
+        systemd.services.openbao.serviceConfig.ExecStartPre =
+          "${lib.getExe' pkgs.spire "spire-agent"} api fetch x509 -socketPath /run/spire-agent/public/api.sock -write $RUNTIME_DIRECTORY";
+
+        services.openbao = {
+          enable = true;
+          settings = {
+            ui = true;
+            listener = {
+              default = {
+                type = "tcp";
+                tls_cert_file = "/run/openbao/svid.0.pem";
+                tls_key_file = "/run/openbao/svid.0.key";
+                address = "openbao.${trustDomain}:8200";
+                cluster_address = "openbao.${trustDomain}:8201";
+              };
+            };
+            api_addr = "https://openbao.${trustDomain}:8200";
+            cluster_addr = "https://openbao.${trustDomain}:8201";
+            storage.raft.path = "/var/lib/openbao";
+
+          };
+        };
+
+        environment.variables = {
+          VAULT_ADDR = config.services.openbao.settings.api_addr;
+          VAULT_CACERT = "/run/openbao/bundle.0.pem";
+          VAULT_CLIENT_CERT = "/run/openbao/svid.0.pem";
+          VAULT_CLIENT_KEY = "/run/openbao/svid.0.key";
+          VAULT_FORMAT = "json";
+
+        };
+      };
+
     server = {
       imports = [ ../modules/spire/server.nix ];
-
-
       spire.server = {
         enable = true;
-        trustDomain = "example.com";
+        inherit trustDomain;
+        entries.openbao = {
+          selectors = [
+            {
+              type = "systemd";
+              value = "id:openbao.service";
+            }
+          ];
+          parent_id = "spiffe://${trustDomain}/server/openbao";
+          spiffe_id = "spiffe://${trustDomain}/service/openbao";
+          dns_names = [ "openbao.${trustDomain}" ];
+        };
         entries.root = {
-          selectors = [ { type = "unix"; value = "uid:0"; } ];
-          parent_id = "spiffe://example.com/server/agent";
-          spiffe_id = "spiffe://example.com/user/root";
+          selectors = [
+            {
+              type = "unix";
+              value = "uid:0";
+            }
+          ];
+          parent_id = "spiffe://${trustDomain}/server/agent";
+          spiffe_id = "spiffe://${trustDomain}/user/root";
         };
         config = ''
           plugins {
@@ -37,45 +113,6 @@
     };
 
     agent = {
-      imports = [ ../modules/spire/agent.nix ];
-
-      systemd.services.spire-agent.serviceConfig = {
-        EnvironmentFile = "/run/credstore/spire-server-join-token";
-        LoadCredential = "spire-server-bundle";
-      };
-
-      spire.agent = {
-        enable = true;
-        trustDomain = "example.com";
-        serverAddress = "server";
-        config = ''
-          agent {
-            join_token = "$SPIRE_AGENT_JOIN_TOKEN"
-            trust_bundle_path = "$CREDENTIALS_DIRECTORY/spire-server-bundle"
-            trust_bundle_format = "pem"
-          }
-          plugins {
-            KeyManager "memory" {
-              plugin_data {
-              }
-            }
-            NodeAttestor "join_token" {
-              plugin_data {
-              }
-            }
-
-            WorkloadAttestor "systemd" {
-              plugin_data {
-              }
-            }
-            WorkloadAttestor "unix" {
-              plugin_data {
-                discover_workload_path = true
-              }
-            }
-          }
-        '';
-      };
     };
   };
 
@@ -83,22 +120,46 @@
     server.wait_for_unit("spire-server.socket")
     server.wait_for_unit("spire-server-local.socket")
 
-    server.succeed("spire-server healthcheck")
+    server.succeed("spire-server healthcheck -socketPath /run/spire-server/private/api.sock")
     server.succeed("curl -kv https://server:8081")
 
-    bundle = server.succeed("spire-server bundle show")
+    bundle = server.succeed("spire-server bundle show -socketPath /run/spire-server/private/api.sock")
     with open("bundle.pem", "w") as f:
         f.write(bundle)
 
-    token = server.succeed("spire-server token generate -spiffeID spiffe://example.com/server/agent").split()[1]
+    token = server.succeed("spire-server token generate -socketPath /run/spire-server/private/api.sock -spiffeID spiffe://example.com/server/agent").split()[1]
     with open("spire-join-token", "w") as f:
         f.write(f"SPIRE_AGENT_JOIN_TOKEN={token}")
 
     agent.copy_from_host("bundle.pem", "/run/credstore/spire-server-bundle")
     agent.copy_from_host("spire-join-token", "/run/credstore/spire-server-join-token")
     agent.wait_for_unit("spire-agent.socket")
-    agent.succeed("spire-agent healthcheck")
-    print(agent.succeed("spire-agent api fetch"))
+    agent.succeed("spire-agent healthcheck -socketPath /run/spire-agent/public/api.sock")
+
+
+    token = server.succeed("spire-server token generate -socketPath /run/spire-server/private/api.sock -spiffeID spiffe://example.com/server/openbao").split()[1]
+    with open("spire-join-token", "w") as f:
+        f.write(f"SPIRE_AGENT_JOIN_TOKEN={token}")
+    openbao.copy_from_host("bundle.pem", "/run/credstore/spire-server-bundle")
+    openbao.copy_from_host("spire-join-token", "/run/credstore/spire-server-join-token")
+    openbao.wait_for_unit("spire-agent.socket")
+    openbao.succeed("spire-agent healthcheck -socketPath /run/spire-agent/public/api.sock")
+
+    openbao.wait_for_unit("openbao.service")
+
+    import json
+
+    init_output = json.loads(openbao.succeed("bao operator init"))
+    for key in init_output["unseal_keys_b64"][:init_output["unseal_threshold"]]:
+      openbao.succeed(f"bao operator unseal {key}")
+    openbao.succeed(f"bao login {init_output["root_token"]}")
+
+    print(init_output["root_token"])
+
+    openbao.succeed("bao auth enable cert")
+    openbao.succeed("bao write auth/cert/certs/spiffe certificate=@/run/credstore/spire-server-bundle")
+    openbao.succeed("bao login -method=cert")
+
   '';
 
 }
