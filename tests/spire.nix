@@ -44,8 +44,8 @@ in
                 type = "tcp";
                 tls_cert_file = "/run/openbao/svid.0.pem";
                 tls_key_file = "/run/openbao/svid.0.key";
-                address = "openbao.${trustDomain}:8200";
-                cluster_address = "openbao.${trustDomain}:8201";
+                address = "[::]:8200";
+                cluster_address = "[::]:8201";
               };
             };
             api_addr = "https://openbao.${trustDomain}:8200";
@@ -57,9 +57,6 @@ in
 
         environment.variables = {
           VAULT_ADDR = config.services.openbao.settings.api_addr;
-          VAULT_CACERT = "/run/openbao/bundle.0.pem";
-          VAULT_CLIENT_CERT = "/run/openbao/svid.0.pem";
-          VAULT_CLIENT_KEY = "/run/openbao/svid.0.key";
           VAULT_FORMAT = "json";
 
         };
@@ -90,6 +87,17 @@ in
           ];
           parent_id = "spiffe://${trustDomain}/server/agent";
           spiffe_id = "spiffe://${trustDomain}/user/root";
+        };
+        entries.admin = {
+          selectors = [
+            {
+              type = "unix";
+              value = "uid:0";
+            }
+          ];
+          parent_id = "spiffe://${trustDomain}/server/openbao";
+          spiffe_id = "spiffe://${trustDomain}/user/admin";
+          dns_names = [ "admin.openboa.${trustDomain}" ]; # https://github.com/hashicorp/vault/issues/6820
         };
         config = ''
           plugins {
@@ -157,7 +165,9 @@ in
     print(init_output["root_token"])
 
     openbao.succeed("bao auth enable cert")
-    openbao.succeed("bao write auth/cert/certs/spiffe certificate=@/run/credstore/spire-server-bundle")
+    openbao.succeed("bao write auth/cert/config enable_identity_alias_metadata=true")
+    openbao.succeed("bao write auth/cert/certs/openbao certificate=@/run/credstore/spire-server-bundle allowed_uri_sans=spiffe://example.com/service/openbao")
+    openbao.succeed("bao write auth/cert/certs/admin certificate=@/run/credstore/spire-server-bundle allowed_uri_sans=spiffe://example.com/user/admin")
     openbao.succeed("bao login -method=cert")
 
   '';
