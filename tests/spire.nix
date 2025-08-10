@@ -58,7 +58,9 @@ in
         environment.variables = {
           VAULT_ADDR = config.services.openbao.settings.api_addr;
           VAULT_FORMAT = "json";
-
+          VAULT_CACERT = "/run/openbao/bundle.0.pem";
+          VAULT_CLIENT_CERT = "/run/openbao/svid.0.pem";
+          VAULT_CLIENT_KEY = "/run/openbao/svid.0.key";
         };
       };
 
@@ -164,11 +166,17 @@ in
 
     print(init_output["root_token"])
 
+    openbao.succeed("bao secrets enable -version=2 kv")
+    openbao.succeed("bao kv put -mount=kv foo secret=ubersecret")
+    openbao.succeed("echo 'path \"kv/data/foo\" { capabilities = [\"read\"]}' | bao policy write access-foo -")
+
     openbao.succeed("bao auth enable cert")
     openbao.succeed("bao write auth/cert/config enable_identity_alias_metadata=true")
-    openbao.succeed("bao write auth/cert/certs/openbao certificate=@/run/credstore/spire-server-bundle allowed_uri_sans=spiffe://example.com/service/openbao")
-    openbao.succeed("bao write auth/cert/certs/admin certificate=@/run/credstore/spire-server-bundle allowed_uri_sans=spiffe://example.com/user/admin")
+    openbao.succeed("bao write auth/cert/certs/openbao certificate=@/run/credstore/spire-server-bundle allowed_uri_sans=spiffe://example.com/service/openbao token_policies=access-foo")
+    openbao.succeed("bao write auth/cert/certs/admin certificate=@/run/credstore/spire-server-bundle allowed_uri_sans=spiffe://example.com/user/admin token_policies=access-foo")
+
     openbao.succeed("bao login -method=cert")
+    openbao.succeed("bao kv get -mount=kv foo")
 
   '';
 
