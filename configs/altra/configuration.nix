@@ -9,7 +9,6 @@
   imports = [
     ./hardware-configuration.nix
     ./yggdrasil.nix
-    ./spire.nix
     ../../modules/tailscale.nix
     ../../modules/prometheus.nix
     ../../modules/alertmanager.nix
