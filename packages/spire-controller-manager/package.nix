@@ -1,4 +1,8 @@
-{ fetchFromGitHub, buildGoModule }:
+{
+  fetchFromGitHub,
+  buildGoModule,
+  fetchpatch,
+}:
 buildGoModule (finalAttrs: {
   pname = "spire-controller-manager";
   version = "0.6.2";
@@ -13,4 +17,10 @@ buildGoModule (finalAttrs: {
   postInstall = ''
     mv $out/bin/cmd $out/bin/spire-controller-manager
   '';
+  patches = [
+    (fetchpatch {
+      url = "https://github.com/spiffe/spire-controller-manager/pull/561.patch";
+      hash = "sha256-0uc14/8pa5yXII72L2Yj5StGBQFtAFYvhCTsGv+wL3Y=";
+    })
+  ];
 })

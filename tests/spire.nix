@@ -70,42 +70,51 @@ in
         ../modules/spire/controller-manager.nix
       ];
       spire.controllerManager.enable = true;
+      spire.controllerManager.manifests = [
+        {
+          apiVersion = "spire.spiffe.io/v1alpha1";
+          kind = "ClusterStaticEntry";
+          metadata = {
+            name = "openbao";
+          };
+          spec = {
+            selectors = [ "systemd:id:openbao.service" ];
+            parentID = "spiffe://${trustDomain}/server/openbao";
+            spiffeID = "spiffe://${trustDomain}/service/openbao";
+            dnsNames = [ "openbao.${trustDomain}" ];
+          };
+        }
+        {
+
+          apiVersion = "spire.spiffe.io/v1alpha1";
+          kind = "ClusterStaticEntry";
+          metadata = {
+            name = "root";
+          };
+          spec = {
+            selectors = [ "unix:uid:0" ];
+            parentID = "spiffe://${trustDomain}/server/agent";
+            spiffeID = "spiffe://${trustDomain}/service/agent";
+            dnsNames = [ "agent.${trustDomain}" ];
+          };
+        }
+        {
+          apiVersion = "spire.spiffe.io/v1alpha1";
+          kind = "ClusterStaticEntry";
+          metadata = {
+            name = "admin";
+          };
+          spec = {
+            selectors = [ "unix:uid:0" ];
+            parentID = "spiffe://${trustDomain}/server/openbao";
+            spiffeID = "spiffe://${trustDomain}/user/admin";
+            dnsNames = [ "admin.openboa.${trustDomain}" ]; # https://github.com/hashicorp/vault/issues/6820
+          };
+        }
+      ];
       spire.server = {
         enable = true;
         inherit trustDomain;
-        entries.openbao = {
-          selectors = [
-            {
-              type = "systemd";
-              value = "id:openbao.service";
-            }
-          ];
-          parent_id = "spiffe://${trustDomain}/server/openbao";
-          spiffe_id = "spiffe://${trustDomain}/service/openbao";
-          dns_names = [ "openbao.${trustDomain}" ];
-        };
-        entries.root = {
-          selectors = [
-            {
-              type = "unix";
-              value = "uid:0";
-            }
-          ];
-          parent_id = "spiffe://${trustDomain}/server/agent";
-          spiffe_id = "spiffe://${trustDomain}/service/agent";
-          dns_names = [ "agent.${trustDomain}" ];
-        };
-        entries.admin = {
-          selectors = [
-            {
-              type = "unix";
-              value = "uid:0";
-            }
-          ];
-          parent_id = "spiffe://${trustDomain}/server/openbao";
-          spiffe_id = "spiffe://${trustDomain}/user/admin";
-          dns_names = [ "admin.openboa.${trustDomain}" ]; # https://github.com/hashicorp/vault/issues/6820
-        };
         config = ''
           plugins {
             KeyManager "memory" {

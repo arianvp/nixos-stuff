@@ -38,9 +38,26 @@ in
       default = format.generate "config.yaml" cfg.settings;
       description = "Path to the SPIRE server configuration file.";
     };
+
+    manifests = lib.mkOption {
+      type = lib.types.listOf format.type;
+      default = [ ];
+      description = "SPIRE Controller Manager manifests";
+    };
+
   };
 
   config = lib.mkIf cfg.enable {
+
+    environment.etc = lib.listToAttrs (
+      map (
+        manifest:
+        lib.nameValuePair "spire/server/manifests/${manifest.metadata.name}.yaml" {
+          source = format.generate "${manifest.metadata.name}.yaml" manifest;
+        }
+      ) cfg.manifests
+    );
+
     systemd.services.spire-controller-manager = {
       wantedBy = [ "multi-user.target" ];
       description = "SPIRE Controller Manager";

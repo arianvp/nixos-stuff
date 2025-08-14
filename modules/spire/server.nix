@@ -7,9 +7,6 @@
 }:
 
 {
-  imports = [
-    ./server-entries.nix
-  ];
   options.spire.server = {
     enable = lib.mkEnableOption "SPIRE server";
 
