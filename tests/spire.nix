@@ -65,7 +65,11 @@ in
       };
 
     server = {
-      imports = [ ../modules/spire/server.nix ];
+      imports = [
+        ../modules/spire/server.nix
+        ../modules/spire/controller-manager.nix
+      ];
+      spire.controllerManager.enable = true;
       spire.server = {
         enable = true;
         inherit trustDomain;
@@ -138,6 +142,8 @@ in
 
     server.succeed("spire-server healthcheck -socketPath /run/spire-server/private/api.sock")
     server.succeed("curl -kv https://server:8081")
+
+    server.wait_for_unit("spire-controller-manager.service")
 
     bundle = server.succeed("spire-server bundle show -socketPath /run/spire-server/private/api.sock")
     with open("bundle.pem", "w") as f:

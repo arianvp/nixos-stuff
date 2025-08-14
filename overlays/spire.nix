@@ -3,10 +3,14 @@ final: prev: {
     src = prev.fetchFromGitHub {
       owner = "arianvp";
       repo = "spire";
-      rev = "8a49f5ccddec60a4eb8aacb222953c45f37567da";
-      hash = "sha256-7/Go3nppaENStVsE8gLfXXpourQpjtZOU8Bq/Z2jtcE=";
+      rev = "ca0c5a87d8c1bca9ab8f84af3b0db77578750527";
+      hash = "sha256-1rOm28YpWsUQbnOPRAyZh2TxChrq9n3Qxp0hkQBl0JU=";
     };
     vendorHash = "sha256-ax+6F2d7Sxwns/e5IRMqdbSni1O6Fu0DffVRanmPI3c=";
     doCheck = false;
+
+    subPackages = oldAttrs.subPackages ++ [ "support/oidc-discovery-provider" ];
   });
+
+  spire-controller-manager = final.callPackage ../packages/spire-controller-manager/package.nix { };
 }

@@ -75,14 +75,24 @@
         };
       */
 
+      packages = unstable.lib.genAttrs [ "x86_64-linux" "aarch64-linux" ] (
+        system:
+        let
+          pkgs = unstable.legacyPackages.${system}.extend (import ./overlays/spire.nix);
+        in
+        {
+          inherit (pkgs) spire-controller-manager;
+        }
+      );
+
       # TODO: move to Phaer's thing
-      packages.x86_64-linux.digitalOceanImage = nixos-generators.nixosGenerate {
-        pkgs = unstable.legacyPackages.x86_64-linux;
-        modules = [
-          ./configs/arianvp.me
-        ];
-        format = "do";
-      };
+      # packages.x86_64-linux.digitalOceanImage = nixos-generators.nixosGenerate {
+      #   pkgs = unstable.legacyPackages.x86_64-linux;
+      #   modules = [
+      #     ./configs/arianvp.me
+      #   ];
+      #   format = "do";
+      # };
 
       checks = unstable.lib.genAttrs [ "x86_64-linux" "aarch64-linux" ] (
         system:
