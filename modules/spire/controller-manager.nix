@@ -17,7 +17,6 @@ let
     clusterName = "scm";
     clusterDomain = "local";
 
-    # TODO: Config
     spireServerSocketPath = "/run/spire-server/private/api.sock";
     staticManifestPath = "/etc/spire/server/manifests";
   };

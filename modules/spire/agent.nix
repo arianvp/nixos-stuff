@@ -114,7 +114,7 @@
 
   };
   config = lib.mkIf config.spire.agent.enable {
-    environment.systemPackages = [ pkgs.spire ];
+    environment.systemPackages = [ pkgs.spire-agent ];
 
     systemd.sockets.spire-agent = {
       description = "Spire agent API socket";
