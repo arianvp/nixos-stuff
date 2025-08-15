@@ -74,9 +74,7 @@ in
         {
           apiVersion = "spire.spiffe.io/v1alpha1";
           kind = "ClusterStaticEntry";
-          metadata = {
-            name = "openbao";
-          };
+          metadata.name = "openbao";
           spec = {
             selectors = [ "systemd:id:openbao.service" ];
             parentID = "spiffe://${trustDomain}/server/openbao";
@@ -85,12 +83,9 @@ in
           };
         }
         {
-
           apiVersion = "spire.spiffe.io/v1alpha1";
           kind = "ClusterStaticEntry";
-          metadata = {
-            name = "root";
-          };
+          metadata.name = "root";
           spec = {
             selectors = [ "unix:uid:0" ];
             parentID = "spiffe://${trustDomain}/server/agent";
@@ -101,9 +96,7 @@ in
         {
           apiVersion = "spire.spiffe.io/v1alpha1";
           kind = "ClusterStaticEntry";
-          metadata = {
-            name = "admin";
-          };
+          metadata.name = "admin";
           spec = {
             selectors = [ "unix:uid:0" ];
             parentID = "spiffe://${trustDomain}/server/openbao";
@@ -146,63 +139,89 @@ in
   };
 
   testScript = ''
-    server.wait_for_unit("spire-server.socket")
-    server.wait_for_unit("spire-server-local.socket")
-
-    server.succeed("spire-server healthcheck -socketPath /run/spire-server/private/api.sock")
-    server.succeed("curl -kv https://server:8081")
-
-    server.wait_for_unit("spire-controller-manager.service")
-
-    bundle = server.succeed("spire-server bundle show -socketPath /run/spire-server/private/api.sock")
-    with open("bundle.pem", "w") as f:
-        f.write(bundle)
-
-    token = server.succeed("spire-server token generate -socketPath /run/spire-server/private/api.sock -spiffeID spiffe://example.com/server/agent").split()[1]
-    with open("spire-join-token", "w") as f:
-        f.write(f"SPIRE_AGENT_JOIN_TOKEN={token}")
-
-    agent.copy_from_host("bundle.pem", "/run/credstore/spire-server-bundle")
-    agent.copy_from_host("spire-join-token", "/run/credstore/spire-server-join-token")
-    agent.wait_for_unit("spire-agent.socket")
-    agent.succeed("spire-agent healthcheck -socketPath /run/spire-agent/public/api.sock")
-
-
-    token = server.succeed("spire-server token generate -socketPath /run/spire-server/private/api.sock -spiffeID spiffe://example.com/server/openbao").split()[1]
-    with open("spire-join-token", "w") as f:
-        f.write(f"SPIRE_AGENT_JOIN_TOKEN={token}")
-    openbao.copy_from_host("bundle.pem", "/run/credstore/spire-server-bundle")
-    openbao.copy_from_host("spire-join-token", "/run/credstore/spire-server-join-token")
-    openbao.wait_for_unit("spire-agent.socket")
-    openbao.succeed("spire-agent healthcheck -socketPath /run/spire-agent/public/api.sock")
-
-    openbao.wait_for_unit("openbao.service")
-
     import json
 
-    init_output = json.loads(openbao.succeed("bao operator init"))
-    for key in init_output["unseal_keys_b64"][:init_output["unseal_threshold"]]:
-      openbao.succeed(f"bao operator unseal {key}")
-    openbao.succeed(f"bao login {init_output["root_token"]}")
+    with subtest("SPIRE server startup and health checks"):
+        server.wait_for_unit("spire-server.socket")
+        server.wait_for_unit("spire-server-local.socket")
+        server.succeed("spire-server healthcheck -socketPath /run/spire-server/private/api.sock")
+        server.succeed("curl -kv https://server:8081")
+        server.wait_for_unit("spire-controller-manager.service")
 
-    print(init_output["root_token"])
+    with subtest("Generate and distribute SPIRE credentials"):
+        # Get the trust bundle
+        bundle = server.succeed("spire-server bundle show -socketPath /run/spire-server/private/api.sock")
+        with open("bundle.pem", "w") as f:
+            f.write(bundle)
 
-    openbao.succeed("bao secrets enable -version=2 kv")
-    openbao.succeed("bao kv put -mount=kv foo secret=ubersecret")
-    openbao.succeed("echo 'path \"kv/data/foo\" { capabilities = [\"read\"]}' | bao policy write access-foo -")
+    with subtest("Setup SPIRE agent on agent node"):
+        # Generate join token for agent
+        token = server.succeed("spire-server token generate -socketPath /run/spire-server/private/api.sock -spiffeID spiffe://example.com/server/agent").split()[1]
+        with open("spire-join-token", "w") as f:
+            f.write(f"SPIRE_AGENT_JOIN_TOKEN={token}")
 
-    openbao.succeed("bao auth enable cert")
-    openbao.succeed("bao write auth/cert/config enable_identity_alias_metadata=true")
-    openbao.succeed("bao write auth/cert/certs/openbao certificate=@/run/credstore/spire-server-bundle allowed_uri_sans=spiffe://example.com/service/openbao token_policies=access-foo")
-    openbao.succeed("bao write auth/cert/certs/agent certificate=@/run/credstore/spire-server-bundle allowed_uri_sans=spiffe://example.com/service/agent token_policies=access-foo")
-    openbao.succeed("bao write auth/cert/certs/admin certificate=@/run/credstore/spire-server-bundle allowed_uri_sans=spiffe://example.com/user/admin token_policies=access-foo")
+        # Deploy credentials and start agent
+        agent.copy_from_host("bundle.pem", "/run/credstore/spire-server-bundle")
+        agent.copy_from_host("spire-join-token", "/run/credstore/spire-server-join-token")
+        agent.wait_for_unit("spire-agent.socket")
+        agent.succeed("spire-agent healthcheck -socketPath /run/spire-agent/public/api.sock")
 
-    openbao.succeed("bao login -method=cert")
-    openbao.succeed("bao kv get -mount=kv foo")
+    with subtest("Setup SPIRE agent on openbao node"):
+        # Generate join token for openbao
+        token = server.succeed("spire-server token generate -socketPath /run/spire-server/private/api.sock -spiffeID spiffe://example.com/server/openbao").split()[1]
+        with open("spire-join-token", "w") as f:
+            f.write(f"SPIRE_AGENT_JOIN_TOKEN={token}")
 
-    agent.succeed("spire-agent api fetch x509 -socketPath /run/spire-agent/public/api.sock -write .")
-    agent.succeed("bao login -method=cert -ca-cert=bundle.0.pem -client-cert=svid.0.pem -client-key=svid.0.key")
-    agent.succeed("VAULT_CACERT=bundle.0.pem bao kv get -mount=kv foo")
+        # Deploy credentials and start agent
+        openbao.copy_from_host("bundle.pem", "/run/credstore/spire-server-bundle")
+        openbao.copy_from_host("spire-join-token", "/run/credstore/spire-server-join-token")
+        openbao.wait_for_unit("spire-agent.socket")
+        openbao.succeed("spire-agent healthcheck -socketPath /run/spire-agent/public/api.sock")
+
+    with subtest("Initialize and unseal OpenBao"):
+        openbao.wait_for_unit("openbao.service")
+
+        # Initialize OpenBao
+        init_output = json.loads(openbao.succeed("bao operator init"))
+
+        # Unseal with required threshold of keys
+        for key in init_output["unseal_keys_b64"][:init_output["unseal_threshold"]]:
+            openbao.succeed(f"bao operator unseal {key}")
+
+        # Login with root token
+        openbao.succeed(f"bao login {init_output['root_token']}")
+        print(f"OpenBao root token: {init_output['root_token']}")
+
+    with subtest("Configure OpenBao secrets and policies"):
+        # Enable KV secrets engine and create test secret
+        openbao.succeed("bao secrets enable -version=2 kv")
+        openbao.succeed("bao kv put -mount=kv foo secret=ubersecret")
+
+        # Create policy for accessing the secret
+        openbao.succeed("echo 'path \"kv/data/foo\" { capabilities = [\"read\"]}' | bao policy write access-foo -")
+
+    with subtest("Configure certificate authentication"):
+        # Enable and configure cert auth method
+        openbao.succeed("bao auth enable cert")
+        openbao.succeed("bao write auth/cert/config enable_identity_alias_metadata=true")
+
+        # Configure certificate roles for different SPIFFE IDs
+        openbao.succeed("bao write auth/cert/certs/openbao certificate=@/run/credstore/spire-server-bundle allowed_uri_sans=spiffe://example.com/service/openbao token_policies=access-foo")
+        openbao.succeed("bao write auth/cert/certs/agent certificate=@/run/credstore/spire-server-bundle allowed_uri_sans=spiffe://example.com/service/agent token_policies=access-foo")
+        openbao.succeed("bao write auth/cert/certs/admin certificate=@/run/credstore/spire-server-bundle allowed_uri_sans=spiffe://example.com/user/admin token_policies=access-foo")
+
+    with subtest("Test certificate authentication from openbao node"):
+        # Test direct cert auth on openbao node
+        openbao.succeed("bao login -method=cert")
+        openbao.succeed("bao kv get -mount=kv foo")
+
+    with subtest("Test certificate authentication from agent node"):
+        # Fetch SVID certificates on agent
+        agent.succeed("spire-agent api fetch x509 -socketPath /run/spire-agent/public/api.sock -write .")
+
+        # Test cert auth using fetched certificates
+        agent.succeed("bao login -method=cert -ca-cert=bundle.0.pem -client-cert=svid.0.pem -client-key=svid.0.key")
+        agent.succeed("VAULT_CACERT=bundle.0.pem bao kv get -mount=kv foo")
 
   '';
 
