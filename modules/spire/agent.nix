@@ -159,6 +159,29 @@
             }
           )
           + " --dataDir $STATE_DIRECTORY";
+
+        # NOTE: We must run as root as unix plugin relies on accessing system bus and /proc
+
+        LockPersonality = true;
+        MemoryDenyWriteExecute = true;
+        NoNewPriveleges = true;
+
+        # TODO: might be needed by tpm plugin
+        PrivateDevices = true;
+        PrivateTmp = true;
+        ProtectControlGroups = true;
+        ProtectClock = true;
+        UMask = "0600";
+        ProtectHome = true;
+        ProtectHostname = true;
+        ProtectKernelLogs = true;
+        ProtectKernelModules = true;
+        ProectKernelTunables = true;
+        ProtectSystem = "strict";
+        RestrictAddressFamilies = "AF_UNIX AF_INET AF_INET6";
+        RestrictNamespaces = true;
+        RestrictRealtime = true;
+        RestrictSUIDSGID = true;
       };
     };
   };
