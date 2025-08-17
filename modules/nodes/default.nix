@@ -1,34 +1,29 @@
 {
   lib,
-  pkgs,
   config,
+  modulesPath,
   ...
 }:
 let
-  inherit (lib.options) mkOption;
-  baseOS = import (pkgs.path + "/nixos/lib/eval-config.nix") {
-    inherit lib;
-    system = null; # use modularly defined system
-    baseModules = (import ../../modules/module-list.nix) ++ [
+  baseOS = lib.evalModules {
+    modules = [
       {
-        key = "nodes";
-        _module.args.nodes = config.nodes;
+        _module.args = {
+          inherit (config) nodes;
+        };
       }
-    ];
+      config.defaults
+    ]
+    ++ (import "${modulesPath}/module-list.nix");
   };
 in
 {
-  inherit (config.system.build) baseOS;
-}
-/*
-  {
-  imports = [ ""]
-  options = {
-    nodes = mkOption {
-      type = lib.types.lazyAttrsOf lib.types.deferredModuleWith {
-        staticModules = [ ];
-      };
-    };
+  options.defaults = lib.mkOption {
+    type = lib.types.deferredModule;
   };
-  }
-*/
+
+  options.nodes = lib.mkOption {
+    # This is just submodule
+    type = lib.types.lazyAttrsOf baseOS.type;
+  };
+}
