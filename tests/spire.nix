@@ -24,14 +24,6 @@ in
 
         networking.firewall.allowedTCPPorts = [ 8200 ];
 
-        virtualisation.forwardPorts = [
-          {
-            from = "host";
-            host.port = 8200;
-            guest.port = 8200;
-          }
-        ];
-
         systemd.services.openbao.serviceConfig.ExecStartPre =
           "${lib.getExe' pkgs.spire "spire-agent"} api fetch x509 -socketPath /run/spire-agent/public/api.sock -write $RUNTIME_DIRECTORY";
 
@@ -51,7 +43,6 @@ in
             api_addr = "https://openbao.${trustDomain}:8200";
             cluster_addr = "https://openbao.${trustDomain}:8201";
             storage.raft.path = "/var/lib/openbao";
-
           };
         };
 
@@ -68,7 +59,9 @@ in
       imports = [
         ../modules/spire/server.nix
         ../modules/spire/controller-manager.nix
+        ../modules/spire/oidc-discovery-provider.nix
       ];
+      spire.oidc-discovery-provider.enable = true;
       spire.controllerManager.enable = true;
       spire.controllerManager.manifests = [
         {
@@ -203,7 +196,6 @@ in
     with subtest("Configure certificate authentication"):
         # Enable and configure cert auth method
         openbao.succeed("bao auth enable cert")
-        openbao.succeed("bao write auth/cert/config enable_identity_alias_metadata=true")
 
         # Configure certificate roles for different SPIFFE IDs
         openbao.succeed("bao write auth/cert/certs/openbao certificate=@/run/credstore/spire-server-bundle allowed_uri_sans=spiffe://example.com/service/openbao token_policies=access-foo")
