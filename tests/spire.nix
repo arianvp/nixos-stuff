@@ -8,10 +8,7 @@ in
   interactive.sshBackdoor.enable = true;
 
   defaults = {
-    imports = [
-      ../modules/spire/agent.nix
-      ./agent.nix
-    ];
+    imports = [ ./agent.nix ];
     networking.domain = trustDomain;
     spire.agent.trustDomain = trustDomain;
     spire.agent.serverAddress = "server.${trustDomain}";
