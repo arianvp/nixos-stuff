@@ -5,6 +5,7 @@
     ./pcrlock.nix
     ./audit.nix
     ../../modules/vmspawn.nix
+    ../../modules/yggdrasil.nix
   ];
   services.fwupd.enable = true;
 

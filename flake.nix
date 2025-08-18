@@ -103,6 +103,9 @@
           spire = pkgs.testers.runNixOSTest {
             imports = [ ./tests/spire.nix ];
           };
+          spire-http-challenge = pkgs.testers.runNixOSTest {
+            imports = [ ./tests/spire-http-challenge.nix ];
+          };
         }
       );
 
