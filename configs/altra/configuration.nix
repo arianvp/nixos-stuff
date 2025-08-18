@@ -8,7 +8,7 @@
 {
   imports = [
     ./hardware-configuration.nix
-    ./yggdrasil.nix
+    ../../modules/yggdrasil.nix
     ../../modules/tailscale.nix
     ../../modules/prometheus.nix
     ../../modules/alertmanager.nix
