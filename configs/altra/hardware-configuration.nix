@@ -64,13 +64,11 @@
   systemd.network.networks.eth = {
     # TODO: bonding
     matchConfig.Name = "enP3p3s0f0";
-    address = [
-      "2a05:2d01:2025:f000:dead:beef:cafe:babe"
-    ];
     networkConfig = {
       DHCP = "yes";
       MulticastDNS = "yes";
     };
+    ipv6AcceptRAConfig.Token = "static:::dead:beef:cafe:babe";
   };
 
   systemd.network.links."10-foo" = {

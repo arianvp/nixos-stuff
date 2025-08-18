@@ -41,6 +41,20 @@
       })
     ];
   };
+  users.users.raito = {
+    extraGroups = [ "wheel" ];
+    isNormalUser = true;
+    openssh.authorizedKeys.keys = [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKiXXYkhRh+s7ixZ8rvG8ntIqd6FELQ9hh7HoaHQJRPU Thorkell"
+    ];
+  };
+  users.users.m = {
+    extraGroups =  [ "nix-trusted-users"];
+    isNormalUser = true;
+    openssh.authorizedKeys.keys = [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC/HMAT/nOa8F5LrFebnG7wk1o/K0Rx1HdDoFYxvLSef root@p4"
+    ];
+  };
   users.users.butz = {
     isNormalUser = true;
     extraGroups = [ "wheel" ];
