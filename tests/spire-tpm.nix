@@ -1,8 +1,9 @@
+{ lib, pkgs, ... }:
 let
   trustDomain = "example.com";
 in
 {
-  name = "spire-http-challenge";
+  name = "spire-tpm";
   nodes = {
     server = {
       imports = [
@@ -36,8 +37,11 @@ in
                 connection_string = "$STATE_DIRECTORY/datastore.sqlite3"
               }
             }
-            NodeAttestor  "http_challenge" {
-              plugin_data { required_port = "80" }
+            NodeAttestor  "tpm" {
+              plugin_cmd = "${lib.getExe' pkgs.spire-tpm-plugin "tpm_attestor_server"}"
+              plugin_data {
+                hash_path = "/etc/spire/server/hashes"
+              }
             }
 
           }
@@ -48,6 +52,13 @@ in
       imports = [ ../modules/spire/agent.nix ];
       networking.firewall.allowedTCPPorts = [ 80 ];
       systemd.services.spire-agent.serviceConfig.LoadCredential = "spire-server-bundle";
+
+      # TODO: use the swtpm-setup tooling instead. But that is supposed to run before tpm2_startup IIRC
+
+      virtualisation.tpm = {
+        enable = true;
+      };
+
       spire.agent = {
         enable = true;
         trustDomain = trustDomain;
@@ -59,8 +70,9 @@ in
           }
           plugins {
             KeyManager "memory" { plugin_data { } }
-            NodeAttestor "http_challenge" {
-              plugin_data { port = 80 }
+            NodeAttestor "tpm" {
+              plugin_cmd = "${lib.getExe' pkgs.spire-tpm-plugin "tpm_attestor_agent"}"
+              plugin_data {}
             }
             WorkloadAttestor "systemd" {
               plugin_data {}
@@ -70,7 +82,11 @@ in
       };
     };
   };
+  # TODO: use ekcert based provisioning
   testScript = ''
+    pubhash = agent.succeed("${lib.getExe' pkgs.spire-tpm-plugin "get_tpm_pubhash"}").strip()
+    server.succeed("mkdir -p /etc/spire/server/hashes")
+    server.succeed(f"touch /etc/spire/server/hashes/{pubhash}")
     server.wait_for_unit("spire-server.socket")
     bundle = server.succeed("spire-server bundle show -socketPath /run/spire-server/private/api.sock")
     with open("bundle.pem", "w") as f:

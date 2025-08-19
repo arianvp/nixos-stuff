@@ -13,4 +13,6 @@ final: prev: {
   });
 
   spire-controller-manager = final.callPackage ../packages/spire-controller-manager/package.nix { };
+
+  spire-tpm-plugin = final.callPackage ../packages/spire-tpm-plugin/package.nix { };
 }

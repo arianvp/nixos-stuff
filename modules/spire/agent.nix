@@ -167,7 +167,8 @@
         NoNewPriveleges = true;
 
         # TODO: might be needed by tpm plugin
-        PrivateDevices = true;
+        # PrivateDevices = true;
+        DeviceAllow = "/dev/tpmrm0";
         PrivateTmp = true;
         ProtectControlGroups = true;
         ProtectClock = true;

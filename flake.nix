@@ -81,7 +81,7 @@
           pkgs = unstable.legacyPackages.${system}.extend (import ./overlays/spire.nix);
         in
         {
-          inherit (pkgs) spire-controller-manager;
+          inherit (pkgs) spire-controller-manager spire-tpm-plugin;
         }
       );
 
@@ -105,6 +105,9 @@
           };
           spire-http-challenge = pkgs.testers.runNixOSTest {
             imports = [ ./tests/spire-http-challenge.nix ];
+          };
+          spire-tpm = pkgs.testers.runNixOSTest {
+            imports = [ ./tests/spire-tpm.nix ];
           };
         }
       );
