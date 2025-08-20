@@ -3,10 +3,6 @@
   imports = [ ./agent.nix ];
   spire.agent = {
     config = ''
-      agent {
-        trust_bundle_path = "$CREDENTIALS_DIRECTORY/spire-server-bundle"
-        trust_bundle_format = "pem"
-      }
       plugins {
         KeyManager "memory" { plugin_data { } }
         NodeAttestor "tpm" {
