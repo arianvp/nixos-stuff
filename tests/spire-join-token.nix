@@ -3,15 +3,50 @@ let
   trustDomain = "example.com";
 in
 {
-  name = "spire";
+  name = "spire-join-token";
 
   interactive.sshBackdoor.enable = true;
 
   defaults = {
-    imports = [ ./agent.nix ];
     networking.domain = trustDomain;
     spire.agent.trustDomain = trustDomain;
     spire.agent.serverAddress = "server.${trustDomain}";
+    imports = [ ../modules/spire/agent.nix ];
+
+    systemd.services.spire-agent.serviceConfig = {
+      EnvironmentFile = "/run/credstore/spire-server-join-token";
+      LoadCredential = "spire-server-bundle";
+    };
+
+    spire.agent = {
+      enable = true;
+      config = ''
+        agent {
+          join_token = "$SPIRE_AGENT_JOIN_TOKEN"
+          trust_bundle_path = "$CREDENTIALS_DIRECTORY/spire-server-bundle"
+          trust_bundle_format = "pem"
+        }
+        plugins {
+          KeyManager "memory" {
+            plugin_data {
+            }
+          }
+          NodeAttestor "join_token" {
+            plugin_data {
+            }
+          }
+          WorkloadAttestor "systemd" {
+            plugin_data {
+            }
+          }
+          WorkloadAttestor "unix" {
+            plugin_data {
+              discover_workload_path = true
+            }
+          }
+        }
+      '';
+    };
   };
 
   nodes = {
@@ -22,7 +57,7 @@ in
         networking.firewall.allowedTCPPorts = [ 8200 ];
 
         systemd.services.openbao.serviceConfig.ExecStartPre =
-          "${lib.getExe' pkgs.spire "spire-agent"} api fetch x509 -socketPath /run/spire-agent/public/api.sock -write $RUNTIME_DIRECTORY";
+          "${lib.getExe' pkgs.spire "spire-agent"} api fetch x509 -socketPath $SPIFFE_ENDPOINT_SOCKET -write $RUNTIME_DIRECTORY";
 
         services.openbao = {
           enable = true;
@@ -56,9 +91,7 @@ in
       imports = [
         ../modules/spire/server.nix
         ../modules/spire/controller-manager.nix
-        ../modules/spire/oidc-discovery-provider.nix
       ];
-      spire.oidc-discovery-provider.enable = true;
       spire.controllerManager.enable = true;
       spire.controllerManager.manifests = [
         {
@@ -134,19 +167,19 @@ in
     with subtest("SPIRE server startup and health checks"):
         server.wait_for_unit("spire-server.socket")
         server.wait_for_unit("spire-server-local.socket")
-        server.succeed("spire-server healthcheck -socketPath /run/spire-server/private/api.sock")
+        server.succeed("spire-server healthcheck -socketPath $SPIRE_SERVER_ADMIN_SOCKET")
         server.succeed("curl -kv https://server:8081")
         server.wait_for_unit("spire-controller-manager.service")
 
     with subtest("Generate and distribute SPIRE credentials"):
         # Get the trust bundle
-        bundle = server.succeed("spire-server bundle show -socketPath /run/spire-server/private/api.sock")
+        bundle = server.succeed("spire-server bundle show -socketPath $SPIRE_SERVER_ADMIN_SOCKET")
         with open("bundle.pem", "w") as f:
             f.write(bundle)
 
     with subtest("Setup SPIRE agent on agent node"):
         # Generate join token for agent
-        token = server.succeed("spire-server token generate -socketPath /run/spire-server/private/api.sock -spiffeID spiffe://example.com/server/agent").split()[1]
+        token = server.succeed("spire-server token generate -socketPath $SPIRE_SERVER_ADMIN_SOCKET -spiffeID spiffe://example.com/server/agent").split()[1]
         with open("spire-join-token", "w") as f:
             f.write(f"SPIRE_AGENT_JOIN_TOKEN={token}")
 
@@ -154,11 +187,11 @@ in
         agent.copy_from_host("bundle.pem", "/run/credstore/spire-server-bundle")
         agent.copy_from_host("spire-join-token", "/run/credstore/spire-server-join-token")
         agent.wait_for_unit("spire-agent.socket")
-        agent.succeed("spire-agent healthcheck -socketPath /run/spire-agent/public/api.sock")
+        agent.succeed("spire-agent healthcheck -socketPath $SPIFFE_ENDPOINT_SOCKET")
 
     with subtest("Setup SPIRE agent on openbao node"):
         # Generate join token for openbao
-        token = server.succeed("spire-server token generate -socketPath /run/spire-server/private/api.sock -spiffeID spiffe://example.com/server/openbao").split()[1]
+        token = server.succeed("spire-server token generate -socketPath $SPIRE_SERVER_ADMIN_SOCKET -spiffeID spiffe://example.com/server/openbao").split()[1]
         with open("spire-join-token", "w") as f:
             f.write(f"SPIRE_AGENT_JOIN_TOKEN={token}")
 
@@ -166,7 +199,7 @@ in
         openbao.copy_from_host("bundle.pem", "/run/credstore/spire-server-bundle")
         openbao.copy_from_host("spire-join-token", "/run/credstore/spire-server-join-token")
         openbao.wait_for_unit("spire-agent.socket")
-        openbao.succeed("spire-agent healthcheck -socketPath /run/spire-agent/public/api.sock")
+        openbao.succeed("spire-agent healthcheck -socketPath $SPIFFE_ENDPOINT_SOCKET")
 
     with subtest("Initialize and unseal OpenBao"):
         openbao.wait_for_unit("openbao.service")
@@ -206,7 +239,7 @@ in
 
     with subtest("Test certificate authentication from agent node"):
         # Fetch SVID certificates on agent
-        agent.succeed("spire-agent api fetch x509 -socketPath /run/spire-agent/public/api.sock -write .")
+        agent.succeed("spire-agent api fetch x509 -socketPath $SPIFFE_ENDPOINT_SOCKET -write .")
 
         # Test cert auth using fetched certificates
         agent.succeed("bao login -method=cert -ca-cert=bundle.0.pem -client-cert=svid.0.pem -client-key=svid.0.key")

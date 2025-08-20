@@ -17,8 +17,9 @@ let
     clusterName = "scm";
     clusterDomain = "local";
 
-    spireServerSocketPath = "/run/spire-server/private/api.sock";
+    spireServerSocketPath = config.spire.server.socketPath;
     staticManifestPath = "/etc/spire/server/manifests";
+    expandEnvStaticManifests = true;
   };
   format = pkgs.formats.yaml { };
 
@@ -60,7 +61,7 @@ in
     systemd.services.spire-controller-manager = {
       wantedBy = [ "multi-user.target" ];
       description = "SPIRE Controller Manager";
-      serviceConfig.ExecStart = "${pkgs.spire-controller-manager}/bin/spire-controller-manager -config ${cfg.configFile}";
+      serviceConfig.ExecStart = "${lib.getExe pkgs.spire-controller-manager} -config ${cfg.configFile}";
     };
   };
 }

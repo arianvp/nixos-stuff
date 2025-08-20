@@ -5,7 +5,9 @@
   utils,
   ...
 }:
-
+let
+  cfg = config.spire.server;
+in
 {
   options.spire.server = {
     enable = lib.mkEnableOption "SPIRE server";
@@ -49,8 +51,17 @@
       description = "The trust domain that this server belongs to";
     };
 
+    socketPath = lib.mkOption {
+      type = lib.types.str;
+      description = "Path to bind the SPIRE Server API Socket to";
+      default = "/run/spire/server/private/api.sock";
+    };
+
   };
-  config = lib.mkIf config.spire.server.enable {
+  config = lib.mkIf cfg.enable {
+    # NOTE: for https://github.com/spiffe/spire/issues/5770
+    systemd.globalEnvironment.SPIRE_SERVER_ADMIN_SOCKET = cfg.socketPath;
+    environment.variables.SPIRE_SERVER_ADMIN_SOCKET = cfg.socketPath;
     environment.systemPackages = [ pkgs.spire ];
     networking.firewall.allowedTCPPorts = [
       443
@@ -69,8 +80,7 @@
       description = "Spire Server Local API Socket";
       wantedBy = [ "sockets.target" ];
       socketConfig = {
-        # TODO: FHS
-        ListenStream = "/run/spire-server/private/api.sock";
+        ListenStream = cfg.socketPath;
         SocketMode = "0600";
         FileDescriptorName = "spire-server-local";
         Service = "spire-server.service";
@@ -89,7 +99,7 @@
         ExecStart =
           utils.escapeSystemdExecArgs (
             [
-              "${pkgs.spire}/bin/spire-server"
+              "${pkgs.spire.server}/bin/spire-server"
               "run"
             ]
             ++ (lib.cli.toGNUCommandLine { } {

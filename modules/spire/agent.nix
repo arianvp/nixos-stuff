@@ -5,6 +5,9 @@
   utils,
   ...
 }:
+let
+  cfg = config.spire.agent;
+in
 {
   options.spire.agent = {
     enable = lib.mkEnableOption "Spire agent";
@@ -112,16 +115,26 @@
       description = "The trust domain that this agent belongs to";
     };
 
+    socketPath = lib.mkOption {
+      type = lib.types.str;
+      description = "Path to bind the SPIRE Server API Socket to";
+      default = "/run/spire/agent/public/api.sock";
+    };
+
   };
-  config = lib.mkIf config.spire.agent.enable {
+  config = lib.mkIf cfg.enable {
     environment.systemPackages = [ pkgs.spire-agent ];
+
+    # NOTE: For when https://github.com/spiffe/spire/pull/5776 lands
+    environment.variables.SPIFFE_ENDPOINT_SOCKET = cfg.socketPath;
+    systemd.globalEnvironment.SPIFFE_ENDPOINT_SOCKET = cfg.socketPath;
 
     systemd.sockets.spire-agent = {
       description = "Spire agent API socket";
       wantedBy = [ "sockets.target" ];
       socketConfig = {
         FileDescriptorName = "spire-agent-workload";
-        ListenStream = "/run/spire-agent/public/api.sock";
+        ListenStream = cfg.socketPath;
       };
     };
 

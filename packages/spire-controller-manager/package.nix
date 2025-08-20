@@ -9,10 +9,11 @@ buildGoModule (finalAttrs: {
   src = fetchFromGitHub {
     owner = "spiffe";
     repo = "spire-controller-manager";
-    rev = "v${finalAttrs.version}";
-    hash = "sha256-7OJr5+qzV1ywEercRrjv5ya8K4CF8+DXuxUXBSKw2P0=";
+    #rev = "v${finalAttrs.version}";
+    rev = "421205d5679befbbb9bfb8a5b03260744adedd6a";
+    hash = "sha256-kf5FRwrvGyroYVn4rWnBCWOj9OMbfCX57Qb/bjz8zW8=";
   };
-  vendorHash = "sha256-tH/3ToXxPJkzbUvY2JY85kHwyZX8n76wsE7yvKAU4aM=";
+  vendorHash = "sha256-1M5+D5SVWmr0pkwx7N5mfYqofO9cU0uY8ib8jYGvmlw=";
   subPackages = [ "cmd" ];
   postInstall = ''
     mv $out/bin/cmd $out/bin/spire-controller-manager
@@ -23,4 +24,6 @@ buildGoModule (finalAttrs: {
       hash = "sha256-0uc14/8pa5yXII72L2Yj5StGBQFtAFYvhCTsGv+wL3Y=";
     })
   ];
+
+  meta.mainProgram = "spire-controller-manager";
 })

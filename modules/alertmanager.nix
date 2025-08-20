@@ -18,6 +18,16 @@
       };
     };
 
+    /*
+      tls_server_config = {
+      cert_file = "/run/credentials/alertmanager/svid.0.pem";
+      key_file = "/run/credentials/alertmanager/svid.0.key";
+
+      client_auth_type = "RequireAndVerifyClientCert";
+      client_ca_file = "/run/credentials/alertmanager/bundle.0.pem";
+      };
+    */
+
     # TODO: how to discover these?  mDNS discovery is *NOT* supported by alertmanager
     clusterPeers = [
 
@@ -30,9 +40,10 @@
     port = config.services.prometheus.alertmanager.port;
   };
 
+  # TODO: Both UDP and TCP
   # advertise the cluster address on LAN
-  systemd.dnssd.services.alertmanager-cluster = {
-    type = "_http._tcp";
-    port = 9094;
-  };
+  # systemd.dnssd.services.alertmanager-cluster = {
+  #  type = "_http._tcp";
+  #  port = 9094;
+  # };
 }

@@ -16,10 +16,20 @@ in
           {
             apiVersion = "spire.spiffe.io/v1alpha1";
             kind = "ClusterStaticEntry";
-            metadata.name = "agent";
+            metadata.name = "server";
+            spec = {
+              parentID = "spiffe://${trustDomain}/spire/server";
+              spiffeID = "spiffe://${trustDomain}/server/agent";
+              selectors = [ "tpm:pub_hash:$PUBHASH" ];
+            };
+          }
+          {
+            apiVersion = "spire.spiffe.io/v1alpha1";
+            kind = "ClusterStaticEntry";
+            metadata.name = "service";
             spec = {
               selectors = [ "systemd:id:backdoor.service" ];
-              parentID = "spiffe://${trustDomain}/spire/agent/http_challenge/agent";
+              parentID = "spiffe://${trustDomain}/server/agent";
               spiffeID = "spiffe://${trustDomain}/service/agent";
             };
           }
@@ -28,6 +38,7 @@ in
       spire.server = {
         enable = true;
         inherit trustDomain;
+        logLevel = "debug";
         config = ''
           plugins {
             KeyManager "memory" { plugin_data {} }
@@ -53,6 +64,8 @@ in
       networking.firewall.allowedTCPPorts = [ 80 ];
       systemd.services.spire-agent.serviceConfig.LoadCredential = "spire-server-bundle";
 
+      environment.systemPackages = [ pkgs.spire-tpm-plugin ];
+
       # TODO: use the swtpm-setup tooling instead. But that is supposed to run before tpm2_startup IIRC
 
       virtualisation.tpm = {
@@ -62,6 +75,7 @@ in
       spire.agent = {
         enable = true;
         trustDomain = trustDomain;
+        logLevel = "debug";
         serverAddress = "server";
         config = ''
           agent {
@@ -84,14 +98,19 @@ in
   };
   # TODO: use ekcert based provisioning
   testScript = ''
-    pubhash = agent.succeed("${lib.getExe' pkgs.spire-tpm-plugin "get_tpm_pubhash"}").strip()
+    pubhash = agent.succeed("get_tpm_pubhash").strip()
     server.succeed("mkdir -p /etc/spire/server/hashes")
     server.succeed(f"touch /etc/spire/server/hashes/{pubhash}")
+    server.succeed(f"systemctl set-environment PUBHASH={pubhash}")
+    # NOTE: to pick up the new env var
+    server.succeed("systemctl restart spire-controller-manager")
     server.wait_for_unit("spire-server.socket")
-    bundle = server.succeed("spire-server bundle show -socketPath /run/spire-server/private/api.sock")
+    bundle = server.succeed("spire-server bundle show -socketPath $SPIRE_SERVER_ADMIN_SOCKET")
     with open("bundle.pem", "w") as f:
         f.write(bundle)
     agent.copy_from_host("bundle.pem", "/run/credstore/spire-server-bundle")
-    agent.succeed("spire-agent api fetch x509 -socketPath /run/spire-agent/public/api.sock -write .")
+    # Check if entry is there. To rule out race
+    print(server.succeed("spire-server entry show -socketPath $SPIRE_SERVER_ADMIN_SOCKET"))
+    agent.succeed("spire-agent api fetch x509 -socketPath $SPIFFE_ENDPOINT_SOCKET -write .")
   '';
 }

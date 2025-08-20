@@ -100,8 +100,8 @@
           pkgs = unstable.legacyPackages.${system}.extend (import ./overlays/spire.nix);
         in
         {
-          spire = pkgs.testers.runNixOSTest {
-            imports = [ ./tests/spire.nix ];
+          spire-join-token = pkgs.testers.runNixOSTest {
+            imports = [ ./tests/spire-join-token.nix ];
           };
           spire-http-challenge = pkgs.testers.runNixOSTest {
             imports = [ ./tests/spire-http-challenge.nix ];
