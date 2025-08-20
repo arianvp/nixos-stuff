@@ -109,8 +109,12 @@ in
     with open("bundle.pem", "w") as f:
         f.write(bundle)
     agent.copy_from_host("bundle.pem", "/run/credstore/spire-server-bundle")
-    # Check if entry is there. To rule out race
-    print(server.succeed("spire-server entry show -socketPath $SPIRE_SERVER_ADMIN_SOCKET"))
+
+    # First call will fail as the X509-SVID is fetched asynchronously instead of synchronously for aliases :(
+    agent.fail("spire-agent api fetch x509 -socketPath $SPIFFE_ENDPOINT_SOCKET -write .")
+    # Now wait for the SVID to be created asynchronously :(
+    # FIXME: workaround for https://github.com/spiffe/spire/issues/6257
+    agent.wait_for_console_text("Creating X509-SVID")
     agent.succeed("spire-agent api fetch x509 -socketPath $SPIFFE_ENDPOINT_SOCKET -write .")
   '';
 }
