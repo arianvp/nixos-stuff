@@ -8,11 +8,12 @@
 {
   imports = [
     ./hardware-configuration.nix
+    ./spire.nix
     ../../modules/yggdrasil.nix
     ../../modules/tailscale.nix
     ../../modules/prometheus.nix
     ../../modules/alertmanager.nix
-    ../../websites/nixos.sh
+    # ../../websites/nixos.sh
   ];
 
   networking.hostName = "altra";
@@ -49,7 +50,7 @@
     ];
   };
   users.users.m = {
-    extraGroups =  [ "nix-trusted-users"];
+    extraGroups = [ "nix-trusted-users" ];
     isNormalUser = true;
     openssh.authorizedKeys.keys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC/HMAT/nOa8F5LrFebnG7wk1o/K0Rx1HdDoFYxvLSef root@p4"

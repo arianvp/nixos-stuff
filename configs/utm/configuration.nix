@@ -12,8 +12,6 @@
     # ../../modules/monitoring.nix
     ../../modules/vmspawn.nix
     ./soft-reboot.nix
-    ../../modules/spire/agent.nix
-    ../../modules/spire/server.nix
     ./ci.nix
   ];
 
@@ -83,13 +81,6 @@
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
   system.stateVersion = "25.05"; # Did you read the comment?
-
-  spire.agent = {
-    enable = true;
-    trustDomain = "frickel.consulting";
-    trustBundleFormat = "spiffe";
-    joinToken = "61cdef30-7ee0-4b51-81aa-c8cb2007df3b";
-  };
 
   systemd.services.teleport.serviceConfig.StateDirectory = "teleport";
   /*

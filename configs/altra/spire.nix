@@ -1,13 +1,9 @@
-let
-  static = "2a05:2d01:2025:f000:dead:beef:babe:cafe";
-in
+{ lib, pkgs, ... }:
 {
   imports = [
     ../../modules/spire/server.nix
-    ../../modules/spire/agent.nix
+    ../../modules/spire/agent-tpm.nix
   ];
-
-  systemd.network.networks.eth.address = [ static ];
 
   spire.agent = {
     enable = true;
@@ -15,30 +11,6 @@ in
     trustBundleFormat = "spiffe";
     serverAddress = "spire.nixos.sh";
     trustDomain = "nixos.sh";
-    joinToken = "64180d65-9c9b-4230-982b-4cf0070d7365";
-  };
-
-  spire.server.entries = {
-    prometheus = {
-      parent_id = "spiffe://nixos.sh/server/altra";
-      spiffe_id = "spiffe://nixos.sh/service/prometheus";
-      selectors = [
-        {
-          type = "systemd";
-          value = "id:prometheus.service";
-        }
-      ];
-    };
-    alertmanager = {
-      parent_id = "spiffe://nixos.sh/server/altra";
-      spiffe_id = "spiffe://nixos.sh/service/alertmanager";
-      selectors = [
-        {
-          type = "systemd";
-          value = "id:alertmanager.service";
-        }
-      ];
-    };
   };
 
   spire.server = {
@@ -46,22 +18,6 @@ in
     trustDomain = "nixos.sh";
     config = # hcl
       ''
-        server {
-          federation {
-            bundle_endpoint {
-              address = "${static}"
-              port = 443
-              profile "https_web" {
-                acme {
-                  domain_name = "spire.nixos.sh"
-                  tos_accepted = true
-                }
-              }
-            }
-          }
-          jwt_issuer = "https://spire.nixos.sh"
-        }
-
         plugins {
           KeyManager "memory" {
             plugin_data {
@@ -73,8 +29,21 @@ in
               connection_string = "$STATE_DIRECTORY/datastore.sqlite3"
             }
           }
+          NodeAttestor "http_challenge" {
+            plugin_data {
+              required_port = 80
+              allowed_dns_patterns = [".*\.nixos.sh"]
+            }
+          }
           NodeAttestor "join_token" {
             plugin_data {
+            }
+          }
+          NodeAttestor  "tpm" {
+            plugin_cmd = "${lib.getExe' pkgs.spire-tpm-plugin "tpm_attestor_server"}"
+            plugin_data {
+              hash_path = "$STATE_DIRECTORY/hashes"
+              cert_path = ${../modules/spire/certs}
             }
           }
         }
