@@ -7,20 +7,16 @@ let
     spire.agent = {
       enable = true;
       trustDomain = trustDomain;
+      trustBundle = "\${CREDENTIALS_DIRECTORY}/spire-server-bundle";
+      trustBundleFormat = "pem";
       serverAddress = "server";
       config = ''
-        agent {
-          trust_bundle_path = "$CREDENTIALS_DIRECTORY/spire-server-bundle"
-          trust_bundle_format = "pem"
-        }
         plugins {
           KeyManager "memory" { plugin_data { } }
           NodeAttestor "http_challenge" {
             plugin_data { port = 80 }
           }
-          WorkloadAttestor "systemd" {
-            plugin_data {}
-          }
+          WorkloadAttestor "systemd" { plugin_data { } }
         }
       '';
     };

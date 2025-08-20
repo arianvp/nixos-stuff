@@ -77,11 +77,9 @@ in
         trustDomain = trustDomain;
         logLevel = "debug";
         serverAddress = "server";
+        trustBundle = "\${CREDENTIALS_DIRECTORY}/spire-server-bundle";
+        trustBundleFormat = "pem";
         config = ''
-          agent {
-            trust_bundle_path = "$CREDENTIALS_DIRECTORY/spire-server-bundle"
-            trust_bundle_format = "pem"
-          }
           plugins {
             KeyManager "memory" { plugin_data { } }
             NodeAttestor "tpm" {

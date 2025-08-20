@@ -145,33 +145,28 @@ in
         RuntimeDirectory = "spire-agent";
         StateDirectory = "spire-agent";
         ExecStart =
-          utils.escapeSystemdExecArgs (
-            [
-              "${pkgs.spire}/bin/spire-agent"
-              "run"
-            ]
-            ++ lib.cli.toGNUCommandLine { } {
-              config = "${pkgs.writeText "agent.conf" config.spire.agent.config}";
-              inherit (config.spire.agent)
-                allowUnauthenticatedVerifiers
-                expandEnv
-                insecureBootstrap
-                joinToken
-                logFile
-                logFormat
-                logLevel
-                logSourceLocation
-                retryBootstrap
-                serverAddress
-                serverPort
-                trustBundle
-                trustBundleFormat
-                trustBundleUrl
-                trustDomain
-                ;
-            }
-          )
-          + " --dataDir $STATE_DIRECTORY";
+          "${pkgs.spire.agent}/bin/spire-agent run "
+          + lib.cli.toGNUCommandLineShell { } {
+            config = "${pkgs.writeText "agent.conf" config.spire.agent.config}";
+            dataDir = "$STATE_DIRECTORY";
+            inherit (config.spire.agent)
+              allowUnauthenticatedVerifiers
+              expandEnv
+              insecureBootstrap
+              joinToken
+              logFile
+              logFormat
+              logLevel
+              logSourceLocation
+              retryBootstrap
+              serverAddress
+              serverPort
+              trustBundle
+              trustBundleFormat
+              trustBundleUrl
+              trustDomain
+              ;
+          };
 
         # NOTE: We must run as root as unix plugin relies on accessing system bus and /proc
 
