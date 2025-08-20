@@ -1,5 +1,30 @@
 let
   trustDomain = "example.com";
+  agentConfig = {
+    imports = [ ../modules/spire/agent.nix ];
+    networking.firewall.allowedTCPPorts = [ 80 ];
+    systemd.services.spire-agent.serviceConfig.LoadCredential = "spire-server-bundle";
+    spire.agent = {
+      enable = true;
+      trustDomain = trustDomain;
+      serverAddress = "server";
+      config = ''
+        agent {
+          trust_bundle_path = "$CREDENTIALS_DIRECTORY/spire-server-bundle"
+          trust_bundle_format = "pem"
+        }
+        plugins {
+          KeyManager "memory" { plugin_data { } }
+          NodeAttestor "http_challenge" {
+            plugin_data { port = 80 }
+          }
+          WorkloadAttestor "systemd" {
+            plugin_data {}
+          }
+        }
+      '';
+    };
+  };
 in
 {
   name = "spire-http-challenge";
@@ -12,13 +37,35 @@ in
       spire.controllerManager = {
         enable = true;
         manifests = [
+          # agent2 uses a node alias
           {
             apiVersion = "spire.spiffe.io/v1alpha1";
             kind = "ClusterStaticEntry";
-            metadata.name = "agent";
+            metadata.name = "node";
+            spec = {
+              selectors = [ "http_challenge:hostname:agent2" ];
+              parentID = "spiffe://${trustDomain}/spire/server";
+              spiffeID = "spiffe://${trustDomain}/node/agent";
+            };
+          }
+          {
+            apiVersion = "spire.spiffe.io/v1alpha1";
+            kind = "ClusterStaticEntry";
+            metadata.name = "agent-alias";
             spec = {
               selectors = [ "systemd:id:backdoor.service" ];
-              parentID = "spiffe://${trustDomain}/spire/agent/http_challenge/agent";
+              parentID = "spiffe://${trustDomain}/node/agent";
+              spiffeID = "spiffe://${trustDomain}/service/agent";
+            };
+          }
+          # agent1 doesn't use a node alias
+          {
+            apiVersion = "spire.spiffe.io/v1alpha1";
+            kind = "ClusterStaticEntry";
+            metadata.name = "agent1";
+            spec = {
+              selectors = [ "systemd:id:backdoor.service" ];
+              parentID = "spiffe://${trustDomain}/spire/agent/http_challenge/agent1";
               spiffeID = "spiffe://${trustDomain}/service/agent";
             };
           }
@@ -44,38 +91,30 @@ in
         '';
       };
     };
-    agent = {
-      imports = [ ../modules/spire/agent.nix ];
-      networking.firewall.allowedTCPPorts = [ 80 ];
-      systemd.services.spire-agent.serviceConfig.LoadCredential = "spire-server-bundle";
-      spire.agent = {
-        enable = true;
-        trustDomain = trustDomain;
-        serverAddress = "server";
-        config = ''
-          agent {
-            trust_bundle_path = "$CREDENTIALS_DIRECTORY/spire-server-bundle"
-            trust_bundle_format = "pem"
-          }
-          plugins {
-            KeyManager "memory" { plugin_data { } }
-            NodeAttestor "http_challenge" {
-              plugin_data { port = 80 }
-            }
-            WorkloadAttestor "systemd" {
-              plugin_data {}
-            }
-          }
-        '';
-      };
-    };
+    agent1 = agentConfig;
+    agent2 = agentConfig;
   };
+
   testScript = ''
     server.wait_for_unit("spire-server.socket")
-    bundle = server.succeed("spire-server bundle show -socketPath /run/spire-server/private/api.sock")
+    bundle = server.succeed("spire-server bundle show -socketPath $SPIRE_SERVER_ADMIN_SOCKET")
     with open("bundle.pem", "w") as f:
         f.write(bundle)
-    agent.copy_from_host("bundle.pem", "/run/credstore/spire-server-bundle")
-    agent.succeed("spire-agent api fetch x509 -socketPath /run/spire-agent/public/api.sock -write .")
+
+
+    with subtest("no alias"):
+      agent1.copy_from_host("bundle.pem", "/run/credstore/spire-server-bundle")
+      # Will succeed immediately as X509-SVID is fetched before $SPIFFE_ENDPOINT_SOCKET accepts connections
+      agent1.succeed("spire-agent api fetch x509 -socketPath $SPIFFE_ENDPOINT_SOCKET -write .")
+
+    # regression test for: https://github.com/spiffe/spire/issues/6257
+    with subtest("alias"):
+      agent2.copy_from_host("bundle.pem", "/run/credstore/spire-server-bundle")
+      # First call will fail as the X509-SVID is fetched asynchronously instead of synchronously for aliases :(
+      agent2.fail("spire-agent api fetch x509 -socketPath $SPIFFE_ENDPOINT_SOCKET -write .")
+      # Now wait for  the SVID to be created asynchronously :(
+      agent2.wait_for_console_text("Creating X509-SVID")
+      agent2.succeed("spire-agent api fetch x509 -socketPath $SPIFFE_ENDPOINT_SOCKET -write .")
+
   '';
 }
