@@ -9,6 +9,9 @@ var REG_TRANSIP = NewRegistrar("none");
 var DSP_TRANSIP = NewDnsProvider("transip");
 var DSP_DIGITALOCEAN = NewDnsProvider("digitalocean");
 
+var DSP_CLOUDFLARE = NewDnsProvider("cloudflare");
+var REG_CLOUDFLARE = NewRegistrar("none");
+
 D(
   "arianvp.me",
   REG_NAMECHEAP,
@@ -108,4 +111,14 @@ D(
   CNAME("ftp", "\@"),
   CNAME("mail", "\@"),
   CNAME("www", "\@"),
+);
+
+D(
+  "passkey.exchange",
+  REG_CLOUDFLARE,
+  DnsProvider(DSP_CLOUDFLARE),
+  DefaultTTL(1),
+  A("@", "3.76.7.217"),
+  AAAA("@", "2a05:d014:151f:ac03:d61b:fab4:cffd:b8c0"),
+  CAA("@", "issue", "letsencrypt.org"),
 );
