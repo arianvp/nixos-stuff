@@ -70,21 +70,16 @@ D(
   DnsProvider(DSP_TRANSIP),
   DefaultTTL(86400),
   CAA("@", "issue", "letsencrypt.org"),
-  A("@", "34.120.229.252"),
   MX("@", 10, "mx01.mail.icloud.com."),
   MX("@", 10, "mx02.mail.icloud.com."),
   TXT("@", "apple-domain=2KW4nPwGshaRqKSi"),
-  TXT(
-    "@",
-    "google-site-verification=uvuZd0IFCtSQu32GfzPF6hi2sh3MD3M2AhoG-YghaGg",
-  ),
-  TXT("@", "v=spf1 include:icloud.com ~all"),
-  TXT(
-    "google-site-verification",
-    "uvuZd0IFCtSQu32GfzPF6hi2sh3MD3M2AhoG-YghaGg",
-  ),
-  CNAME("oidc", "ghs.googlehosted.com."),
   CNAME("sig1._domainkey", "sig1.dkim.authguard.dev.at.icloudmailadmin.com."),
+  TXT("@", "v=spf1 include:icloud.com ~all"),
+  DMARC_BUILDER({
+    policy: "quarantine",
+    percent: 100,
+    ttl: 60,
+  }),
 );
 
 D(
