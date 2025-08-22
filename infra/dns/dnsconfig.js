@@ -93,29 +93,18 @@ D(
   DnsProvider(DSP_TRANSIP),
   DefaultTTL(3600),
   CAA("@", "issue", "letsencrypt.org"),
-  A("@", "37.97.254.27"),
-  AAAA("@", "2a01:7c8:3:1337::27"),
-  MX("@", 10, "@"),
-  TXT("@", "v=spf1 ~all"),
-  CNAME("transip-a._domainkey", "_dkim-A.transip.email."),
-  CNAME("transip-b._domainkey", "_dkim-B.transip.email."),
-  CNAME("transip-c._domainkey", "_dkim-C.transip.email."),
-  CNAME("www", "\@"),
-  TXT("_dmarc", "v=DMARC1; p=none;"),
+  TXT("@", "v=spf1 -all"),
+  TXT("_dmarc", "v=DMARC1;p=reject;"),
 );
 
 D(
   "snorco.nl",
   REG_TRANSIP,
   DnsProvider(DSP_TRANSIP),
-  DefaultTTL(86400),
+  DefaultTTL(60),
   CAA("@", "issue", "letsencrypt.org"),
-  A("@", "195.201.113.40"),
-  AAAA("@", "2a01:4f8:1c0c:792f::1"),
-  MX("@", 10, "@"),
-  CNAME("ftp", "\@"),
-  CNAME("mail", "\@"),
-  CNAME("www", "\@"),
+  TXT("@", "v=spf1 -all"),
+  TXT("_dmarc", "v=DMARC1;p=reject;"),
 );
 
 D(
@@ -124,4 +113,6 @@ D(
   DnsProvider(DSP_CLOUDFLARE),
   DefaultTTL(1),
   CAA("@", "issue", "letsencrypt.org"),
+  TXT("@", "v=spf1 -all"),
+  TXT("_dmarc", "v=DMARC1;p=reject;"),
 );
