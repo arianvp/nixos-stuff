@@ -5,11 +5,13 @@
     ../../modules/spire/agent-tpm.nix
   ];
 
+  # hack to not have to depend on one-self
   systemd.services.spire-agent.preStart = ''
     ${pkgs.spire-server}/bin/spire-server bundle show -socketPath $SPIRE_SERVER_ADMIN_SOCKET > $STATE_DIRECTORY/bundle.pem
   '';
+
   spire.agent = {
-    enable = false;
+    enable = true;
     trustBundleUrl = "\${STATE_DIRECTORY}/bundle.pem";
     trustBundleFormat = "pem";
     serverAddress = "localhost";
