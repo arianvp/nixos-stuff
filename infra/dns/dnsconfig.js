@@ -20,6 +20,7 @@ D(
   //NAMESERVER("ns1.digitalocean.com."),
   //NAMESERVER("ns2.digitalocean.com."),
   //NAMESERVER("ns3.digitalocean.com."),
+  CAA("@", "issue", "letsencrypt.org"),
   A("@", "161.35.204.16"),
   MX("@", 10, "mx01.mail.icloud.com."),
   MX("@", 10, "mx02.mail.icloud.com."),
@@ -43,7 +44,9 @@ D(
   REG_TRANSIP,
   DnsProvider(DSP_TRANSIP),
   DefaultTTL(86400),
+  CAA("@", "issue", "letsencrypt.org"),
   TXT("@", "v=spf1 -all"),
+  TXT("_dmarc", "v=DMARC1;p=reject;"),
   AAAA("altra", "202:a655:b29f:851:4fe6:cdf7:d0eb:cb0"),
   SSHFP("altra", 1, 1, "ad445dc455aba0169f429714eb34dd04e0df9dbe"),
   SSHFP(
@@ -59,7 +62,6 @@ D(
     2,
     "eb61040cf1a2636a25b02f0fcca654ac8913d8ac7c011560d9bad0c52548ac4e",
   ),
-  TXT("_dmarc", "v=DMARC1;p=reject;"),
 );
 
 D(
@@ -67,6 +69,7 @@ D(
   REG_TRANSIP,
   DnsProvider(DSP_TRANSIP),
   DefaultTTL(86400),
+  CAA("@", "issue", "letsencrypt.org"),
   A("@", "34.120.229.252"),
   MX("@", 10, "mx01.mail.icloud.com."),
   MX("@", 10, "mx02.mail.icloud.com."),
@@ -89,6 +92,7 @@ D(
   REG_TRANSIP,
   DnsProvider(DSP_TRANSIP),
   DefaultTTL(3600),
+  CAA("@", "issue", "letsencrypt.org"),
   A("@", "37.97.254.27"),
   AAAA("@", "2a01:7c8:3:1337::27"),
   MX("@", 10, "@"),
@@ -105,6 +109,7 @@ D(
   REG_TRANSIP,
   DnsProvider(DSP_TRANSIP),
   DefaultTTL(86400),
+  CAA("@", "issue", "letsencrypt.org"),
   A("@", "195.201.113.40"),
   AAAA("@", "2a01:4f8:1c0c:792f::1"),
   MX("@", 10, "@"),
@@ -118,7 +123,5 @@ D(
   REG_CLOUDFLARE,
   DnsProvider(DSP_CLOUDFLARE),
   DefaultTTL(1),
-  A("@", "3.76.7.217"),
-  AAAA("@", "2a05:d014:151f:ac03:d61b:fab4:cffd:b8c0"),
   CAA("@", "issue", "letsencrypt.org"),
 );

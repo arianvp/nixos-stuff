@@ -7,8 +7,9 @@
 }:
 {
   imports = [
-    (modulesPath + "/virtualisation/digital-ocean-image.nix")
+    (modulesPath + "/virtualisation/digital-ocean-config.nix")
     ./network.nix
+    ../../modules/spire/agent.nix
   ];
 
   system.stateVersion = "25.05";

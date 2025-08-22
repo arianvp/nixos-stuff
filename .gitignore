@@ -4,4 +4,4 @@ ramdisk
 spire-join-token
 bundle.pem
 .nixos-test-history
-
+.direnv

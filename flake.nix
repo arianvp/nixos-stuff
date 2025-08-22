@@ -7,10 +7,6 @@
     url = "github:nix-community/lanzaboote/v0.4.2";
     inputs.nixpkgs.follows = "unstable";
   };
-  inputs.nixos-generators = {
-    url = "github:nix-community/nixos-generators";
-    inputs.nixpkgs.follows = "unstable";
-  };
 
   inputs.cgroup-exporter = {
     url = "github:arianvp/cgroups-exporter";
@@ -25,7 +21,6 @@
       stable,
       unstable,
       nixos-hardware,
-      nixos-generators,
       ...
     }:
     {
@@ -36,6 +31,7 @@
             packages = [
               doctl
               opentofu
+              dnscontrol
             ];
           };
         }
