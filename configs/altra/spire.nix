@@ -12,7 +12,7 @@
 
   spire.agent = {
     enable = true;
-    trustBundleUrl = "\${STATE_DIRECTORY}/bundle.pem";
+    trustBundle = "\${STATE_DIRECTORY}/bundle.pem";
     trustBundleFormat = "pem";
     serverAddress = "localhost";
     trustDomain = "nixos.sh";
