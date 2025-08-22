@@ -6,10 +6,10 @@
   ];
 
   spire.agent = {
-    enable = true;
+    enable = false;
     trustBundleUrl = "https://spire.nixos.sh";
     trustBundleFormat = "spiffe";
-    serverAddress = "spire.nixos.sh";
+    serverAddress = "localhost";
     trustDomain = "nixos.sh";
   };
 
@@ -42,7 +42,7 @@
           NodeAttestor  "tpm" {
             plugin_cmd = "${lib.getExe' pkgs.spire-tpm-plugin "tpm_attestor_server"}"
             plugin_data {
-              cert_path = ${../../modules/spire/certs}
+              cert_path = "${../../modules/spire/certs}"
             }
           }
         }
