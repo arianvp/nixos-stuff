@@ -5,7 +5,6 @@
     config = ''
       agent {
         rebootstrap_mode = "auto"
-        retry_bootstrap = true
       }
       plugins {
         KeyManager "memory" { plugin_data { } }
