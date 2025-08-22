@@ -47,7 +47,7 @@ D(
   CAA("@", "issue", "letsencrypt.org"),
   TXT("@", "v=spf1 -all"),
   TXT("_dmarc", "v=DMARC1;p=reject;"),
-  AAAA("altra", "202:a655:b29f:851:4fe6:cdf7:d0eb:cb0"),
+  AAAA("altra", "224:1fad:743f:7e4f:746f:20a6:c20a:5338"),
   SSHFP("altra", 1, 1, "ad445dc455aba0169f429714eb34dd04e0df9dbe"),
   SSHFP(
     "altra",
