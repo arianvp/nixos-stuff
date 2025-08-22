@@ -42,7 +42,7 @@
           NodeAttestor  "tpm" {
             plugin_cmd = "${lib.getExe' pkgs.spire-tpm-plugin "tpm_attestor_server"}"
             plugin_data {
-              cert_path = "${../../modules/spire/certs}"
+              ca_path = "${../../modules/spire/certs}"
             }
           }
         }
