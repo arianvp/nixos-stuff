@@ -1,6 +1,6 @@
 { pkgs, ... }:
 {
-  nix.package = pkgs.lix;
+  nix.package = pkgs.lixPackageSets.lix_2_93.lix;
 
   nix.settings.substituters = [
     "https://nixos.snix.store?priority=39"
