@@ -32,40 +32,23 @@ in
       ];
       spire.controllerManager = {
         enable = true;
-        manifests = [
-          # agent2 uses a node alias
-          {
-            apiVersion = "spire.spiffe.io/v1alpha1";
-            kind = "ClusterStaticEntry";
-            metadata.name = "node";
-            spec = {
-              selectors = [ "http_challenge:hostname:agent2" ];
-              parentID = "spiffe://${trustDomain}/spire/server";
-              spiffeID = "spiffe://${trustDomain}/node/agent";
-            };
-          }
-          {
-            apiVersion = "spire.spiffe.io/v1alpha1";
-            kind = "ClusterStaticEntry";
-            metadata.name = "agent-alias";
-            spec = {
-              selectors = [ "systemd:id:backdoor.service" ];
-              parentID = "spiffe://${trustDomain}/node/agent";
-              spiffeID = "spiffe://${trustDomain}/service/agent";
-            };
-          }
-          # agent1 doesn't use a node alias
-          {
-            apiVersion = "spire.spiffe.io/v1alpha1";
-            kind = "ClusterStaticEntry";
-            metadata.name = "agent1";
-            spec = {
-              selectors = [ "systemd:id:backdoor.service" ];
-              parentID = "spiffe://${trustDomain}/spire/agent/http_challenge/agent1";
-              spiffeID = "spiffe://${trustDomain}/service/agent";
-            };
-          }
-        ];
+        staticEntries = {
+          node.spec = {
+            selectors = [ "http_challenge:hostname:agent2" ];
+            parentID = "spiffe://${trustDomain}/spire/server";
+            spiffeID = "spiffe://${trustDomain}/node/agent";
+          };
+          agent-alias.spec = {
+            selectors = [ "systemd:id:backdoor.service" ];
+            parentID = "spiffe://${trustDomain}/node/agent";
+            spiffeID = "spiffe://${trustDomain}/service/agent";
+          };
+          agent1.spec = {
+            selectors = [ "systemd:id:backdoor.service" ];
+            parentID = "spiffe://${trustDomain}/spire/agent/http_challenge/agent1";
+            spiffeID = "spiffe://${trustDomain}/service/agent";
+          };
+        };
       };
       spire.server = {
         enable = true;

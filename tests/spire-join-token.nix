@@ -14,14 +14,15 @@ in
     imports = [ ../modules/spire/agent.nix ];
 
     systemd.services.spire-agent.serviceConfig = {
-      EnvironmentFile = "/run/credstore/spire-server-join-token";
-      LoadCredential = "spire-server-bundle";
+      LoadCredential = [ "spire-server-bundle" ];
+      EnvironmentFile = "/run/credstore/spire-join-token";
     };
 
     spire.agent = {
       enable = true;
       trustBundle = "\${CREDENTIALS_DIRECTORY}/spire-server-bundle";
       trustBundleFormat = "pem";
+      joinToken = "\${SPIRE_JOIN_TOKEN}";
       config = ''
         plugins {
           KeyManager "memory" { plugin_data { } }
@@ -80,42 +81,29 @@ in
         ../modules/spire/server.nix
         ../modules/spire/controller-manager.nix
       ];
-      spire.controllerManager.enable = true;
-      spire.controllerManager.manifests = [
-        {
-          apiVersion = "spire.spiffe.io/v1alpha1";
-          kind = "ClusterStaticEntry";
-          metadata.name = "openbao";
-          spec = {
+      spire.controllerManager = {
+        enable = true;
+        staticEntries = {
+          openbao.spec = {
             selectors = [ "systemd:id:openbao.service" ];
             parentID = "spiffe://${trustDomain}/server/openbao";
             spiffeID = "spiffe://${trustDomain}/service/openbao";
             dnsNames = [ "openbao.${trustDomain}" ];
           };
-        }
-        {
-          apiVersion = "spire.spiffe.io/v1alpha1";
-          kind = "ClusterStaticEntry";
-          metadata.name = "root";
-          spec = {
+          root.spec = {
             selectors = [ "unix:uid:0" ];
             parentID = "spiffe://${trustDomain}/server/agent";
             spiffeID = "spiffe://${trustDomain}/service/agent";
             dnsNames = [ "agent.${trustDomain}" ];
           };
-        }
-        {
-          apiVersion = "spire.spiffe.io/v1alpha1";
-          kind = "ClusterStaticEntry";
-          metadata.name = "admin";
-          spec = {
+          admin.spec = {
             selectors = [ "unix:uid:0" ];
             parentID = "spiffe://${trustDomain}/server/openbao";
             spiffeID = "spiffe://${trustDomain}/user/admin";
             dnsNames = [ "admin.openboa.${trustDomain}" ]; # https://github.com/hashicorp/vault/issues/6820
           };
-        }
-      ];
+        };
+      };
       spire.server = {
         enable = true;
         inherit trustDomain;
@@ -152,6 +140,14 @@ in
   testScript = ''
     import json
 
+    def provision(agent, spiffe_id):
+      token = server.succeed(f"spire-server token generate -socketPath $SPIRE_SERVER_ADMIN_SOCKET -spiffeID {spiffe_id}").split()[1]
+      with open("spire-join-token", "w") as f:
+          f.write(f"SPIRE_JOIN_TOKEN={token}")
+      agent.copy_from_host("spire-join-token", "/run/credstore/spire-join-token")
+      agent.copy_from_host("bundle.pem", "/run/credstore/spire-server-bundle")
+
+
     with subtest("SPIRE server startup and health checks"):
         server.wait_for_unit("spire-server.socket")
         server.wait_for_unit("spire-server-local.socket")
@@ -166,26 +162,12 @@ in
             f.write(bundle)
 
     with subtest("Setup SPIRE agent on agent node"):
-        # Generate join token for agent
-        token = server.succeed("spire-server token generate -socketPath $SPIRE_SERVER_ADMIN_SOCKET -spiffeID spiffe://example.com/server/agent").split()[1]
-        with open("spire-join-token", "w") as f:
-            f.write(f"SPIRE_AGENT_JOIN_TOKEN={token}")
-
-        # Deploy credentials and start agent
-        agent.copy_from_host("bundle.pem", "/run/credstore/spire-server-bundle")
-        agent.copy_from_host("spire-join-token", "/run/credstore/spire-server-join-token")
+        provision(agent, "spiffe://example.com/server/agent")
         agent.wait_for_unit("spire-agent.socket")
         agent.succeed("spire-agent healthcheck -socketPath $SPIFFE_ENDPOINT_SOCKET")
 
     with subtest("Setup SPIRE agent on openbao node"):
-        # Generate join token for openbao
-        token = server.succeed("spire-server token generate -socketPath $SPIRE_SERVER_ADMIN_SOCKET -spiffeID spiffe://example.com/server/openbao").split()[1]
-        with open("spire-join-token", "w") as f:
-            f.write(f"SPIRE_AGENT_JOIN_TOKEN={token}")
-
-        # Deploy credentials and start agent
-        openbao.copy_from_host("bundle.pem", "/run/credstore/spire-server-bundle")
-        openbao.copy_from_host("spire-join-token", "/run/credstore/spire-server-join-token")
+        provision(openbao, "spiffe://example.com/server/openbao")
         openbao.wait_for_unit("spire-agent.socket")
         openbao.succeed("spire-agent healthcheck -socketPath $SPIFFE_ENDPOINT_SOCKET")
 

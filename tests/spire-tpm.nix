@@ -12,28 +12,18 @@ in
       ];
       spire.controllerManager = {
         enable = true;
-        manifests = [
-          {
-            apiVersion = "spire.spiffe.io/v1alpha1";
-            kind = "ClusterStaticEntry";
-            metadata.name = "server";
-            spec = {
-              parentID = "spiffe://${trustDomain}/spire/server";
-              spiffeID = "spiffe://${trustDomain}/server/agent";
-              selectors = [ "tpm:pub_hash:$PUBHASH" ];
-            };
-          }
-          {
-            apiVersion = "spire.spiffe.io/v1alpha1";
-            kind = "ClusterStaticEntry";
-            metadata.name = "service";
-            spec = {
-              selectors = [ "systemd:id:backdoor.service" ];
-              parentID = "spiffe://${trustDomain}/server/agent";
-              spiffeID = "spiffe://${trustDomain}/service/agent";
-            };
-          }
-        ];
+        staticEntries = {
+          server.spec = {
+            parentID = "spiffe://${trustDomain}/spire/server";
+            spiffeID = "spiffe://${trustDomain}/server/agent";
+            selectors = [ "tpm:pub_hash:$PUBHASH" ];
+          };
+          services.spec = {
+            selectors = [ "systemd:id:backdoor.service" ];
+            parentID = "spiffe://${trustDomain}/server/agent";
+            spiffeID = "spiffe://${trustDomain}/service/agent";
+          };
+        };
       };
       spire.server = {
         enable = true;
