@@ -17,6 +17,7 @@
   ];
 
   services.yggdrasil.persistentKeys = true;
+  security.tpm2.enable = true;
 
   networking.hostName = "altra";
 
