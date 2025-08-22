@@ -5,10 +5,13 @@
     ../../modules/spire/agent-tpm.nix
   ];
 
+  systemd.services.spire-agent.preStart = ''
+    ${pkgs.spire-server}/bin/spire-server bundle show -socketPath $SPIRE_SERVER_ADMIN_SOCKET > $STATE_DIRECTORY/bundle.pem
+  '';
   spire.agent = {
     enable = false;
-    trustBundleUrl = "https://spire.nixos.sh";
-    trustBundleFormat = "spiffe";
+    trustBundleUrl = "\${STATE_DIRECTORY}/bundle.pem";
+    trustBundleFormat = "pem";
     serverAddress = "localhost";
     trustDomain = "nixos.sh";
   };
