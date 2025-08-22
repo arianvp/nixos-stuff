@@ -52,8 +52,9 @@
             plugin_cmd = "${lib.getExe' pkgs.spire-tpm-plugin "tpm_attestor_server"}"
             plugin_data {
               # TODO: there seems to be a bug in the spire-tpm-plugin and can't verify my certs :(
-              ca_path = "${../../modules/spire/certs}"
-              # hash_path = "${
+              # could not verify cert: x509: unhandled critical extension"
+              # ca_path = "${../../modules/spire/certs}"
+              hash_path = "${
                 pkgs.runCommand "hash-path" { } ''
                   mkdir -p $out
                   touch $out/856dd0443668292a66fabd29f778345f7c1a82bbc9b55d99ceb462cdba0897f6
