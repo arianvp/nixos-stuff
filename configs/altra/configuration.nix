@@ -16,6 +16,8 @@
     # ../../websites/nixos.sh
   ];
 
+  services.yggdrasil.persistentKeys = true;
+
   networking.hostName = "altra";
 
   # Use the systemd-boot EFI boot loader.
