@@ -32,7 +32,7 @@
           NodeAttestor "http_challenge" {
             plugin_data {
               required_port = 80
-              allowed_dns_patterns = [".*\.nixos.sh"]
+              allowed_dns_patterns = [".*\\.nixos.sh"]
             }
           }
           NodeAttestor "join_token" {
