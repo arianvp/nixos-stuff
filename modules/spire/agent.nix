@@ -171,7 +171,7 @@ in
 
         LockPersonality = true;
         MemoryDenyWriteExecute = true;
-        NoNewPriveleges = true;
+        NoNewPrivileges = true;
 
         # TODO: might be needed by tpm plugin
         # PrivateDevices = true;
