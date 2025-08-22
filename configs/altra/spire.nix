@@ -16,11 +16,15 @@
     trustBundleFormat = "pem";
     serverAddress = "localhost";
     trustDomain = "nixos.sh";
+    logLevel = "debug";
   };
+
+  environment.systemPackages = [ pkgs.spire-tpm-plugin ];
 
   spire.server = {
     enable = true;
     trustDomain = "nixos.sh";
+    logLevel = "debug";
     config = # hcl
       ''
         plugins {
@@ -47,7 +51,9 @@
           NodeAttestor  "tpm" {
             plugin_cmd = "${lib.getExe' pkgs.spire-tpm-plugin "tpm_attestor_server"}"
             plugin_data {
-              ca_path = "${../../modules/spire/certs}"
+              # TODO: there seems to be a bug in the spire-tpm-plugin and can't verify my certs :(
+              # ca_path = "${../../modules/spire/certs}"
+              hash_path =
             }
           }
         }
