@@ -143,6 +143,7 @@ in
         Restart = "always";
         RuntimeDirectory = "spire-agent";
         StateDirectory = "spire-agent";
+        StateDirectoryMode = "0700";
         ExecStart =
           "${pkgs.spire.agent}/bin/spire-agent run "
           + lib.cli.toGNUCommandLineShell { } {

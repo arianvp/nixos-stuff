@@ -96,6 +96,7 @@ in
         Restart = "on-failure";
         RuntimeDirectory = "spire-server";
         StateDirectory = "spire-server";
+        StateDirectoryMode = "0700";
         ExecStart =
           utils.escapeSystemdExecArgs (
             [
