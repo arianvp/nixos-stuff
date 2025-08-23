@@ -2,6 +2,7 @@
 {
   imports = [
     ../../modules/spire/server.nix
+    ../../modules/spire/controller-manager.nix
     ../../modules/spire/agent-tpm.nix
   ];
 
