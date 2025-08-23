@@ -24,7 +24,7 @@
 
   spire.controllerManager.enable = true;
   spire.controllerManager.staticEntries = {
-    altra = {
+    altra.spec = {
       parentID = "spiffe://nixos.sh/spire/server";
       spiffeID = "spiffe://nixos.sh/server/altra";
       selectors = [
@@ -33,7 +33,7 @@
         "tpm:tpm_version:id:00070002"
       ];
     };
-    prometheus = {
+    prometheus.spec = {
       parentID = "spiffe://nixos.sh/server/altra";
       spiffeID = "spiffe://nixos.sh/server/prometheus";
       selectors = [ "systemd:id:prometheus.service" ];
