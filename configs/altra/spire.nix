@@ -22,8 +22,8 @@
 
   environment.systemPackages = [ pkgs.spire-tpm-plugin ];
 
+  spire.controllerManager.enable = true;
   spire.controllerManager.staticEntries = {
-    enable = true;
     altra = {
       parentID = "spiffe://nixos.sh/spire/server";
       spiffeID = "spiffe://nixos.sh/server/altra";
