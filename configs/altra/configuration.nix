@@ -9,6 +9,7 @@
   imports = [
     ./hardware-configuration.nix
     ./spire.nix
+    ./prometheus.nix
     ../../modules/yggdrasil.nix
     ../../modules/tailscale.nix
     ../../modules/prometheus.nix

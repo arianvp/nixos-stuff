@@ -21,6 +21,19 @@
 
   environment.systemPackages = [ pkgs.spire-tpm-plugin ];
 
+  spire.controllerManager.staticEntries = {
+    altra = {
+      parentID = "spiffe://nixos.sh/spire/server";
+      spiffeID = "spiffe://nixos.sh/server/altra";
+      selectors = [
+        "tpm:tpm_manufacturer:id:4E544300"
+        "tpm:tpm_model:NPCT75x"
+        "tpm:tpm_version:id:00070002"
+      ];
+    };
+
+  };
+
   spire.server = {
     enable = true;
     trustDomain = "nixos.sh";
