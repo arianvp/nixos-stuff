@@ -28,8 +28,9 @@
     config = # hcl
       ''
         plugins {
-          KeyManager "memory" {
+          KeyManager "disk" {
             plugin_data {
+              keys_path = "$STATE_DIRECTORY/keys.json"
             }
           }
           DataStore "sql" {
