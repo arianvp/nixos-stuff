@@ -8,9 +8,9 @@ buildGoModule (finalAttrs: {
   src = fetchFromGitHub {
     owner = "arianvp";
     repo = "spire-tpm-plugin";
-    rev = "fa66b8e18374f12f44b452299c6c9d4e2eb02bfe";
+    rev = "f2861cc26599d79d6bb625ce56e6dad793f354cf";
     # tag = "v${finalAttrs.version}";
-    hash = "sha256-WkdwU6y20P0FbjOmZUin8/jfeXJ0zbTYxEaONeTisZA=";
+    hash = "sha256-iIlRDq1eId2iYgDTQyL5uUyhVtwmd3PCm2ZHbbvk+/c=";
   };
   vendorHash = "sha256-0HkJdgIweB8SnnTsOgl3m3XL72OBhw+nBbe9GuTMY20=";
 
