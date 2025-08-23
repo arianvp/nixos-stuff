@@ -1,6 +1,5 @@
 { lib, pkgs, ... }:
 {
-  networking.firewall.allowedTCPPorts = [ 9090 ];
   spire.controllerManager.staticEntries.prometheus = {
     parentID = "spiffe://nixos.sh/server/altra";
     spiffeID = "spiffe://nixos.sh/server/prometheus";
