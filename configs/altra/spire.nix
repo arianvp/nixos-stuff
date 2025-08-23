@@ -31,6 +31,11 @@
         "tpm:tpm_version:id:00070002"
       ];
     };
+    prometheus = {
+      parentID = "spiffe://nixos.sh/server/altra";
+      spiffeID = "spiffe://nixos.sh/server/prometheus";
+      selectors = [ "systemd:id:prometheus.service" ];
+    };
 
   };
 
