@@ -1,10 +1,6 @@
 { lib, pkgs, ... }:
 {
-  spire.controllerManager.staticEntries.prometheus = {
-    parentID = "spiffe://nixos.sh/server/altra";
-    spiffeID = "spiffe://nixos.sh/server/prometheus";
-    selectors = [ "systemd:id:prometheus.service" ];
-  };
+
   systemd.services.prometheus.serviceConfig.ExecStartPre =
     "${lib.getExe' pkgs.spire "spire-agent"} api fetch x509 -socketPath $SPIFFE_ENDPOINT_SOCKET -write $RUNTIME_DIRECTORY";
   services.prometheus = {

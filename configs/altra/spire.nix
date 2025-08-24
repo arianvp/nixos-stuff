@@ -35,10 +35,14 @@
     };
     prometheus.spec = {
       parentID = "spiffe://nixos.sh/server/altra";
-      spiffeID = "spiffe://nixos.sh/server/prometheus";
+      spiffeID = "spiffe://nixos.sh/service/prometheus";
       selectors = [ "systemd:id:prometheus.service" ];
     };
-
+    alertmanager.spec = {
+      parentID = "spiffe://nixos.sh/server/altra";
+      spiffeID = "spiffe://nixos.sh/service/alertmanager";
+      selectors = [ "systemd:id:alertmanager.service" ];
+    };
   };
 
   spire.server = {
