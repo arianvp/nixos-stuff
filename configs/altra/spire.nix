@@ -13,6 +13,7 @@
 
   spire.agent = {
     enable = true;
+    rebootstrapMode = "auto";
     trustBundle = "\${STATE_DIRECTORY}/bundle.pem";
     trustBundleFormat = "pem";
     serverAddress = "localhost";
@@ -31,6 +32,7 @@
         "tpm:tpm_manufacturer:id:4E544300"
         "tpm:tpm_model:NPCT75x"
         "tpm:tpm_version:id:00070002"
+        "tpm:pub_hash:856dd0443668292a66fabd29f778345f7c1a82bbc9b55d99ceb462cdba0897f6"
       ];
     };
     prometheus.spec = {

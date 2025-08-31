@@ -23,6 +23,9 @@
       pkgs.btop
       pkgs.nixd
       pkgs.go
+      pkgs.binutils
+      pkgs.dnsutils
+      pkgs.unixtools.netstat
     ];
 
     # Until we have a proper SSH-CA this is what we do instead

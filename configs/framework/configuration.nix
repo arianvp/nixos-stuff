@@ -6,7 +6,17 @@
     ./audit.nix
     ../../modules/vmspawn.nix
     ../../modules/yggdrasil.nix
+    ../../modules/spire/agent-tpm.nix
+    ../../modules/tpm2.nix
   ];
+
+  spire.agent = {
+    enable = true;
+    serverAddress = "altra.nixos.sh";
+    trustDomain = "nixos.sh";
+    insecureBootstrap = true; # TODO: Fix. but it's kind of okay because we're going through yggdrasil
+  };
+
   services.fwupd.enable = true;
 
   fileSystems = {

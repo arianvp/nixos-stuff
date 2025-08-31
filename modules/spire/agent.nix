@@ -120,6 +120,18 @@ in
       default = "/run/spire/agent/public/api.sock";
     };
 
+    rebootstrapMode = lib.mkOption {
+      type = lib.types.nullOr (
+        lib.types.enum [
+          "never"
+          "auto"
+          "always"
+        ]
+      );
+      default = null;
+      description = "Mode for rebootstraping the agent";
+    };
+
   };
   config = lib.mkIf cfg.enable {
     environment.systemPackages = [ pkgs.spire-agent ];
@@ -165,6 +177,7 @@ in
               trustBundleFormat
               trustBundleUrl
               trustDomain
+              rebootstrapMode
               ;
           };
 

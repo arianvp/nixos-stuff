@@ -3,9 +3,6 @@
   imports = [ ./agent.nix ];
   spire.agent = {
     config = ''
-      agent {
-        rebootstrap_mode = "auto"
-      }
       plugins {
         KeyManager "memory" { plugin_data { } }
         NodeAttestor "tpm" {
