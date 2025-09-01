@@ -6,6 +6,7 @@ let
     systemd.services.spire-agent.serviceConfig.LoadCredential = "spire-server-bundle";
     spire.agent = {
       enable = true;
+      logLevel = "debug";
       trustDomain = trustDomain;
       trustBundle = "\${CREDENTIALS_DIRECTORY}/spire-server-bundle";
       trustBundleFormat = "pem";
@@ -53,7 +54,11 @@ in
       spire.server = {
         enable = true;
         inherit trustDomain;
+        logLevel = "debug";
         config = ''
+          server {
+            audit_log_enabled = true
+          }
           plugins {
             KeyManager "memory" { plugin_data {} }
             DataStore "sql" {
@@ -73,6 +78,8 @@ in
     agent1 = agentConfig;
     agent2 = agentConfig;
   };
+
+  sshBackdoor.enable = true;
 
   testScript = ''
     server.wait_for_unit("spire-server.socket")
