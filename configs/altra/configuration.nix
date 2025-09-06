@@ -20,7 +20,7 @@
   services.yggdrasil.persistentKeys = true;
   security.tpm2.enable = true;
 
-  networking.hostName = "altra";
+  networking.hostName = "matthew";
 
   # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
@@ -94,7 +94,7 @@
   ];
   programs.zsh.enable = true;
 
-  system.name = "altra";
+  system.name = "matthew";
 
   nix.settings.trusted-users = [ "@wheel" ];
   nix.settings.experimental-features = [
