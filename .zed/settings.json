@@ -1,0 +1,26 @@
+// Folder-specific settings
+//
+// For a full list of overridable settings, and general information on folder-specific settings,
+// see the documentation: https://zed.dev/docs/configuring-zed#settings-files
+{
+  "languages": {
+    "Nix": {
+      "language_servers": ["nixd", "!nil"]
+    }
+  },
+  "lsp": {
+    "nixd": {
+      "settings": {
+        "formatting": {
+          "command": ["nixfmt"]
+        },
+        "nixpkgs": {},
+        "options": {
+          "nixos": {
+            "expr": "(builtins.getFlake (builtins.toString ./.)).nixosConfigurations.altra.options"
+          }
+        }
+      }
+    }
+  }
+}
