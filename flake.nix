@@ -37,6 +37,8 @@
         }
       );
 
+      overlays.spire = ./overlays/spire.nix;
+
       nixosModules = {
         base = ./modules/base.nix;
         cachix = ./modules/cachix.nix;
@@ -47,6 +49,9 @@
         prometheus = ./modules/prometheus.nix;
         alertmanager = ./modules/alertmanager.nix;
         grafana = ./modules/grafana.nix;
+	spire-server = ./modules/spire/server.nix;
+	spire-agent = ./modules/spire/agent.nix;
+	spire-controller-manager = ./modules/spire/controller-manager.nix;
         inputs = {
           _module.args.inputs.self = self;
         };
