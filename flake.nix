@@ -37,7 +37,7 @@
         }
       );
 
-      overlays.spire = ./overlays/spire.nix;
+      overlays.spire = import ./overlays/spire.nix;
 
       nixosModules = {
         base = ./modules/base.nix;
