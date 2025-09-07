@@ -71,6 +71,32 @@
     ipv6AcceptRAConfig.Token = "static:::dead:beef:cafe:babe";
   };
 
+  systemd.network.networks.wg0 = {
+    matchConfig = {
+      Name = "wg0";
+    };
+    address = [ "2a00:5880:1404:103::/64" ];
+  };
+
+  systemd.network.netdevs."80-wg0" = {
+    netdevConfig = {
+      Kind = "wireguard";
+      Name = "wg0";
+      MTUBytes = "1416";
+    };
+    wireguardConfig = {
+      PrivateKeyFile = "/etc/credstore/wireguard.key";
+    };
+    wireguardPeers = [
+      {
+        PublicKey = "0gBdqxLAMvm9sgGP5ujGRFE6rHDko8vl5UnBm2q58y4=";
+        Endpoint = "hardin.alternativebit.fr";
+        PersistentKeepalive = 15;
+        AllowedIPs = "0.0.0.0/0,::/0";
+      }
+    ];
+  };
+
   systemd.network.links."10-foo" = {
     matchConfig.Driver = "ixgbe";
     linkConfig.Advertise = [
