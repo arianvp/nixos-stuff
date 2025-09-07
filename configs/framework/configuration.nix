@@ -15,6 +15,7 @@
     serverAddress = "altra.nixos.sh";
     trustDomain = "nixos.sh";
     insecureBootstrap = true; # TODO: Fix. but it's kind of okay because we're going through yggdrasil
+    # rebootstrapMode = "auto";
   };
 
   services.fwupd.enable = true;
@@ -70,7 +71,6 @@
     neovim
     yubioath-flutter
     zed-editor
-    live-server
     nix-output-monitor
   ];
 
