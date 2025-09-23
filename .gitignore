@@ -5,3 +5,4 @@ spire-join-token
 bundle.pem
 .nixos-test-history
 .direnv
+.DS_Store

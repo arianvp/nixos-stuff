@@ -29,24 +29,25 @@ in
         enable = true;
         inherit trustDomain;
         logLevel = "debug";
-        config = ''
-          plugins {
-            KeyManager "memory" { plugin_data {} }
-            DataStore "sql" {
-              plugin_data {
-                database_type = "sqlite3"
-                connection_string = "$STATE_DIRECTORY/datastore.sqlite3"
-              }
-            }
-            NodeAttestor  "tpm" {
-              plugin_cmd = "${lib.getExe' pkgs.spire-tpm-plugin "tpm_attestor_server"}"
-              plugin_data {
-                hash_path = "/etc/spire/server/hashes"
-              }
-            }
-
-          }
-        '';
+        settings = {
+          plugins = {
+            KeyManager.memory = {
+              plugin_data = { };
+            };
+            DataStore.sql = {
+              plugin_data = {
+                database_type = "sqlite3";
+                connection_string = "$STATE_DIRECTORY/datastore.sqlite3";
+              };
+            };
+            NodeAttestor.tpm = {
+              plugin_cmd = lib.getExe' pkgs.spire-tpm-plugin "tpm_attestor_server";
+              plugin_data = {
+                hash_path = "/etc/spire/server/hashes";
+              };
+            };
+          };
+        };
       };
     };
     agent = {
@@ -69,18 +70,16 @@ in
         serverAddress = "server";
         trustBundle = "\${CREDENTIALS_DIRECTORY}/spire-server-bundle";
         trustBundleFormat = "pem";
-        config = ''
-          plugins {
-            KeyManager "memory" { plugin_data { } }
-            NodeAttestor "tpm" {
-              plugin_cmd = "${lib.getExe' pkgs.spire-tpm-plugin "tpm_attestor_agent"}"
-              plugin_data {}
-            }
-            WorkloadAttestor "systemd" {
-              plugin_data {}
-            }
-          }
-        '';
+        settings = {
+          plugins = {
+            KeyManager.memory.plugin_data = { };
+            NodeAttestor.tpm = {
+              plugin_cmd = lib.getExe' pkgs.spire-tpm-plugin "tpm_attestor_agent";
+              plugin_data = { };
+            };
+            WorkloadAttestor.systemd.plugin_data = { };
+          };
+        };
       };
     };
   };

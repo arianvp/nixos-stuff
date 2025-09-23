@@ -5,8 +5,6 @@ in
 {
   name = "spire-join-token";
 
-  interactive.sshBackdoor.enable = true;
-
   defaults = {
     networking.domain = trustDomain;
     spire.agent.trustDomain = trustDomain;
@@ -23,18 +21,16 @@ in
       trustBundle = "\${CREDENTIALS_DIRECTORY}/spire-server-bundle";
       trustBundleFormat = "pem";
       joinToken = "\${SPIRE_JOIN_TOKEN}";
-      config = ''
-        plugins {
-          KeyManager "memory" { plugin_data { } }
-          NodeAttestor "join_token" { plugin_data { } }
-          WorkloadAttestor "systemd" { plugin_data { } }
-          WorkloadAttestor "unix" {
-            plugin_data {
-              discover_workload_path = true
-            }
-          }
-        }
-      '';
+      settings = {
+        plugins = {
+          KeyManager.memory.plugin_data = { };
+          NodeAttestor.join_token.plugin_data = { };
+          WorkloadAttestor.systemd.plugin_data = { };
+          WorkloadAttestor.unix.plugin_data = {
+            discover_workload_path = true;
+          };
+        };
+      };
     };
   };
 
@@ -107,24 +103,16 @@ in
       spire.server = {
         enable = true;
         inherit trustDomain;
-        config = ''
-          plugins {
-            KeyManager "memory" {
-              plugin_data {
-              }
-            }
-            DataStore "sql" {
-              plugin_data {
-                database_type = "sqlite3"
-                connection_string = "$STATE_DIRECTORY/datastore.sqlite3"
-              }
-            }
-            NodeAttestor "join_token" {
-              plugin_data {
-              }
-            }
-          }
-        '';
+        settings = {
+          plugins = {
+            KeyManager.memory.plugin_data = { };
+            DataStore.sql.plugin_data = {
+              database_type = "sqlite3";
+              connection_string = "$STATE_DIRECTORY/datastore.sqlite3";
+            };
+            NodeAttestor.join_token.plugin_data = { };
+          };
+        };
       };
     };
 

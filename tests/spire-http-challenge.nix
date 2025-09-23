@@ -11,15 +11,13 @@ let
       trustBundle = "\${CREDENTIALS_DIRECTORY}/spire-server-bundle";
       trustBundleFormat = "pem";
       serverAddress = "server";
-      config = ''
-        plugins {
-          KeyManager "memory" { plugin_data { } }
-          NodeAttestor "http_challenge" {
-            plugin_data { port = 80 }
-          }
-          WorkloadAttestor "systemd" { plugin_data { } }
-        }
-      '';
+      settings.plugins = {
+        KeyManager.memory.plugin_data = { };
+        NodeAttestor.http_challenge.plugin_data = {
+          port = 80;
+        };
+        WorkloadAttestor.systemd.plugin_data = { };
+      };
     };
   };
 in
@@ -55,31 +53,25 @@ in
         enable = true;
         inherit trustDomain;
         logLevel = "debug";
-        config = ''
-          server {
-            audit_log_enabled = true
-          }
-          plugins {
-            KeyManager "memory" { plugin_data {} }
-            DataStore "sql" {
-              plugin_data {
-                database_type = "sqlite3"
-                connection_string = "$STATE_DIRECTORY/datastore.sqlite3"
-              }
-            }
-            NodeAttestor  "http_challenge" {
-              plugin_data { required_port = "80" }
-            }
-
-          }
-        '';
+        settings = {
+          server.audit_log_enabled = true;
+          plugins = {
+            KeyManager.memory.plugin_data = { };
+            DataStore.sql.plugin_data = {
+              database_type = "sqlite3";
+              connection_string = "$STATE_DIRECTORY/datastore.sqlite3";
+            };
+            NodeAttestor.http_challenge.plugin_data = {
+              required_port = "80";
+            };
+          };
+        };
       };
     };
     agent1 = agentConfig;
     agent2 = agentConfig;
   };
 
-  sshBackdoor.enable = true;
 
   testScript = ''
     server.wait_for_unit("spire-server.socket")

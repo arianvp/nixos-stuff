@@ -6,20 +6,28 @@
 }:
 let
   cfg = config.spire.agent;
+  inherit (import ./hcl1-format.nix { inherit pkgs lib; }) hcl1;
+  format = hcl1 {};
 in
 {
   options.spire.agent = {
     enable = lib.mkEnableOption "Spire agent";
 
+    settings = lib.mkOption {
+      type = lib.types.submodule {
+        freeformType = format.type;
+      };
+    };
+
+    configFile = lib.mkOption {
+      type = lib.types.path;
+      default = format.generate "agent.conf" cfg.settings;
+    };
+
     allowUnauthenticatedVerifiers = lib.mkOption {
       type = lib.types.bool;
       default = false;
       description = "If true, the agent permits the retrieval of X509 certificate bundles by unregistered clients";
-    };
-
-    config = lib.mkOption {
-      type = lib.types.str;
-      description = "SPIRE plugin config";
     };
 
     expandEnv = lib.mkOption {
@@ -131,7 +139,6 @@ in
       default = null;
       description = "Mode for rebootstraping the agent";
     };
-
   };
   config = lib.mkIf cfg.enable {
     environment.systemPackages = [ pkgs.spire-agent ];
@@ -159,7 +166,7 @@ in
         ExecStart =
           "${pkgs.spire.agent}/bin/spire-agent run "
           + lib.cli.toGNUCommandLineShell { } {
-            config = "${pkgs.writeText "agent.conf" config.spire.agent.config}";
+            config = cfg.configFile;
             dataDir = "$STATE_DIRECTORY";
             inherit (config.spire.agent)
               allowUnauthenticatedVerifiers

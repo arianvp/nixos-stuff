@@ -41,6 +41,15 @@
     enable = true;
     trustDomain = "nixos.sh";
     logLevel = "debug";
+    settings = {
+      plugins = {
+        KeyManager.disk.plugin_data.keys_path = "$STATE_DIRECTORY/keys.json";
+        DataStore.sql.plugin_data = {
+            database_type = "sqlite3";
+            connection_string = "$STATE_DIRECTORY/datastore.sqlite3";
+        };
+      };
+    };
     config = # hcl
       ''
         plugins {

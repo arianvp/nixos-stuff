@@ -7,14 +7,24 @@
 }:
 let
   cfg = config.spire.server;
+  inherit (import ./hcl1-format.nix { inherit pkgs lib; }) hcl1;
+  format = hcl1 {};
 in
 {
   options.spire.server = {
     enable = lib.mkEnableOption "SPIRE server";
 
-    config = lib.mkOption {
-      type = lib.types.str;
-      description = "SPIRE config";
+
+    settings = lib.mkOption {
+      type = lib.types.submodule {
+        freeformType = format.type;
+      };
+    };
+
+    configFile = lib.mkOption {
+      type = lib.types.path;
+      default = format.generate "server.conf" cfg.settings;
+      description = "Path to SPIRE config file";
     };
 
     expandEnv = lib.mkOption {
@@ -95,6 +105,7 @@ in
         ];
         Restart = "on-failure";
         RuntimeDirectory = "spire-server";
+        CacheDirectory = "spire-server";
         StateDirectory = "spire-server";
         StateDirectoryMode = "0700";
         ExecStart =
@@ -111,7 +122,7 @@ in
                 logSourceLocation
                 trustDomain
                 ;
-              config = pkgs.writeText "server.hcl" config.spire.server.config;
+              config = cfg.configFile;
             })
           )
           + " --dataDir $STATE_DIRECTORY";
