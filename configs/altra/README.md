@@ -38,8 +38,10 @@ that the seller doesn't get into trouble. We deduced from
 the fact that the chip pacakge is marked as "ES" and the boot logs.
 
 
+![Boot](https://cf-assets.www.cloudflare.com/zkvhlag99gkb/3z02FzpTwAjg8aK9VdC2Ro/6ab22618c187ff09fcc1b7d177d165db/image4-21.png)
+
 ![ROT](https://cf-assets.www.cloudflare.com/zkvhlag99gkb/1uctsORF4iINvxIpkpAMCM/34e931a29cc21a6b0e9d3549e81abcf8/image7-5.png)
-More info about ARM Secure Boot can be found here: https://blog.cloudflare.com/armed-to-boot/
+
 
 
 Boot log on port 2201. This seems to be
