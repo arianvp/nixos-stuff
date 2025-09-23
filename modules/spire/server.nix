@@ -8,24 +8,50 @@
 let
   cfg = config.spire.server;
   inherit (import ./hcl1-format.nix { inherit pkgs lib; }) hcl1;
-  format = hcl1 {};
+  format = hcl1 { };
 in
 {
   options.spire.server = {
     enable = lib.mkEnableOption "SPIRE server";
 
-
     settings = lib.mkOption {
       type = lib.types.submodule {
         freeformType = format.type;
+        options.server = {
+          trust_domain = lib.mkOption {
+            type = lib.types.str;
+            description = "The trust domain that this server belongs to";
+          };
+          data_dir = lib.mkOption {
+            type = lib.types.str;
+            description = "The directory where SPIRE server stores its data";
+            default = "$STATE_DIRECTORY";
+          };
+          socket_path = lib.mkOption {
+            type = lib.types.str;
+            default = "/run/spire/server/private/api.sock";
+            description = "Path to bind the SPIRE Server API Socket to";
+          };
+          bind_address = lib.mkOption {
+            type = lib.types.str;
+            default = "[::]";
+            description = "The address on which the SPIRE server is listening";
+          };
+          bind_port = lib.mkOption {
+            type = lib.types.port;
+            default = 8081;
+            description = "The port on which the SPIRE server is listening";
+          };
+        };
       };
     };
 
     configFile = lib.mkOption {
       type = lib.types.path;
       default = format.generate "server.conf" cfg.settings;
-      description = "Path to SPIRE config file";
+      description = "Path to the SPIRE server configuration file";
     };
+
 
     expandEnv = lib.mkOption {
       type = lib.types.bool;
@@ -33,45 +59,11 @@ in
       description = "Expand environment variables in SPIRE config file";
     };
 
-    logFile = lib.mkOption {
-      type = lib.types.nullOr lib.types.str;
-      default = null;
-      description = "File to write logs to";
-    };
-
-    logLevel = lib.mkOption {
-      type = lib.types.enum [
-        "debug"
-        "info"
-        "warn"
-        "error"
-      ];
-      default = "info";
-      description = "Log level";
-    };
-
-    logSourceLocation = lib.mkOption {
-      type = lib.types.bool;
-      default = false;
-      description = "Include source file, line number and function name in log lines";
-    };
-
-    trustDomain = lib.mkOption {
-      type = lib.types.str;
-      description = "The trust domain that this server belongs to";
-    };
-
-    socketPath = lib.mkOption {
-      type = lib.types.str;
-      description = "Path to bind the SPIRE Server API Socket to";
-      default = "/run/spire/server/private/api.sock";
-    };
-
   };
   config = lib.mkIf cfg.enable {
     # NOTE: for https://github.com/spiffe/spire/issues/5770
-    systemd.globalEnvironment.SPIRE_SERVER_ADMIN_SOCKET = cfg.socketPath;
-    environment.variables.SPIRE_SERVER_ADMIN_SOCKET = cfg.socketPath;
+    systemd.globalEnvironment.SPIRE_SERVER_ADMIN_SOCKET = cfg.settings.server.socket_path;
+    environment.variables.SPIRE_SERVER_ADMIN_SOCKET = cfg.settings.server.socket_path;
     environment.systemPackages = [ pkgs.spire ];
     networking.firewall.allowedTCPPorts = [
       443
@@ -81,7 +73,7 @@ in
       description = "Spire Server API Socket";
       wantedBy = [ "sockets.target" ];
       socketConfig = {
-        ListenStream = "8081";
+        ListenStream = "${cfg.settings.server.bind_address}:${toString cfg.settings.server.bind_port}";
         FileDescriptorName = "spire-server-tcp";
         Service = "spire-server.service";
       };
@@ -90,7 +82,7 @@ in
       description = "Spire Server Local API Socket";
       wantedBy = [ "sockets.target" ];
       socketConfig = {
-        ListenStream = cfg.socketPath;
+        ListenStream = cfg.settings.server.socket_path;
         SocketMode = "0600";
         FileDescriptorName = "spire-server-local";
         Service = "spire-server.service";
@@ -104,7 +96,6 @@ in
           "spire-server-local.socket"
         ];
         Restart = "on-failure";
-        RuntimeDirectory = "spire-server";
         CacheDirectory = "spire-server";
         StateDirectory = "spire-server";
         StateDirectoryMode = "0700";
@@ -117,15 +108,10 @@ in
             ++ (lib.cli.toGNUCommandLine { } {
               inherit (config.spire.server)
                 expandEnv
-                logFile
-                logLevel
-                logSourceLocation
-                trustDomain
                 ;
               config = cfg.configFile;
             })
-          )
-          + " --dataDir $STATE_DIRECTORY";
+          );
 
       };
     };

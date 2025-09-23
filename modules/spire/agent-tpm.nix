@@ -2,15 +2,9 @@
 {
   imports = [ ./agent.nix ];
   spire.agent = {
-    config = ''
-      plugins {
-        KeyManager "memory" { plugin_data { } }
-        NodeAttestor "tpm" {
-          plugin_cmd = "${lib.getExe' pkgs.spire-tpm-plugin "tpm_attestor_agent"}"
-          plugin_data { }
-        }
-        WorkloadAttestor "systemd" { plugin_data { } }
-      }
-    '';
+    settings.plugins.NodeAttestor.tpm = {
+      plugin_cmd = lib.getExe' pkgs.spire-tpm-plugin  "tpm_attestor_agent";
+      plugin_data = {};
+    };
   };
 }

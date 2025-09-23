@@ -7,8 +7,6 @@ in
 
   defaults = {
     networking.domain = trustDomain;
-    spire.agent.trustDomain = trustDomain;
-    spire.agent.serverAddress = "server.${trustDomain}";
     imports = [ ../modules/spire/agent.nix ];
 
     systemd.services.spire-agent.serviceConfig = {
@@ -18,10 +16,14 @@ in
 
     spire.agent = {
       enable = true;
-      trustBundle = "\${CREDENTIALS_DIRECTORY}/spire-server-bundle";
-      trustBundleFormat = "pem";
-      joinToken = "\${SPIRE_JOIN_TOKEN}";
       settings = {
+        agent = {
+          trust_domain = trustDomain;
+          server_address = "server.${trustDomain}";
+          trust_bundle_path = "$CREDENTIALS_DIRECTORY/spire-server-bundle";
+          trust_bundle_format = "pem";
+          join_token = "$SPIRE_JOIN_TOKEN" ;
+        };
         plugins = {
           KeyManager.memory.plugin_data = { };
           NodeAttestor.join_token.plugin_data = { };
@@ -102,8 +104,8 @@ in
       };
       spire.server = {
         enable = true;
-        inherit trustDomain;
         settings = {
+          server.trust_domain = trustDomain;
           plugins = {
             KeyManager.memory.plugin_data = { };
             DataStore.sql.plugin_data = {

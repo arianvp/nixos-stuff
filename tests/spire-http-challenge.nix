@@ -6,17 +6,21 @@ let
     systemd.services.spire-agent.serviceConfig.LoadCredential = "spire-server-bundle";
     spire.agent = {
       enable = true;
-      logLevel = "debug";
-      trustDomain = trustDomain;
-      trustBundle = "\${CREDENTIALS_DIRECTORY}/spire-server-bundle";
-      trustBundleFormat = "pem";
-      serverAddress = "server";
-      settings.plugins = {
-        KeyManager.memory.plugin_data = { };
-        NodeAttestor.http_challenge.plugin_data = {
-          port = 80;
+      settings = {
+        agent = {
+          log_level = "debug";
+          trust_domain = trustDomain;
+          trust_bundle_path = "$CREDENTIALS_DIRECTORY/spire-server-bundle";
+          trust_bundle_format = "pem";
+          server_address = "server";
         };
-        WorkloadAttestor.systemd.plugin_data = { };
+        plugins = {
+          KeyManager.memory.plugin_data = { };
+          NodeAttestor.http_challenge.plugin_data = {
+            port = 80;
+          };
+          WorkloadAttestor.systemd.plugin_data = { };
+        };
       };
     };
   };
@@ -51,10 +55,12 @@ in
       };
       spire.server = {
         enable = true;
-        inherit trustDomain;
-        logLevel = "debug";
         settings = {
-          server.audit_log_enabled = true;
+          server = {
+            audit_log_enabled = true;
+            log_level = "debug";
+            trust_domain = trustDomain;
+          };
           plugins = {
             KeyManager.memory.plugin_data = { };
             DataStore.sql.plugin_data = {
@@ -71,7 +77,6 @@ in
     agent1 = agentConfig;
     agent2 = agentConfig;
   };
-
 
   testScript = ''
     server.wait_for_unit("spire-server.socket")

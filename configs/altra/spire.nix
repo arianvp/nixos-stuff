@@ -13,12 +13,14 @@
 
   spire.agent = {
     enable = true;
-    rebootstrapMode = "auto";
-    trustBundle = "\${STATE_DIRECTORY}/bundle.pem";
-    trustBundleFormat = "pem";
-    serverAddress = "localhost";
-    trustDomain = "nixos.sh";
-    logLevel = "debug";
+    settings.agent = {
+      rebootstrap_mode = "auto";
+      trust_bundle_path = "$STATE_DIRECTORY/bundle.pem";
+      trust_bundle_format = "pem";
+      server_address = "localhost";
+      trust_domain = "nixos.sh";
+      log_level = "debug";
+    };
   };
 
   environment.systemPackages = [ pkgs.spire-tpm-plugin ];
@@ -39,56 +41,30 @@
 
   spire.server = {
     enable = true;
-    trustDomain = "nixos.sh";
-    logLevel = "debug";
     settings = {
+      server = {
+        trust_domain = "nixos.sh";
+        log_level = "debug";
+      };
       plugins = {
         KeyManager.disk.plugin_data.keys_path = "$STATE_DIRECTORY/keys.json";
         DataStore.sql.plugin_data = {
             database_type = "sqlite3";
             connection_string = "$STATE_DIRECTORY/datastore.sqlite3";
         };
+        NodeAttestor.http_challenge.plugin_data = {
+            required_port = 80;
+            allowed_dns_patterns = [".*\\.nixos.sh"];
+        };
+        NodeAttestor.join_token.plugin_data = {};
+        NodeAttestor.tpm = {
+            plugin_cmd = lib.getExe' pkgs.spire-tpm-plugin "tpm_attestor_server";
+            plugin_data = {
+                ca_path = ../../modules/spire/certs;
+            };
+        };
+
       };
     };
-    config = # hcl
-      ''
-        plugins {
-          KeyManager "disk" {
-            plugin_data {
-              keys_path = "$STATE_DIRECTORY/keys.json"
-            }
-          }
-          DataStore "sql" {
-            plugin_data {
-              database_type = "sqlite3"
-              connection_string = "$STATE_DIRECTORY/datastore.sqlite3"
-            }
-          }
-          NodeAttestor "http_challenge" {
-            plugin_data {
-              required_port = 80
-              allowed_dns_patterns = [".*\\.nixos.sh"]
-            }
-          }
-          NodeAttestor "join_token" {
-            plugin_data {
-            }
-          }
-          NodeAttestor  "tpm" {
-            plugin_cmd = "${lib.getExe' pkgs.spire-tpm-plugin "tpm_attestor_server"}"
-            plugin_data {
-              # TODO: there seems to be a bug in the spire-tpm-plugin and can't verify my certs :(
-              # could not verify cert: x509: unhandled critical extension"
-              ca_path = "${../../modules/spire/certs}"
-              # hash_path = "${
-                pkgs.runCommand "hash-path" { } ''
-                  mkdir -p $out
-                  touch $out/856dd0443668292a66fabd29f778345f7c1a82bbc9b55d99ceb462cdba0897f6
-                ''
-              }"
-            }
-          }
-        }
-      '';
   };
 }

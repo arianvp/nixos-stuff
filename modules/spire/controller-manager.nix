@@ -11,13 +11,13 @@ let
     apiVersion = "spire.spiffe.io/v1alpha1";
     kind = "ControllerManagerConfig";
     metadata.name = "config";
-    trustDomain = config.spire.server.trustDomain;
+    trustDomain = config.spire.server.settings.server.trust_domain;
 
     # TODO: I don't think this *does* anything in static manifest mode but it's required
     clusterName = "scm";
     clusterDomain = "local";
 
-    spireServerSocketPath = config.spire.server.socketPath;
+    spireServerSocketPath = config.spire.server.settings.server.socket_path;
     staticManifestPath = "/etc/spire/server/manifests";
     expandEnvStaticManifests = true;
   };

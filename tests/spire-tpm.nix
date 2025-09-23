@@ -27,9 +27,11 @@ in
       };
       spire.server = {
         enable = true;
-        inherit trustDomain;
-        logLevel = "debug";
         settings = {
+          server = {
+            trust_domain = trustDomain;
+            log_level = "debug";
+          };
           plugins = {
             KeyManager.memory = {
               plugin_data = { };
@@ -65,12 +67,14 @@ in
 
       spire.agent = {
         enable = true;
-        trustDomain = trustDomain;
-        logLevel = "debug";
-        serverAddress = "server";
-        trustBundle = "\${CREDENTIALS_DIRECTORY}/spire-server-bundle";
-        trustBundleFormat = "pem";
         settings = {
+          agent = {
+            trust_domain = trustDomain;
+            log_level = "debug";
+            server_address = "server";
+            trust_bundle_path = "$CREDENTIALS_DIRECTORY/spire-server-bundle";
+            trust_bundle_format = "pem";
+          };
           plugins = {
             KeyManager.memory.plugin_data = { };
             NodeAttestor.tpm = {
