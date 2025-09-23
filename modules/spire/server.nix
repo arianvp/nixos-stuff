@@ -52,7 +52,6 @@ in
       description = "Path to the SPIRE server configuration file";
     };
 
-
     expandEnv = lib.mkOption {
       type = lib.types.bool;
       default = true;
@@ -99,19 +98,16 @@ in
         CacheDirectory = "spire-server";
         StateDirectory = "spire-server";
         StateDirectoryMode = "0700";
-        ExecStart =
-          utils.escapeSystemdExecArgs (
-            [
-              "${pkgs.spire.server}/bin/spire-server"
-              "run"
-            ]
-            ++ (lib.cli.toGNUCommandLine { } {
-              inherit (config.spire.server)
-                expandEnv
-                ;
-              config = cfg.configFile;
-            })
-          );
+        ExecStart = utils.escapeSystemdExecArgs (
+          [
+            "${pkgs.spire.server}/bin/spire-server"
+            "run"
+          ]
+          ++ (lib.cli.toGNUCommandLine { } {
+            inherit (cfg) expandEnv;
+            config = cfg.configFile;
+          })
+        );
 
       };
     };

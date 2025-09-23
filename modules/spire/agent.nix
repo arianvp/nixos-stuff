@@ -1,5 +1,6 @@
 {
   lib,
+  utils,
   pkgs,
   config,
   ...
@@ -7,7 +8,7 @@
 let
   cfg = config.spire.agent;
   inherit (import ./hcl1-format.nix { inherit pkgs lib; }) hcl1;
-  format = hcl1 {};
+  format = hcl1 { };
 in
 {
   options.spire.agent = {
@@ -19,12 +20,16 @@ in
         options.agent = {
           trust_domain = lib.mkOption {
             type = lib.types.str;
-            description = "The trust domain that this server belongs to";
+            description = "The trust domain that this agent belongs to";
           };
           data_dir = lib.mkOption {
             type = lib.types.str;
             default = "$STATE_DIRECTORY";
             description = "The directory where the SPIRE agent stores its data";
+          };
+          server_address = lib.mkOption {
+            type = lib.types.str;
+            description = "The address of the SPIRE server";
           };
           server_port = lib.mkOption {
             type = lib.types.int;
@@ -44,7 +49,6 @@ in
       type = lib.types.path;
       default = format.generate "agent.conf" cfg.settings;
     };
-
 
     expandEnv = lib.mkOption {
       type = lib.types.bool;
@@ -76,14 +80,16 @@ in
         RuntimeDirectory = "spire-agent";
         StateDirectory = "spire-agent";
         StateDirectoryMode = "0700";
-        ExecStart =
-          "${pkgs.spire.agent}/bin/spire-agent run "
-          + lib.cli.toGNUCommandLineShell { } {
+        ExecStart = utils.escapeSystemdExecArgs (
+          [
+            "${pkgs.spire.agent}/bin/spire-agent"
+            "run"
+          ]
+          ++ (lib.cli.toGNUCommandLine { } {
+            inherit (cfg) expandEnv;
             config = cfg.configFile;
-            inherit (config.spire.agent)
-              expandEnv
-              ;
-          };
+          })
+        );
 
         # NOTE: We must run as root as unix plugin relies on accessing system bus and /proc
 
