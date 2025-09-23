@@ -42,7 +42,7 @@
     openssh.authorizedKeys.keyFiles = [
       (pkgs.fetchurl {
         url = "https://codeberg.org/picnoir.keys";
-        sha256 = "sha256-bS0BVP0K0KZ3vHyYcHpfRzOVQeO/7XlKWK+UYj1j6Fo=";
+        hash = "sha256-ETw5Qm4hp/fMMCTOJR7IFpydUtkbVDosHPvHp09wJ/k=";
       })
     ];
   };
