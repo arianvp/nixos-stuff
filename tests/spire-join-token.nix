@@ -43,6 +43,8 @@ in
 
         networking.firewall.allowedTCPPorts = [ 8200 ];
 
+        # TODO: The trust bundle expires and should be refreshed periodically
+        # and openbao need to be reloaded
         systemd.services.openbao.serviceConfig.ExecStartPre =
           "${lib.getExe' pkgs.spire "spire-agent"} api fetch x509 -socketPath $SPIFFE_ENDPOINT_SOCKET -write $RUNTIME_DIRECTORY";
 
@@ -187,6 +189,9 @@ in
         # Enable and configure cert auth method
         openbao.succeed("bao auth enable cert")
 
+
+        # TODO: There's a problem here. The spire-server's bundle rotates!
+        # We have to write to write this setting every time that happens
         # Configure certificate roles for different SPIFFE IDs
         openbao.succeed("bao write auth/cert/certs/openbao certificate=@/run/credstore/spire-server-bundle allowed_uri_sans=spiffe://example.com/service/openbao token_policies=access-foo")
         openbao.succeed("bao write auth/cert/certs/agent certificate=@/run/credstore/spire-server-bundle allowed_uri_sans=spiffe://example.com/service/agent token_policies=access-foo")
