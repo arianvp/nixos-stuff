@@ -22,11 +22,8 @@
         trust_domain = "nixos.sh";
         log_level = "debug";
       };
-      plugins.WorkloadAttestor.unix = {
-        plugin_data = {
-
-        };
-      };
+      plugins.WorkloadAttestor.unix.plugin_data = {};
+      plugins.WorkloadAttestor.systemd.plugin_data = {};
     };
   };
 
