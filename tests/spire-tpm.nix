@@ -33,9 +33,7 @@ in
             log_level = "debug";
           };
           plugins = {
-            KeyManager.memory = {
-              plugin_data = { };
-            };
+            KeyManager.memory.plugin_data = { };
             DataStore.sql = {
               plugin_data = {
                 database_type = "sqlite3";
@@ -44,9 +42,7 @@ in
             };
             NodeAttestor.tpm = {
               plugin_cmd = lib.getExe' pkgs.spire-tpm-plugin "tpm_attestor_server";
-              plugin_data = {
-                hash_path = "/etc/spire/server/hashes";
-              };
+              plugin_data.hash_path = "/etc/spire/server/hashes";
             };
           };
         };

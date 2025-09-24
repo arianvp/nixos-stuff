@@ -16,9 +16,7 @@ let
         };
         plugins = {
           KeyManager.memory.plugin_data = { };
-          NodeAttestor.http_challenge.plugin_data = {
-            port = 80;
-          };
+          NodeAttestor.http_challenge.plugin_data.port = 80;
           WorkloadAttestor.systemd.plugin_data = { };
         };
       };
@@ -67,9 +65,7 @@ in
               database_type = "sqlite3";
               connection_string = "$STATE_DIRECTORY/datastore.sqlite3";
             };
-            NodeAttestor.http_challenge.plugin_data = {
-              required_port = "80";
-            };
+            NodeAttestor.http_challenge.plugin_data.equired_port = "80";
           };
         };
       };
