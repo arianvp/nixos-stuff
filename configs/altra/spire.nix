@@ -13,13 +13,20 @@
 
   spire.agent = {
     enable = true;
-    settings.agent = {
-      rebootstrap_mode = "auto";
-      trust_bundle_path = "$STATE_DIRECTORY/bundle.pem";
-      trust_bundle_format = "pem";
-      server_address = "localhost";
-      trust_domain = "nixos.sh";
-      log_level = "debug";
+    settings = {
+      agent = {
+        rebootstrap_mode = "auto";
+        trust_bundle_path = "$STATE_DIRECTORY/bundle.pem";
+        trust_bundle_format = "pem";
+        server_address = "localhost";
+        trust_domain = "nixos.sh";
+        log_level = "debug";
+      };
+      plugins.WorkloadAttestor.unix = {
+        plugin_data = {
+
+        };
+      };
     };
   };
 
@@ -37,6 +44,11 @@
         "tpm:pub_hash:856dd0443668292a66fabd29f778345f7c1a82bbc9b55d99ceb462cdba0897f6"
       ];
     };
+    arian.spec = {
+      parentID = "spiffe://nixos.sh/server/altra";
+      spiffeID = "spiffe://nixos.sh/user/arian";
+      selectors = [ "unix:uid:1000" ];
+    };
   };
 
   spire.server = {
@@ -49,19 +61,19 @@
       plugins = {
         KeyManager.disk.plugin_data.keys_path = "$STATE_DIRECTORY/keys.json";
         DataStore.sql.plugin_data = {
-            database_type = "sqlite3";
-            connection_string = "$STATE_DIRECTORY/datastore.sqlite3";
+          database_type = "sqlite3";
+          connection_string = "$STATE_DIRECTORY/datastore.sqlite3";
         };
         NodeAttestor.http_challenge.plugin_data = {
-            required_port = 80;
-            allowed_dns_patterns = [".*\\.nixos.sh"];
+          required_port = 80;
+          allowed_dns_patterns = [ ".*\\.nixos.sh" ];
         };
-        NodeAttestor.join_token.plugin_data = {};
+        NodeAttestor.join_token.plugin_data = { };
         NodeAttestor.tpm = {
-            plugin_cmd = lib.getExe' pkgs.spire-tpm-plugin "tpm_attestor_server";
-            plugin_data = {
-                ca_path = ../../modules/spire/certs;
-            };
+          plugin_cmd = lib.getExe' pkgs.spire-tpm-plugin "tpm_attestor_server";
+          plugin_data = {
+            ca_path = ../../modules/spire/certs;
+          };
         };
 
       };
