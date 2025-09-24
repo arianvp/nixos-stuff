@@ -49,7 +49,7 @@ in
       };
     };
     agent = {
-      imports = [ ../modules/spire/agent.nix ];
+      imports = [ ../modules/spire/agent.nix ../modules/spire/agent-tpm.nix ];
       networking.firewall.allowedTCPPorts = [ 80 ];
       systemd.services.spire-agent.serviceConfig.LoadCredential = "spire-server-bundle";
 
@@ -73,10 +73,6 @@ in
           };
           plugins = {
             KeyManager.memory.plugin_data = { };
-            NodeAttestor.tpm = {
-              plugin_cmd = lib.getExe' pkgs.spire-tpm-plugin "tpm_attestor_agent";
-              plugin_data = { };
-            };
             WorkloadAttestor.systemd.plugin_data = { };
           };
         };
@@ -85,6 +81,7 @@ in
   };
   # TODO: use ekcert based provisioning
   testScript = ''
+    print(agent.succeed("ls -la /dev/tpmrm0"))
     pubhash = agent.succeed("get_tpm_pubhash").strip()
     server.succeed("mkdir -p /etc/spire/server/hashes")
     server.succeed(f"touch /etc/spire/server/hashes/{pubhash}")

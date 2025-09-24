@@ -72,6 +72,13 @@ in
       };
     };
 
+    users.users.spire-agent = {
+      isSystemUser = true;
+      group = "spire-agent";
+    };
+
+    users.groups.spire-agent = { };
+
     systemd.services.spire-agent = {
       description = "Spire agent";
       serviceConfig = {
@@ -86,30 +93,31 @@ in
         StateDirectory = "spire-agent";
         StateDirectoryMode = "0700";
 
-        # NOTE: We must run as root as unix plugin relies on accessing system bus and /proc
-        DynamicUser = false;
+        # TODO: Doesn't work with DynamicUser. Get an error connecting to dbus.
+        # I assume something something dbus and NSS don't work on NixOS
+        User = "spire-agent";
+        Group = "spire-agent";
 
-        LockPersonality = true;
-        MemoryDenyWriteExecute = true;
-        NoNewPrivileges = true;
+         # TODO: Some of these seem to break plugins. Not sure which
 
-        # TODO: might be needed by tpm plugin
-        # PrivateDevices = true;
-        DeviceAllow = "/dev/tpmrm0";
-        PrivateTmp = true;
-        ProtectControlGroups = true;
-        ProtectClock = true;
-        UMask = "0600";
-        ProtectHome = true;
-        ProtectHostname = true;
-        ProtectKernelLogs = true;
-        ProtectKernelModules = true;
-        ProtectKernelTunables = true;
-        ProtectSystem = "strict";
-        RestrictAddressFamilies = "AF_UNIX AF_INET AF_INET6";
-        RestrictNamespaces = true;
-        RestrictRealtime = true;
-        RestrictSUIDSGID = true;
+          /*LockPersonality = true;
+          MemoryDenyWriteExecute = true;
+          NoNewPrivileges = true;
+
+          PrivateTmp = true;
+          ProtectControlGroups = true;
+          ProtectClock = true;
+          UMask = "0600";
+          ProtectHome = true;
+          ProtectHostname = true;
+          ProtectKernelLogs = true;
+          ProtectKernelModules = true;
+          ProtectKernelTunables = true;
+          ProtectSystem = "strict";
+          RestrictAddressFamilies = "AF_UNIX AF_INET AF_INET6";
+          RestrictNamespaces = true;
+          RestrictRealtime = true;
+          RestrictSUIDSGID = true;*/
       };
     };
   };

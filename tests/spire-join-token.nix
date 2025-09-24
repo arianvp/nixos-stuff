@@ -29,7 +29,6 @@ in
           NodeAttestor.join_token.plugin_data = { };
           WorkloadAttestor.systemd.plugin_data = { };
           WorkloadAttestor.unix.plugin_data = {
-            discover_workload_path = true;
           };
         };
       };

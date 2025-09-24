@@ -3,6 +3,7 @@ let
   agentConfig = {
     imports = [ ../modules/spire/agent.nix ];
     networking.firewall.allowedTCPPorts = [ 80 ];
+    systemd.services.spire-agent.serviceConfig.AmbientCapabilities = [ "CAP_NET_BIND_SERVICE" ];
     spire.agent = {
       enable = true;
       settings = {
