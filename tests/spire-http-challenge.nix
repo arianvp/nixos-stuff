@@ -3,14 +3,13 @@ let
   agentConfig = {
     imports = [ ../modules/spire/agent.nix ];
     networking.firewall.allowedTCPPorts = [ 80 ];
-    systemd.services.spire-agent.serviceConfig.LoadCredential = "spire-server-bundle";
     spire.agent = {
       enable = true;
       settings = {
         agent = {
           log_level = "debug";
           trust_domain = trustDomain;
-          trust_bundle_path = "$CREDENTIALS_DIRECTORY/spire-server-bundle";
+          trust_bundle_path = ./ca.crt;
           trust_bundle_format = "pem";
           server_address = "server";
         };
@@ -61,6 +60,10 @@ in
           };
           plugins = {
             KeyManager.memory.plugin_data = { };
+            UpstreamAuthority.disk.plugin_data = {
+              cert_file_path = ./ca.crt;
+              key_file_path = ./ca.key;
+            };
             DataStore.sql.plugin_data = {
               database_type = "sqlite3";
               connection_string = "$STATE_DIRECTORY/datastore.sqlite3";
@@ -76,19 +79,13 @@ in
 
   testScript = ''
     server.wait_for_unit("spire-server.socket")
-    bundle = server.succeed("spire-server bundle show -socketPath $SPIRE_SERVER_ADMIN_SOCKET")
-    with open("bundle.pem", "w") as f:
-        f.write(bundle)
-
 
     with subtest("no alias"):
-      agent1.copy_from_host("bundle.pem", "/run/credstore/spire-server-bundle")
       # Will succeed immediately as X509-SVID is fetched before $SPIFFE_ENDPOINT_SOCKET accepts connections
       agent1.succeed("spire-agent api fetch x509 -socketPath $SPIFFE_ENDPOINT_SOCKET -write .")
 
     # regression test for: https://github.com/spiffe/spire/issues/6257
     with subtest("alias"):
-      agent2.copy_from_host("bundle.pem", "/run/credstore/spire-server-bundle")
       # First call will fail as the X509-SVID is fetched asynchronously instead of synchronously for aliases :(
       agent2.fail("spire-agent api fetch x509 -socketPath $SPIFFE_ENDPOINT_SOCKET -write .")
       # Now wait for  the SVID to be created asynchronously :(
