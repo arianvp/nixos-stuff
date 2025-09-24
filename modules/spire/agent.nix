@@ -1,6 +1,5 @@
 {
   lib,
-  utils,
   pkgs,
   config,
   ...
@@ -76,22 +75,19 @@ in
     systemd.services.spire-agent = {
       description = "Spire agent";
       serviceConfig = {
-        Restart = "always";
+        ExecStart =
+          "${lib.getExe' pkgs.spire.agent "spire-agent"} run "
+          + lib.cli.toGNUCommandLineShell { } {
+            inherit (cfg) expandEnv;
+            config = cfg.configFile;
+          };
+        Restart = "on-failure";
         RuntimeDirectory = "spire-agent";
         StateDirectory = "spire-agent";
         StateDirectoryMode = "0700";
-        ExecStart = utils.escapeSystemdExecArgs (
-          [
-            "${pkgs.spire.agent}/bin/spire-agent"
-            "run"
-          ]
-          ++ (lib.cli.toGNUCommandLine { } {
-            inherit (cfg) expandEnv;
-            config = cfg.configFile;
-          })
-        );
 
         # NOTE: We must run as root as unix plugin relies on accessing system bus and /proc
+        DynamicUser = false;
 
         LockPersonality = true;
         MemoryDenyWriteExecute = true;

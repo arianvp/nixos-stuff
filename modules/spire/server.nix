@@ -2,7 +2,6 @@
   lib,
   pkgs,
   config,
-  utils,
   ...
 }:
 let
@@ -13,6 +12,11 @@ in
 {
   options.spire.server = {
     enable = lib.mkEnableOption "SPIRE server";
+
+    package = lib.mkOption {
+      type = lib.types.package;
+      default = pkgs.spire.server;
+    };
 
     settings = lib.mkOption {
       type = lib.types.submodule {
@@ -87,29 +91,26 @@ in
         Service = "spire-server.service";
       };
     };
-    systemd.services.spire-server = {
-      description = "Spire Server";
-      serviceConfig = {
-        Sockets = [
-          "spire-server.socket"
-          "spire-server-local.socket"
-        ];
-        Restart = "on-failure";
-        CacheDirectory = "spire-server";
-        StateDirectory = "spire-server";
-        StateDirectoryMode = "0700";
-        ExecStart = utils.escapeSystemdExecArgs (
-          [
-            "${pkgs.spire.server}/bin/spire-server"
-            "run"
-          ]
-          ++ (lib.cli.toGNUCommandLine { } {
-            inherit (cfg) expandEnv;
-            config = cfg.configFile;
-          })
-        );
-
+    systemd.services.spire-server =
+      { name, ... }:
+      {
+        description = "Spire Server";
+        serviceConfig = {
+          Sockets = [
+            "spire-server.socket"
+            "spire-server-local.socket"
+          ];
+          ExecStart =
+            "${lib.getExe' cfg.package "spire-server"} run "
+            + lib.cli.toGNUCommandLineShell { } {
+              inherit (cfg) expandEnv;
+              config = cfg.configFile;
+            };
+          Restart = "on-failure";
+          StateDirectory = name;
+          StateDirectoryMode = "0700";
+          CacheDirectory = name;
+        };
       };
-    };
   };
 }

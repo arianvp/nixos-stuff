@@ -125,7 +125,14 @@ in
 
 {
   options.spire.controllerManager = {
+
     enable = lib.mkEnableOption "SPIRE Controller Manager";
+
+    package = lib.mkOption {
+      type = lib.types.package;
+      default = pkgs.spire-controller-manager;
+    };
+
     settings = lib.mkOption {
       type = format.type;
       default = settings;
@@ -178,7 +185,7 @@ in
     systemd.services.spire-controller-manager = {
       wantedBy = [ "multi-user.target" ];
       description = "SPIRE Controller Manager";
-      serviceConfig.ExecStart = "${lib.getExe pkgs.spire-controller-manager} -config ${cfg.configFile}";
+      serviceConfig.ExecStart = "${lib.getExe cfg.package} -config ${cfg.configFile}";
     };
   };
 }
