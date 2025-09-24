@@ -18,6 +18,7 @@
         trust_domain = "nixos.sh";
         log_level = "debug";
       };
+      plugins.KeyManager.disk.plugin_data.keys_path = "$STATE_DIRECTORY/keys.json";
       plugins.WorkloadAttestor.unix.plugin_data = {};
       plugins.WorkloadAttestor.systemd.plugin_data = {};
     };
