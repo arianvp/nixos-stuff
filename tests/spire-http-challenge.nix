@@ -65,7 +65,7 @@ in
               database_type = "sqlite3";
               connection_string = "$STATE_DIRECTORY/datastore.sqlite3";
             };
-            NodeAttestor.http_challenge.plugin_data.equired_port = "80";
+            NodeAttestor.http_challenge.plugin_data.required_port = 80;
           };
         };
       };
