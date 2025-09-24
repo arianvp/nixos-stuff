@@ -6,18 +6,14 @@
     ../../modules/spire/agent-tpm.nix
   ];
 
-  # hack to not have to depend on one-self
-  systemd.services.spire-agent.preStart = ''
-    ${pkgs.spire-server}/bin/spire-server bundle show -socketPath $SPIRE_SERVER_ADMIN_SOCKET > $STATE_DIRECTORY/bundle.pem
-  '';
 
   spire.agent = {
     enable = true;
     settings = {
       agent = {
-        rebootstrap_mode = "auto";
-        trust_bundle_path = "$STATE_DIRECTORY/bundle.pem";
-        trust_bundle_format = "pem";
+        insecure_bootstrap = true;  # TODO: Get a proper trust bundle instead of TOFU
+        # trust_bundle_path = "$STATE_DIRECTORY/bundle.pem";
+        # trust_bundle_format = "pem";
         server_address = "localhost";
         trust_domain = "nixos.sh";
         log_level = "debug";
