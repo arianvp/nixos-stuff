@@ -76,13 +76,13 @@
         };
       */
 
-      packages = unstable.lib.genAttrs [ "x86_64-linux" "aarch64-linux" ] (
+      packages = unstable.lib.genAttrs [ "x86_64-linux" "aarch64-linux" "aarch64-darwin"] (
         system:
         let
           pkgs = unstable.legacyPackages.${system}.extend (import ./overlays/spire.nix);
         in
         {
-          inherit (pkgs) spire-controller-manager spire-tpm-plugin;
+          inherit (pkgs) spire-controller-manager spire-tpm-plugin spire;
         }
       );
 
@@ -112,6 +112,12 @@
           };
         }
       );
+
+      nodes = (unstable.lib.evalModules {
+        modules = [
+          ./modules/nodes
+        ];
+      }).config.nodes;
 
       nixosConfigurations =
         let
