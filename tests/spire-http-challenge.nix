@@ -11,7 +11,6 @@ let
           log_level = "debug";
           trust_domain = trustDomain;
           trust_bundle_path = ./ca.crt;
-          trust_bundle_format = "pem";
           server_address = "server";
         };
         plugins = {
@@ -23,34 +22,15 @@ let
     };
   };
 in
+{ nodes, ... }:
 {
   name = "spire-http-challenge";
+  defaults.networking.useNetworkd = true;
   nodes = {
     server = {
       imports = [
         ../modules/spire/server.nix
-        ../modules/spire/controller-manager.nix
       ];
-      spire.controllerManager = {
-        enable = true;
-        staticEntries = {
-          node.spec = {
-            selectors = [ "http_challenge:hostname:agent2" ];
-            parentID = "spiffe://${trustDomain}/spire/server";
-            spiffeID = "spiffe://${trustDomain}/node/agent";
-          };
-          agent-alias.spec = {
-            selectors = [ "systemd:id:backdoor.service" ];
-            parentID = "spiffe://${trustDomain}/node/agent";
-            spiffeID = "spiffe://${trustDomain}/service/agent";
-          };
-          agent1.spec = {
-            selectors = [ "systemd:id:backdoor.service" ];
-            parentID = "spiffe://${trustDomain}/spire/agent/http_challenge/agent1";
-            spiffeID = "spiffe://${trustDomain}/service/agent";
-          };
-        };
-      };
       spire.server = {
         enable = true;
         settings = {
@@ -74,24 +54,32 @@ in
         };
       };
     };
-    agent1 = agentConfig;
-    agent2 = agentConfig;
+    agent-without-alias = agentConfig;
+    agent-with-alias = agentConfig;
   };
 
   testScript = ''
-    server.wait_for_unit("spire-server.socket")
+    with subtest("IGNORE ME: boot server"):
+      server.wait_for_unit("multi-user.target")
 
-    with subtest("no alias"):
-      # Will succeed immediately as X509-SVID is fetched before $SPIFFE_ENDPOINT_SOCKET accepts connections
-      agent1.succeed("spire-agent api fetch x509 -socketPath $SPIFFE_ENDPOINT_SOCKET -write .")
+    with subtest("create entries"):
+      server.succeed("spire-server entry create -parentID spiffe://${trustDomain}/spire/agent/http_challenge/${nodes.agent-without-alias.networking.hostName} -spiffeID spiffe://${trustDomain}/workload/backdoor -selector systemd:id:backdoor.service -socketPath $SPIRE_SERVER_ADMIN_SOCKET")
+      server.succeed("spire-server entry create  -parentID spiffe://${trustDomain}/node/agent -spiffeID spiffe://${trustDomain}/workload/backdoor -selector systemd:id:backdoor.service -socketPath $SPIRE_SERVER_ADMIN_SOCKET")
+      server.succeed("spire-server entry create -node -spiffeID spiffe://${trustDomain}/node/agent -selector http_challenge:hostname:${nodes.agent-with-alias.networking.hostName} -socketPath $SPIRE_SERVER_ADMIN_SOCKET")
 
-    # regression test for: https://github.com/spiffe/spire/issues/6257
-    with subtest("alias"):
-      # First call will fail as the X509-SVID is fetched asynchronously instead of synchronously for aliases :(
-      agent2.fail("spire-agent api fetch x509 -socketPath $SPIFFE_ENDPOINT_SOCKET -write .")
-      # Now wait for  the SVID to be created asynchronously :(
-      agent2.wait_for_console_text("Creating X509-SVID")
-      agent2.succeed("spire-agent api fetch x509 -socketPath $SPIFFE_ENDPOINT_SOCKET -write .")
+    with subtest("IGNORE ME: boot agent-without-alias"):
+      agent_without_alias.wait_for_unit("multi-user.target")
 
+    with subtest("agent-without-alias"):
+      agent_without_alias.succeed("spire-agent api fetch x509 -socketPath $SPIFFE_ENDPOINT_SOCKET -write .")
+
+
+    with subtest("IGNORE ME: boot agent-with-alias"):
+      agent_with_alias.wait_for_unit("multi-user.target")
+
+    with subtest("agent-with-alias"):
+      agent_with_alias.fail("spire-agent api fetch x509 -socketPath $SPIFFE_ENDPOINT_SOCKET -write .")
+      agent_with_alias.wait_for_console_text("Creating X509-SVID")
+      agent_with_alias.succeed("spire-agent api fetch x509 -socketPath $SPIFFE_ENDPOINT_SOCKET -write .")
   '';
 }

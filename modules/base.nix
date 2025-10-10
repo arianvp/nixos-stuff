@@ -1,5 +1,6 @@
 {
   pkgs,
+  lib,
   ...
 }:
 {
@@ -11,6 +12,11 @@
   ];
 
   services.openssh.settings.PasswordAuthentication = false;
+
+  nixpkgs.config.allowUnfreePredicate = pkg: lib.elem (lib.getName pkg) [ "claude-code" ];
+
+  environment.variables.EDITOR = "nvim";
+
 
   users.users.arian = {
     isNormalUser = true;
@@ -26,6 +32,7 @@
       pkgs.binutils
       pkgs.dnsutils
       pkgs.unixtools.netstat
+      pkgs.claude-code
     ];
 
     # Until we have a proper SSH-CA this is what we do instead
