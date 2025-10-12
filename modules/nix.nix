@@ -3,7 +3,7 @@
   nix.package = pkgs.lixPackageSets.lix_2_93.lix;
 
   nix.settings.substituters = [
-    "https://nixos.snix.store?priority=39"
+    # "https://nixos.snix.store?priority=39"  # lots of issues with lix
     "https://cache.nixos.org?priority=40"
   ];
 

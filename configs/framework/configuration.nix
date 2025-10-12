@@ -40,14 +40,6 @@
     options iwlwifi disable_11ax=Y
   '';
 
-  nix.settings.substituters = [ "https://nixos.snix.store" ];
-  nix.settings.trusted-users = [ "@wheel" ];
-  nix.settings.experimental-features = [
-    "flakes"
-    "nix-command"
-    "fetch-closure"
-  ];
-
   networking.hostName = "framework";
   networking.firewall.enable = true;
   services.openssh.enable = true;
