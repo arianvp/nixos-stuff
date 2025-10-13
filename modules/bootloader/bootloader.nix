@@ -1,0 +1,85 @@
+{
+  lib,
+  pkgs,
+  config,
+  ...
+}:
+let
+  inherit (config.system.build) toplevel;
+  cfg = config.boot.loader.nixos-stuff;
+  format = pkgs.formats.systemd { };
+
+  store = "/var/lib/nixos/boot";
+  boot = "/boot";
+  profiles = "${stores}/nix/var/nix/profiles";
+  profileName = "boot";
+  tries = 3;
+  instancesMax = 5;
+
+  transfer = {
+    Source = {
+      Type = "regular-file";
+      Path = profiles;
+      MatchPattern = "${profileName}-@v-link/entry.conf";
+    };
+    Target = {
+      Type = "regular-file";
+      Path = "/entries";
+      PathRelativeTo = "boot";
+      MatchPattern = lib.map (v: "nixos-generation_${v}.conf") [
+        "@v+@l-@d"
+        "@v+@l"
+        "@v"
+      ];
+      TriesLeft = tries;
+      TriesDone = 0;
+      InstancesMax = instancesMax;
+    };
+  };
+
+
+  entry = pkgs.runCommand "entry.conf"  {
+    # we don't want to copy $toplevel to the $BOOT partition, so discard context
+    options = builtins.unsafeDiscardStringContext (builtins.toString kernelParams);
+
+    kernel = "${config.boot.kernelPackages.kernel}/${config.boot.loader.kernelFile}";
+
+    # NOTE: must make sure that the underlying derivation has no references.
+    initrd  = "${config.system.build.initialRamdisk}/${config.system.boot.loader.initrdFile}";
+  } ''
+     mkdir -p $out
+     cat <<EOF > $out/entry.conf 
+     kernel $kernel
+     initrd $initrd 
+     options $options
+     EOF
+  '';
+
+
+  installHook = pkgs.writeShellApplication {
+    name = "install-bootloader";
+    runtimeInputs = [ pkgs.jq config.systemd.package ];
+    runtimeEnv = {
+    	STORE = store;
+	BOOT = boot;
+	ISNTANCES_MAX = instancesMax;
+    };
+    text = ''
+    	${builtins.readFile ./boot.sh}
+    '';
+  };
+in
+{
+
+  options.boot.loader.nixos-stuff = {
+    enable = lib.options.mkEnableOption "nixos-stuff bootloader";
+  };
+
+  config = lib.mkIf cfg.enable {
+    boot.loader.external = {
+      enable = true;
+      inherit installHook;
+    };
+
+  };
+}
