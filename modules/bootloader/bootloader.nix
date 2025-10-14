@@ -46,9 +46,17 @@ let
 
     # NOTE: must make sure that the underlying derivation has no references.
     initrd  = "${config.system.build.initialRamdisk}/${config.system.boot.loader.initrdFile}";
+
+    # When the title is not unique, falls back to title + version
+    # if that is not unique,  title + version + machine-id
+    # if that is not unique,  title + version + machine-id + filename
+    
+    # This means we do not need to dynamically generate entries titles at all.
+    # systemd-boot will take care of it.
   } ''
      mkdir -p $out
      cat <<EOF > $out/entry.conf 
+     title NixOS
      kernel $kernel
      initrd $initrd 
      options $options
@@ -62,7 +70,8 @@ let
     runtimeEnv = {
     	STORE = store;
 	BOOT = boot;
-	ISNTANCES_MAX = instancesMax;
+	ENTRY = entry;
+	INSTANCES_MAX = instancesMax;
     };
     text = ''
     	${builtins.readFile ./boot.sh}
