@@ -25,5 +25,4 @@ mkdir -p "$BOOT/nix"
 rsync --recursive --delete --progress "$STORE/nix/store" "$BOOT/nix"
 
 
-
-
+updatectl
