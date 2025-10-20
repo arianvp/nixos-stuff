@@ -15,8 +15,12 @@
 
   nixpkgs.config.allowUnfreePredicate = pkg: lib.elem (lib.getName pkg) [ "claude-code" ];
 
-  environment.variables.EDITOR = "nvim";
-
+  programs.neovim = {
+    enable = true;
+    defaultEditor = true;
+    viAlias = true;
+    vimAlias = true;
+  };
 
   users.users.arian = {
     isNormalUser = true;
@@ -25,7 +29,6 @@
     packages = [
       pkgs.git
       pkgs.nixfmt
-      pkgs.neovim
       pkgs.btop
       pkgs.nixd
       pkgs.go
