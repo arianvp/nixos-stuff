@@ -8,7 +8,6 @@ let
   cfg = config.boot.loader.nixos-stuff;
 
   store = "/var/lib/nixos/boot";
-  boot = "/boot";
   profiles = "${store}/nix/var/nix/profiles";
   profileName = "boot";
   tries = 3;
@@ -20,7 +19,7 @@ let
         # we don't want to copy $toplevel to the $BOOT partition, so discard context
         options = builtins.unsafeDiscardStringContext (builtins.toString config.boot.kernelParams);
 
-        kernel = "${config.boot.kernelPackages.kernel}/${config.boot.loader.kernelFile}";
+        kernel = "${config.boot.kernelPackages.kernel}/${config.system.boot.loader.kernelFile}";
 
         # NOTE: must make sure that the underlying derivation has no references.
         initrd = "${config.system.build.initialRamdisk}/${config.system.boot.loader.initrdFile}";
@@ -50,7 +49,7 @@ let
     ];
     runtimeEnv = {
       STORE = store;
-      BOOT = boot;
+      BOOT = "/boot";
       ENTRY = entry;
       INSTANCES_MAX = instancesMax;
     };
@@ -63,7 +62,7 @@ in
 
   options.boot.loader.nixos-stuff = {
     enable = lib.options.mkEnableOption "nixos-stuff bootloader";
-
+    boot = lib.mkOption { type = lib.types.str; default = "/boot"; };
   };
 
   config = lib.mkIf cfg.enable {
@@ -77,9 +76,9 @@ in
       };
       Target = {
         Type = "regular-file";
-        Path = "/entries";
-        PathRelativeTo = "boot";
-        MatchPattern = lib.map (v: "nixos-generation_${v}.conf") [
+        Path = "/boot/entries";
+        # PathRelativeTo = "boot";
+        MatchPattern = lib.map (v: "nixos-generation-${v}.conf") [
           "@v+@l-@d"
           "@v+@l"
           "@v"
