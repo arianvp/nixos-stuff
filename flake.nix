@@ -76,7 +76,7 @@
         };
       */
 
-      packages = unstable.lib.genAttrs [ "x86_64-linux" "aarch64-linux" "aarch64-darwin"] (
+      packages = unstable.lib.genAttrs [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ] (
         system:
         let
           pkgs = unstable.legacyPackages.${system}.extend (import ./overlays/spire.nix);
@@ -110,14 +110,18 @@
           spire-tpm = pkgs.testers.runNixOSTest {
             imports = [ ./tests/spire-tpm.nix ];
           };
+          bootloader = pkgs.testers.runNixOSTest {
+            imports = [ ./modules/bootloader/test.nix ];
+          };
         }
       );
 
-      nodes = (unstable.lib.evalModules {
-        modules = [
-          ./modules/nodes
-        ];
-      }).config.nodes;
+      nodes =
+        (unstable.lib.evalModules {
+          modules = [
+            ./modules/nodes
+          ];
+        }).config.nodes;
 
       nixosConfigurations =
         let
