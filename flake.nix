@@ -63,6 +63,7 @@
               ./overlays/fonts.nix
               ./overlays/neovim.nix
               ./overlays/spire.nix
+	      ./overlays/claude-code.nix
             ];
           };
       };
