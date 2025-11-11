@@ -33,23 +33,6 @@
   ];
 
   users.groups.nix-trusted-users = { };
-  users.users.picnoir = {
-    extraGroups = [ "nix-trusted-users" ];
-    isNormalUser = true;
-    openssh.authorizedKeys.keyFiles = [
-      (pkgs.fetchurl {
-        url = "https://codeberg.org/picnoir.keys";
-        hash = "sha256-ETw5Qm4hp/fMMCTOJR7IFpydUtkbVDosHPvHp09wJ/k=";
-      })
-    ];
-  };
-  users.users.raito = {
-    extraGroups = [ "wheel" ];
-    isNormalUser = true;
-    openssh.authorizedKeys.keys = [
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKiXXYkhRh+s7ixZ8rvG8ntIqd6FELQ9hh7HoaHQJRPU Thorkell"
-    ];
-  };
   users.users.m = {
     extraGroups = [ "nix-trusted-users" ];
     isNormalUser = true;
@@ -57,32 +40,6 @@
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC/HMAT/nOa8F5LrFebnG7wk1o/K0Rx1HdDoFYxvLSef root@p4"
     ];
   };
-  users.users.butz = {
-    isNormalUser = true;
-    extraGroups = [ "wheel" ];
-    openssh.authorizedKeys.keyFiles = [
-      (pkgs.fetchurl {
-        url = "https://github.com/willibutz.keys";
-        sha256 = "sha256-+VU7unfOQ2wxKSXlIW351wmpBHqwgFf1nct7A0jVlaI=";
-      })
-    ];
-  };
-  users.users.flokli = {
-    isNormalUser = true;
-    extraGroups = [ "wheel" ];
-    packages = [
-      pkgs.vim
-      pkgs.git
-      pkgs.btop
-      pkgs.tmux
-      pkgs.nix-output-monitor
-    ];
-    openssh.authorizedKeys.keys = [
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPTVTXOutUZZjXLB0lUSgeKcSY/8mxKkC0ingGK1whD2"
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE6a15p9HLSrawsMTd2UQGAiM7r7VdyrfSRyzwRYTgWT"
-    ];
-  };
-
   services.openssh.enable = true;
   services.openssh.settings.PasswordAuthentication = false;
 
