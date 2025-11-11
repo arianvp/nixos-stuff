@@ -117,12 +117,12 @@
         }
       );
 
-      nodes =
+      /*nodes =
         (unstable.lib.evalModules {
           modules = [
             ./modules/nodes
           ];
-        }).config.nodes;
+        }).config.nodes;*/
 
       nixosConfigurations =
         let
