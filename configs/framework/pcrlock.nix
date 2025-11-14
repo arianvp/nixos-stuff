@@ -26,9 +26,12 @@ in
     "systemd-pcrphase.service"
     "systemd-pcrphase-sysinit.service"
 
-    "systemd-pcrlock-file-system.service"
+    # "systemd-pcrlock-file-system.service"
     "systemd-pcrlock-firmware-code.service"
-    "systemd-pcrlock-firmware-config.service"
+
+    # TODO: Can not lock PCR1 as EFI_HANDOFF_TABLES event seems to change across boots.
+    # Probably caused by SMBIOS measurements done by Insyde firmware being non-deterministic.
+    # "systemd-pcrlock-firmware-config.service"
     "systemd-pcrlock-machine-id.service"
     "systemd-pcrlock-make-policy.service"
     "systemd-pcrlock-secureboot-authority.service"
