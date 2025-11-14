@@ -23,19 +23,14 @@
   boot.kernelModules = [ "kvm-intel" ];
   boot.extraModulePackages = [ ];
 
-  fileSystems."/" = {
-    device = "/dev/disk/by-uuid/17446d19-fb33-4929-8580-5a1424562aa7";
-    fsType = "btrfs";
-    options = [ "subvol=@" ];
-  };
+  boot.initrd.systemd.root = "gpt-auto";
 
-  boot.initrd.luks.devices."luks-31e89180-a13a-4afb-8b36-75d9dac50997".device =
-    "/dev/disk/by-uuid/31e89180-a13a-4afb-8b36-75d9dac50997";
+  # otherwise it won't find the luks partition
+  boot.initrd.luks.forceLuksSupportInInitrd = true;
 
-  fileSystems."/boot" = {
-    device = "/dev/disk/by-uuid/D967-6278";
-    fsType = "vfat";
-  };
+  # had to run sudo btrfs subvol set-default / too
+  # otherwise it won't mount the root partition
+  boot.initrd.supportedFilesystems = [ "btrfs" ];
 
   swapDevices = [ ];
 
