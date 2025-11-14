@@ -36,7 +36,7 @@
   # boot.kernelPackages = pkgs.linuxPackages_latest;
   # boot.loader.systemd-boot.enable = true;
   boot.lanzaboote.enable = true;
-  boot.lanzaboote.pkiBundle = "/etc/secureboot";
+  boot.lanzaboote.pkiBundle = "/var/lib/sbctl";
   boot.loader.efi.canTouchEfiVariables = true;
 
   boot.extraModprobeConfig = ''
@@ -57,7 +57,8 @@
     cntr
     neovim
     yubioath-flutter
-    zed-editor
+    # Wait until it builds
+    # zed-editor
     nix-output-monitor
   ];
 

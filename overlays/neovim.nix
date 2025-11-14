@@ -1,5 +1,5 @@
 self: super: {
-  neovim = super.neovim.override {
+  /*neovim = super.neovim.override {
     configure = {
       customRC = ''
         set expandtab
@@ -47,11 +47,7 @@ self: super: {
           buf_set_keymap('n', ']d', '<cmd>lua vim.lsp.diagnostic.goto_next()<CR>', opts)
           buf_set_keymap('n', '<space>q', '<cmd>lua vim.lsp.diagnostic.set_loclist()<CR>', opts)
           buf_set_keymap("n", "<space>f", "<cmd>lua vim.lsp.buf.formatting()<CR>", opts)
-
         end
-        require'lspconfig'.rust_analyzer.setup {
-          on_attach = on_attach
-        }
         EOF
       '';
       packages.myPackages = with self.vimPlugins; {
@@ -65,9 +61,8 @@ self: super: {
           vim-jsonnet
           vim-nix
           vim-terraform
-          vim-tmux-navigator
         ];
       };
     };
-  };
+  };*/
 }

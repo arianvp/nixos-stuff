@@ -1,10 +1,10 @@
 {
   description = "Arian's computers";
-  inputs.unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+  inputs.unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
   inputs.stable.url = "github:NixOS/nixpkgs/nixos-25.05";
   inputs.nixos-hardware.url = "github:NixOS/nixos-hardware";
   inputs.lanzaboote = {
-    url = "github:nix-community/lanzaboote/v0.4.2";
+    url = "github:nix-community/lanzaboote";
     inputs.nixpkgs.follows = "unstable";
   };
 
@@ -63,7 +63,6 @@
               ./overlays/fonts.nix
               ./overlays/neovim.nix
               ./overlays/spire.nix
-	      ./overlays/claude-code.nix
             ];
           };
       };
@@ -117,12 +116,14 @@
         }
       );
 
-      /*nodes =
+      /*
+        nodes =
         (unstable.lib.evalModules {
           modules = [
             ./modules/nodes
           ];
-        }).config.nodes;*/
+        }).config.nodes;
+      */
 
       nixosConfigurations =
         let
@@ -131,7 +132,6 @@
             inputs
             cgroup-exporter.nixosModules.default
             dnssd
-            direnv
             overlays
           ];
         in
