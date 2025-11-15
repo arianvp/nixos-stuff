@@ -5,7 +5,6 @@ We use lanzaboote for secure boot.
 
 We use `systemd-pcrlock` for unlocking the disk.
 
-Support for measured boot is still an open issue https://github.com/nix-community/lanzaboote/issues/348
 
 
 We lock against the firmware code (`systemd-pcrlock-firmware-code.service` is
@@ -23,5 +22,11 @@ boot automatically.
 Keys are stored in `/var/lib/sbctl` and were generated with `sudo sbctl create-keys`
 
 
+We have (for now) also enrolled Microsoft keys.
+
+TODO: fix BombShell https://eclypsium.com/blog/bombshell-the-signed-backdoor-hiding-in-plain-sight-on-framework-devices/
 
 
+Support for measured boot is still an open issue https://github.com/nix-community/lanzaboote/issues/348
+
+:
