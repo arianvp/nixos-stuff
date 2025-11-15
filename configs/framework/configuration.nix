@@ -8,6 +8,7 @@
     ../../modules/yggdrasil.nix
     ../../modules/tpm2.nix
     ./rice.nix
+    ./silent-boot.nix
   ];
 
   services.fwupd.enable = true;
