@@ -2,7 +2,7 @@
   description = "Arian's computers";
   inputs.unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
   inputs.stable.url = "github:NixOS/nixpkgs/nixos-25.05";
-  inputs.nixos-hardware.url = "github:NixOS/nixos-hardware";
+  inputs.nixos-hardware.url = "github:arianvp/nixos-hardware?ref=altrad8ud-1l2t";
   inputs.lanzaboote = {
     url = "github:nix-community/lanzaboote";
     inputs.nixpkgs.follows = "unstable";
@@ -150,7 +150,10 @@
             ];
           };
           altra = unstable.lib.nixosSystem {
-            modules = modules ++ [ ./configs/altra/configuration.nix ];
+            modules = modules ++ [
+              nixos-hardware.nixosModules.asrock-rack-altrad8ud-1l2t
+              ./configs/altra/configuration.nix
+            ];
           };
           arianvp-me = unstable.lib.nixosSystem {
             modules = modules ++ [
