@@ -28,7 +28,6 @@ let
 in
 
 {
-  security.audit.enable = true;
 
   # Don't allow any  binaries outside of nix store
   # fileSystems."/".options = [ "nosuid" "nodev" "noexec" ];
