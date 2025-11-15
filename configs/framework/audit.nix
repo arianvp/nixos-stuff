@@ -28,7 +28,6 @@ let
 in
 
 {
-  boot.kernelParams = [ "audit=1" ];
   security.audit.enable = true;
 
   # Don't allow any  binaries outside of nix store
