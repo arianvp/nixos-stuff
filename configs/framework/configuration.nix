@@ -7,6 +7,7 @@
     ../../modules/vmspawn.nix
     ../../modules/yggdrasil.nix
     ../../modules/tpm2.nix
+    ../../modules/ssh-keys.nix
     ./rice.nix
     ./silent-boot.nix
   ];
