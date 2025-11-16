@@ -7,7 +7,6 @@
     ../../modules/vmspawn.nix
     ../../modules/yggdrasil.nix
     ../../modules/tpm2.nix
-    ../../modules/ssh-keys.nix
     ./rice.nix
     ./silent-boot.nix
   ];
@@ -24,8 +23,6 @@
 
   services.tailscale.enable = true;
   programs.mtr.enable = true;
-
-
 
 
   boot.initrd.systemd.enable = true;
@@ -67,14 +64,7 @@
   users.users.arian = {
     isNormalUser = true;
     createHome = true;
-    extraGroups = [
-      "wheel"
-      "tss"
-    ];
-    openssh.authorizedKeys.keys = [
-      "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBMaGVuvE+aNyuAu0E9m5scVhmnVgAutNqridbMnc261cHQwecih720LCqDwTgrI3zbMwixBuU422AK0N81DyekQ="
-      "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBGVpzxBOwLIuy/2jjNoec7YfRHtwImf8688srJXaIRiyA4ye6/Ik8lWDTzzB4+V3rfekK0cx7w5gCOrKaqDRvVc="
-    ];
+    extraGroups = [ "wheel" "tss" ];
   };
 
   services.fprintd.enable = false;
