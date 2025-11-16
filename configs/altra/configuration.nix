@@ -7,6 +7,7 @@
     ./hardware-configuration.nix
     ./spire.nix
     ./prometheus.nix
+    ../../modules/ssh.nix
     ../../modules/yggdrasil.nix
     ../../modules/tailscale.nix
     ../../modules/prometheus.nix

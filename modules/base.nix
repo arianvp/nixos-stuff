@@ -9,9 +9,9 @@
     ./dnssd.nix
     ./monitoring.nix
     ./nix.nix
+    ./ssh.nix
   ];
 
-  services.openssh.settings.PasswordAuthentication = false;
 
   nixpkgs.config.allowUnfreePredicate = pkg: lib.elem (lib.getName pkg) [ "claude-code" ];
 

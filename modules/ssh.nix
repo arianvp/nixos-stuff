@@ -7,5 +7,6 @@ let
   ];
 in
 {
+  services.openssh.settings.PasswordAuthentication = false;
   services.openssh.settings.TrustedUserCAKeys = "${caKeys}";
 }
