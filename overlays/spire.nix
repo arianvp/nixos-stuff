@@ -22,17 +22,6 @@ final: prev: {
           rev = "socket-activation";
           hash = "sha256-t3AvqylZnT6/k7FI/XEv6BD2z7VWYkde0Ei1V3K5nck=";
         };
-
-        preCheck = null;
-
-        subPackages = null;
-        excludedPackages = null;
-
-        buildInputs = [ prev.openssl ];
-
-        # Needed for github.co/google/go-tpm-tools/simulator  which contains non-go files that `go mod vendor` strips
-        proxyVendor = true;
-        vendorHash = "sha256-Mq3wR2kCdiyaaWMDCDjSN/KlKi6vXwXvo6mNptI4BYc=";
       });
 
   spire-controller-manager = final.callPackage ../packages/spire-controller-manager/package.nix { };
