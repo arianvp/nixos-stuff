@@ -33,9 +33,12 @@
   time.timeZone = "Europe/Amsterdam";
   networking.firewall.enable = true;
   networking.firewall.allowedTCPPorts = [
+    80
     443
     22
   ];
+
+  services.nginx.enable = true;
 
   users.groups.nix-trusted-users = { };
   users.users.m = {
