@@ -18,6 +18,10 @@
   services.yggdrasil.persistentKeys = true;
   security.tpm2.enable = true;
 
+  # NOTE: temporary measure until we remove the need for sudo
+  # We just mint root user certs instead
+  security.sudo.wheelNeedsPassword = false;
+
   networking.hostName = "altra";
 
   # Use the systemd-boot EFI boot loader.
@@ -39,6 +43,13 @@
     isNormalUser = true;
     openssh.authorizedKeys.keys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC/HMAT/nOa8F5LrFebnG7wk1o/K0Rx1HdDoFYxvLSef root@p4"
+    ];
+  };
+  users.users.flokli = {
+    isNormalUser = true;
+    extraGroups = [
+      "wheel"
+      "nix-trusted-users"
     ];
   };
   services.openssh.enable = true;

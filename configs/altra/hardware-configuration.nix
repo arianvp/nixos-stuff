@@ -75,6 +75,12 @@
       Name = "wg0";
     };
     address = [ "2a00:5880:1404:103::/64" ];
+    routes = [
+      {
+        Gateway = "2a00:5880:1404:101:cafe:cafe:cafe:cafe";
+        GatewayOnLink = "yes";
+      }
+    ];
   };
 
   systemd.network.netdevs."80-wg0" = {
@@ -89,7 +95,7 @@
     wireguardPeers = [
       {
         PublicKey = "0gBdqxLAMvm9sgGP5ujGRFE6rHDko8vl5UnBm2q58y4=";
-        Endpoint = "hardin.alternativebit.fr";
+        Endpoint = "hardin.alternativebit.fr:51818";
         PersistentKeepalive = 15;
         AllowedIPs = "0.0.0.0/0,::/0";
       }
