@@ -4,22 +4,10 @@
 {
   config,
   lib,
-  pkgs,
-  modulesPath,
   ...
 }:
 
 {
-  imports = [ ];
-
-  boot.initrd.availableKernelModules = [
-    "xhci_pci"
-    "usb_storage"
-    "nvme"
-  ];
-  boot.initrd.kernelModules = [ ];
-  boot.kernelModules = [ ];
-  boot.extraModulePackages = [ ];
 
   systemd.repart.partitions = {
     "00-esp" = {
