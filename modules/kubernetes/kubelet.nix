@@ -2,7 +2,9 @@
 {
   systemd.services.kubelet = {
     serviceConfig = {
-      Type = "exec";
+      wantedBy = [ "multi-user.target" ];
+      Type = "notify";
+      # TODO: enable watchdog
       ExecStart = "${pkgs.kubernetes}/bin/kubelet";
     };
   };
