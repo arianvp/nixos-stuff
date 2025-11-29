@@ -5,6 +5,7 @@
 {
   imports = [
     ./hardware-configuration.nix
+    ./network.nix
     ./spire.nix
     ./prometheus.nix
     ../../modules/ssh.nix
