@@ -10,20 +10,26 @@
     }
     {
 
-      systemd.network.networks.bmc = {
-        matchConfig.Name = "usb0";
-        networkConfig = {
-          LinkLocalAddressing = "yes";
-          MulticastDNS = "yes";
+      systemd.network = {
+        networks.bmc = {
+          matchConfig.Name = "usb0";
+          networkConfig = {
+            LinkLocalAddressing = "yes";
+            MulticastDNS = "yes";
+          };
         };
-      };
+        networks.eth = {
+          # TODO: bonding
+          matchConfig.Name = "enP3p3s0f0";
+          networkConfig = {
+            DHCP = "ipv6";
+            MulticastDNS = "yes";
+          };
+        };
 
-      systemd.network.networks.eth = {
-        # TODO: bonding
-        matchConfig.Name = "enP3p3s0f0";
-        networkConfig = {
-          DHCP = "yes";
-          MulticastDNS = "yes";
+        netdevs.kubebridge = {
+          Name = "kubebridge";
+          Kind = "bridge";
         };
       };
 
