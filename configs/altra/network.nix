@@ -26,13 +26,7 @@
             MulticastDNS = "yes";
           };
         };
-
-        netdevs.kubebridge = {
-          Name = "kubebridge";
-          Kind = "bridge";
-        };
       };
-
     }
     (lib.mkIf config.networking.wg.enable {
       systemd.network.networks.wg0 = {
