@@ -15,7 +15,7 @@ in
   };
 
 
-  environment.etc."ssh/authorized_principals.d/root" = pkgs.writeText "root" ''
+  environment.etc."ssh/authorized_principals.d/root".text = ''
     arian
     flokli
   '';
