@@ -7,6 +7,11 @@ let
   ];
 in
 {
+
+  /*programs.ssh.extraConfig = ''
+    CertificateFile ${../keys/yk-black/id_ed25519_sk_rk_arian-cert.pub}
+    CertificateFile ${../keys/yk-yellow/id_ed25519_sk_rk_arian-cert.pub}
+  '';*/
   services.openssh.settings = {
     PasswordAuthentication = false;
     TrustedUserCAKeys = "${caKeys}";
@@ -20,4 +25,12 @@ in
     flokli
   '';
 
+
+  environment.etc."ssh/authorized_principals.d/arian".text = ''
+    arian
+  '';
+
+  environment.etc."ssh/authorized_principals.d/flokli".text = ''
+    flokli
+  '';
 }
