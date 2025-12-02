@@ -20,17 +20,29 @@ in
   };
 
 
-  environment.etc."ssh/authorized_principals.d/root".text = ''
-    arian
-    flokli
-  '';
+  # Setting mode forces NixOS to copy the file instead of symlinking to /nix/store.
+  # Without this, sshd rejects the file with:
+  # "Ignored authorized principals: bad ownership or modes for directory /nix/store"
+  # because /nix/store is group-writable (1775) which violates sshd's strict path checks.
+  environment.etc."ssh/authorized_principals.d/root" = {
+    text = ''
+      arian
+      flokli
+    '';
+    mode = "0644";
+  };
 
+  environment.etc."ssh/authorized_principals.d/arian" = {
+    text = ''
+      arian
+    '';
+    mode = "0644";
+  };
 
-  environment.etc."ssh/authorized_principals.d/arian".text = ''
-    arian
-  '';
-
-  environment.etc."ssh/authorized_principals.d/flokli".text = ''
-    flokli
-  '';
+  environment.etc."ssh/authorized_principals.d/flokli" = {
+    text = ''
+      flokli
+    '';
+    mode = "0644";
+  };
 }
