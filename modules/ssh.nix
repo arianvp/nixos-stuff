@@ -11,7 +11,7 @@ in
     PasswordAuthentication = false;
     TrustedUserCAKeys = "${caKeys}";
     AuthorizedPrincipalsFile = "/etc/ssh/authorized_principals.d/%u";
-    RevokedKeys = ../keys/revoked_keys;
+    RevokedKeys = "${../keys/revoked_keys}";
   };
 
 
