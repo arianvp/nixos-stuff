@@ -7,6 +7,17 @@ let
   ];
 in
 {
-  services.openssh.settings.PasswordAuthentication = false;
-  services.openssh.settings.TrustedUserCAKeys = "${caKeys}";
+  services.openssh.settings = {
+    PasswordAuthentication = false;
+    TrustedUserCAKeys = "${caKeys}";
+    AuthorizedPrincipalsFile = "/etc/ssh/authorized_principals.d/%u";
+    RevokedKeys = ../keys/revoked_keys;
+  };
+
+
+  environment.etc."ssh/authorized_principals.d/root" = pkgs.writeText "root" ''
+    arian
+    flokli
+  '';
+
 }
