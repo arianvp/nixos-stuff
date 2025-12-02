@@ -8,10 +8,12 @@ let
 in
 {
 
-  /*programs.ssh.extraConfig = ''
+  programs.ssh.extraConfig = ''
     CertificateFile ${../keys/yk-black/id_ed25519_sk_rk_arian-cert.pub}
     CertificateFile ${../keys/yk-yellow/id_ed25519_sk_rk_arian-cert.pub}
-  '';*/
+    # run ssh-keygen -K to download
+    IdentityFile ~/.ssh/id_ed25519_sk_rk_arian
+  '';
   services.openssh.settings = {
     PasswordAuthentication = false;
     TrustedUserCAKeys = "${caKeys}";
