@@ -12,6 +12,10 @@
     ./ssh.nix
   ];
 
+  documentation.man = {
+    enable = true;
+    generateCaches = true;
+  };
 
   nixpkgs.config.allowUnfreePredicate = pkg: lib.elem (lib.getName pkg) [ "claude-code" ];
 
