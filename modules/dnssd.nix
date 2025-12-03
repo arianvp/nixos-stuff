@@ -64,4 +64,5 @@ in
     stopIfChanged = false;
     reloadTriggers = lib.mapAttrsToList (_: v: config.environment.etc.${v.path}.source) cfg.services;
   };
+  config.networking.firewall.allowedUDPPorts = [ 5353 ]; # mDNS
 }
