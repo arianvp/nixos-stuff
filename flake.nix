@@ -2,7 +2,7 @@
   description = "Arian's computers";
   inputs.unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
   inputs.stable.url = "github:NixOS/nixpkgs/nixos-25.05";
-  inputs.nixos-hardware.url = "github:arianvp/nixos-hardware?ref=altrad8ud-1l2t";
+  inputs.nixos-hardware.url = "github:NixOS/nixos-hardware";
   inputs.lanzaboote = {
     url = "github:nix-community/lanzaboote";
     inputs.nixpkgs.follows = "unstable";
