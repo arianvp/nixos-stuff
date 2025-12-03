@@ -9,6 +9,7 @@
     ./spire.nix
     ./prometheus.nix
     ../../modules/ssh.nix
+    ../../modules/monitoring.nix
     ../../modules/yggdrasil.nix
     ../../modules/tailscale.nix
     ../../modules/prometheus.nix
