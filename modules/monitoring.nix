@@ -16,7 +16,7 @@
   systemd.dnssd.services = {
     node-exporter = {
       name = "%H";
-      type = "_node_exporter._ctp";
+      type = "_node_exporter._tcp";
       port = config.services.prometheus.exporters.node.port;
     };
     systemd-exporter = {
