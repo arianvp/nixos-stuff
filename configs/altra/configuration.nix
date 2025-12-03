@@ -16,6 +16,9 @@
     # ../../websites/nixos.sh
   ];
 
+  # TODO: Move into something more generic?
+  services.openssh.enable = true;
+
   services.yggdrasil.persistentKeys = true;
   security.tpm2.enable = true;
 
@@ -23,16 +26,26 @@
   # We just mint root user certs instead
   security.sudo.wheelNeedsPassword = false;
 
+  # TODO: Move to the new systemd hostname generation stuff from 259?
   networking.hostName = "altra";
+  system.name = "altra";
 
   # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
   boot.loader.timeout = 20;
   boot.loader.efi.canTouchEfiVariables = true;
   boot.initrd.systemd.enable = true;
+
+  # TODO: Move into something more generic?
   services.getty.autologinUser = "arian";
+
+  # TODO: Move into something more generic?
   time.timeZone = "Europe/Amsterdam";
+
+  # TODO: Move to base?
   networking.firewall.enable = true;
+
+  # TODO: Move to specific modules?
   networking.firewall.allowedTCPPorts = [
     80
     443
@@ -59,10 +72,12 @@
   environment.systemPackages = [
     pkgs.kitty.terminfo
   ];
+
+  # TODO: Do we need this?
   programs.zsh.enable = true;
 
-  system.name = "altra";
 
+  # TODO: Move to builder role?
   nix.settings.system-features = [
     "nixos-test"
     "benchmark"
