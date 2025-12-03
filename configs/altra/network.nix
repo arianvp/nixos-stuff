@@ -22,7 +22,7 @@
           # TODO: bonding
           matchConfig.Name = "enP3p3s0f0";
           networkConfig = {
-            DHCP = "ipv6";
+            DHCP = "yes";
             MulticastDNS = "yes";
           };
         };
