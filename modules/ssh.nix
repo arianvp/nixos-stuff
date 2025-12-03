@@ -16,6 +16,9 @@ in
     # run ssh-keygen -K to download
     IdentityFile ~/.ssh/id_ed25519_sk_rk_arian
   '';
+
+  services.openssh.enable = true;
+
   services.openssh.settings = {
     PasswordAuthentication = false;
     TrustedUserCAKeys = "${caKeys}";
