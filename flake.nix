@@ -62,6 +62,7 @@
               ./overlays/fonts.nix
               ./overlays/neovim.nix
               ./overlays/spire.nix
+              ./overlays/openssh-audit.nix
             ];
           };
       };
