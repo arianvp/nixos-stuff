@@ -28,8 +28,7 @@
 
   users.users.arian = {
     isNormalUser = true;
-    extraGroups = [ "wheel" ];
-
+    extraGroups = [ "wheel" "nix-trusted-users" ];
     packages = [
       pkgs.git
       pkgs.nixfmt
