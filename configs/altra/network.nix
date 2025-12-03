@@ -11,6 +11,7 @@
     {
 
       systemd.network = {
+
         networks.bmc = {
           matchConfig.Name = "usb0";
           networkConfig = {
@@ -18,14 +19,38 @@
             MulticastDNS = "yes";
           };
         };
-        networks.eth = {
-          # TODO: bonding
-          matchConfig.Name = "enP3p3s0f0";
+
+        netdevs."10-bond0" = {
+          netdevConfig = {
+            Name = "bond0";
+            Kind = "bond";
+          };
+          # TODO: My switch doesn't support LACP
+          bondConfig = {
+            Mode = "active-backup";
+            MIIMonitorSec = "100ms";
+          };
+        };
+
+        networks."20-bond0-slaves" = {
+          matchConfig = {
+            Driver = "ixgbe";
+            Property = [
+              "ID_MODEL_ID=0x1563"
+              "ID_VENDOR_ID=0x8086"
+            ];
+          };
+          networkConfig.Bond = "bond0";
+        };
+
+        networks."30-bond0" = {
+          matchConfig.Name = "bond0";
           networkConfig = {
             DHCP = "yes";
             MulticastDNS = "yes";
           };
         };
+
       };
     }
     (lib.mkIf config.networking.wg.enable {
