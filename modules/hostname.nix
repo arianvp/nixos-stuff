@@ -8,13 +8,7 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    assertions = [
-      {
-        assertion = config.networking.hostName == "";
-        message = "networking.hostName cannot be set when networking.dynamicHostName is enabled. This module manages the hostname automatically.";
-      }
-    ];
-
+    networking.hostName = "";
     environment.etc.hostname.text = "${config.system.name}-????-????";
   };
 }

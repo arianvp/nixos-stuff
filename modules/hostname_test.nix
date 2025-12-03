@@ -7,7 +7,6 @@
 
     system.name = "testmachine";
     networking.dynamicHostName.enable = true;
-    networking.hostName = lib.mkForce "";
   };
 
   testScript = ''
