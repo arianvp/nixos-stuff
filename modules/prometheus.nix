@@ -15,19 +15,19 @@
     scrapeConfigs = [
       {
         job_name = "cgroup";
-        dns_sd_configs = [ { names = [ "cgroup-exporter._http._tcp.local" ]; } ];
+        dns_sd_configs = [ { names = [ "_cgroup_exporter._sub._http._tcp.local" ]; } ];
       }
       {
         job_name = "node";
-        dns_sd_configs = [ { names = [ "node-exporter._http._tcp.local" ]; } ];
+        dns_sd_configs = [ { names = [ "_node_exporter._sub._http._tcp.local" ]; } ];
       }
       {
         job_name = "smartctl";
-        dns_sd_configs = [ { names = [ "smartctl-exporter._http._tcp.local" ]; } ];
+        dns_sd_configs = [ { names = [ "_smartctl_exporter._sub._http._tcp.local" ]; } ];
       }
       {
         job_name = "systemd";
-        dns_sd_configs = [ { names = [ "systemd-exporter._http._tcp.local" ]; } ];
+        dns_sd_configs = [ { names = [ "_systemd_exporter._sub._http._tcp.local" ]; } ];
       }
       {
         job_name = "prometheus";
