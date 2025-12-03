@@ -8,6 +8,8 @@
     port = config.services.prometheus.port;
   };
 
+  networking.firewall.allowedTCPPorts = [ config.services.prometheus.port ];
+
   services.prometheus = {
     enable = true;
     alertmanagers = [ { dns_sd_configs = [ { names = [ "alertmanager._http._tcp.local" ]; } ]; } ];
