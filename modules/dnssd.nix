@@ -41,7 +41,7 @@ let
         path = "systemd/dnssd/${name}.dnssd";
         text = ''
           [Service]
-          Name=${name}
+          Name=${config.name}
           Type=${config.type}
           Port=${toString config.port}
         '';
