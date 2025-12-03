@@ -9,7 +9,6 @@
   imports = [
     (modulesPath + "/virtualisation/digital-ocean-config.nix")
     ./network.nix
-    ../../modules/spire/agent.nix
   ];
 
   system.stateVersion = "25.05";
@@ -63,12 +62,6 @@
   security.acme.defaults.email = "arian.vanputten@gmail.com";
   security.acme.acceptTerms = true;
 
-  users.users.root.openssh.authorizedKeys.keyFiles = [
-    (pkgs.fetchurl {
-      url = "https://github.com/arianvp.keys";
-      sha256 = "sha256-HyJKxLYTQC4ZG9Xh91bCUVzkC1TBzvFkZR1XqT7aD7o=";
-    })
-  ];
   nixpkgs.hostPlatform = {
     system = "x86_64-linux";
   };

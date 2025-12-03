@@ -41,23 +41,20 @@
 
   services.nginx.enable = true;
 
-  users.groups.nix-trusted-users = { };
   users.users.m = {
     extraGroups = [ "nix-trusted-users" ];
     isNormalUser = true;
-    openssh.authorizedKeys.keys = [
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC/HMAT/nOa8F5LrFebnG7wk1o/K0Rx1HdDoFYxvLSef root@p4"
-    ];
   };
+
+  users.users.arian = {
+    isNormalUser = true;
+    extraGroups = [ "nix-trusted-users" "wheel" ];
+  };
+
   users.users.flokli = {
     isNormalUser = true;
-    extraGroups = [
-      "wheel"
-      "nix-trusted-users"
-    ];
+    extraGroups = [ "nix-trusted-users" ];
   };
-  services.openssh.enable = true;
-  services.openssh.settings.PasswordAuthentication = false;
 
   environment.systemPackages = [
     pkgs.kitty.terminfo
@@ -66,12 +63,6 @@
 
   system.name = "altra";
 
-  nix.settings.trusted-users = [ "@wheel" ];
-  nix.settings.experimental-features = [
-    "nix-command"
-    "flakes"
-    "fetch-closure"
-  ];
   nix.settings.system-features = [
     "nixos-test"
     "benchmark"

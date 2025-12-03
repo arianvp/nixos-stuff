@@ -40,7 +40,6 @@
       overlays.spire = import ./overlays/spire.nix;
 
       nixosModules = {
-        base = ./modules/base.nix;
         cachix = ./modules/cachix.nix;
         direnv = ./modules/direnv.nix;
         diff = ./modules/diff.nix;
@@ -171,10 +170,9 @@
       nixosConfigurations =
         let
           modules = with self.nixosModules; [
-            base
             inputs
-            cgroup-exporter.nixosModules.default
             dnssd
+            cgroup-exporter.nixosModules.default
             overlays
           ];
         in

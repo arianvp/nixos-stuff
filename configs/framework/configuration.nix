@@ -4,6 +4,7 @@
     ./hardware-configuration.nix
     ./pcrlock.nix
     ./audit.nix
+    ../../modules/base-interactive.nix
     ../../modules/vmspawn.nix
     ../../modules/yggdrasil.nix
     ../../modules/tpm2.nix
