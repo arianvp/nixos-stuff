@@ -54,7 +54,6 @@
   networking.firewall.allowedTCPPorts = [
     80
     443
-    22
   ];
 
   services.nginx.enable = true;
