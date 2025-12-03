@@ -11,6 +11,7 @@
 
     # TODO: something better
     ../../modules/base-interactive.nix
+    ../../modules/hostname.nix
 
     ../../modules/ssh.nix
     ../../modules/monitoring.nix
@@ -31,8 +32,7 @@
   # We just mint root user certs instead
   security.sudo.wheelNeedsPassword = false;
 
-  # TODO: Move to the new systemd hostname generation stuff from 259?
-  networking.hostName = "altra";
+  networking.dynamicHostName.enable = true;
   system.name = "altra";
 
   # Use the systemd-boot EFI boot loader.
