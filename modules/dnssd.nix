@@ -23,6 +23,10 @@ let
         type = lib.mkOption {
           type = lib.types.str;
         };
+        subType = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+        };
         port = lib.mkOption {
           type = lib.types.int;
         };
@@ -43,6 +47,7 @@ let
           [Service]
           Name=${config.name}
           Type=${config.type}
+          ${lib.optionalString (config.subType != null) "SubType=${config.subType}"}
           Port=${toString config.port}
         '';
       };
