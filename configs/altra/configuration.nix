@@ -8,6 +8,10 @@
     ./network.nix
     ./spire.nix
     ./prometheus.nix
+
+    # TODO: something better
+    ../../modules/base-interactive.nix
+
     ../../modules/ssh.nix
     ../../modules/monitoring.nix
     ../../modules/yggdrasil.nix
