@@ -16,22 +16,22 @@
   systemd.dnssd.services = {
     node-exporter = {
       name = "%H";
-      type = "_node_exporter._tcp";
+      type = "_node-exporter._tcp";
       port = config.services.prometheus.exporters.node.port;
     };
     systemd-exporter = {
       name = "%H";
-      type = "_systemd_exporter._tcp";
+      type = "_systemd-exporter._tcp";
       port = config.services.prometheus.exporters.systemd.port;
     };
     cgroup-exporter = {
       name = "%H";
-      type = "_cgroup_exporter._tcp";
+      type = "_cgroup-exporter._tcp";
       port = config.services.prometheus.exporters.cgroup.port;
     };
     smartctl-exporter = {
       name = "%H";
-      type = "_cgroup_exporter._tcp";
+      type = "_cgroup-exporter._tcp";
       port = config.services.prometheus.exporters.smartctl.port;
     };
   };
