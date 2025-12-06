@@ -99,6 +99,13 @@ in
     };
   };
 
+  systemd.services.kube-scheduler = {
+  };
+
+  systemd.services.kube-controller-manager = {
+
+  };
+
   systemd.services.kube-apiserver =
 
     let
@@ -115,6 +122,9 @@ in
         # The default; but conceptually wrong when the issuer is external.
         # TODO: change to the cluster api server address in the future
         api-audiences = [ service-account-issuer ];
+
+        bind-address = "::";
+        # advertise-address = ; auto-detected
 
         # TODO: Authentication
         # TODO: Authorization
