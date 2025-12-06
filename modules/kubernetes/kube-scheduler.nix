@@ -1,0 +1,6 @@
+{ ... }:
+
+{
+  systemd.services.kube-scheduler = {
+  };
+}
