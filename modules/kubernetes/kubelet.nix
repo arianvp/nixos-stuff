@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 
 let
   format = pkgs.formats.yaml { };
@@ -20,27 +20,29 @@ let
     #
 
     # authentication = {
-      # x509 = {
-        # clientCAFile = "";
-      # };
-      # webhook = {
-        /* bool enabled allows bearer token authentication backed by the
-        tokenreviews.authentication.k8s.io API. */
-       # enabled = false;
-        # cacheTTL
-      # };
-      # anonymous = {
-        /*
-        bool enabled allows anonymous requests to the kubelet server. Requests
-        that are not rejected by another authentication method are treated as
-        anonymous requests. Anonymous requests have a username of
-        system:anonymous, and a group name of system:unauthenticated.
-        */
-        # enabled = false;
-      # };
+    # x509 = {
+    # clientCAFile = "";
+    # };
+    # webhook = {
+    /*
+      bool enabled allows bearer token authentication backed by the
+      tokenreviews.authentication.k8s.io API.
+    */
+    # enabled = false;
+    # cacheTTL
+    # };
+    # anonymous = {
+    /*
+      bool enabled allows anonymous requests to the kubelet server. Requests
+      that are not rejected by another authentication method are treated as
+      anonymous requests. Anonymous requests have a username of
+      system:anonymous, and a group name of system:unauthenticated.
+    */
+    # enabled = false;
+    # };
     # };
     # authorization = {
-      # mode  = "AlwaysEnabled|Webhook"; SubjectAccessReview API or not?
+    # mode  = "AlwaysEnabled|Webhook"; SubjectAccessReview API or not?
     # };
 
     # cluster.local is not RFC compliant and interferes with our network's mDNS
@@ -56,20 +58,16 @@ let
     # TODO: is this correct?
     resolvConf = "/run/systemd/resolve/resolv.conf";
 
-
     containerRuntimeEndpoint = "/run/this-would-be-a-cri-if-we-had-one.sock";
   };
 
   /*
+    For my understanding:
 
-  For my understanding:
-
-  --bootstrap-kubeconfig is the kubeconfig used to talk to the apiserver initially.
-  It is used to request a certificate from the apiserver.
-  On success, a new kubeconfig will be written to --kubeconfig
-
+    --bootstrap-kubeconfig is the kubeconfig used to talk to the apiserver initially.
+    It is used to request a certificate from the apiserver.
+    On success, a new kubeconfig will be written to --kubeconfig
   */
-
 
   kubeletConfig = format.generate "config.yaml" settings;
 in
@@ -87,21 +85,32 @@ in
     };
   };
 
-  systemd.services.kube-apiserver = {
-    wantedBy = [ "multi-user.target" ];
+  systemd.services.kube-apiserver =
 
-    # Fixes: Unable to find suitable network address.error='no default routes
-    # found in \"/proc/net/route\" or \"/proc/net/ipv6_route\"'. Try to set the
-    # AdvertiseAddress directly or provide a valid BindAddress to fix this.
-    requires = [ "network-online.target" ];
-    after = [ "network-online.target" ];
+    let
+      args = lib.cli.toGNUCommandLineShell { } {
+        etcd-servers = "http://localhost:2379";
+        service-account-issuer = "https://spire.nixos.sh";
+        # Work without feature gate? lets see
+        service-account-signing-endpoint = "/run/signing.sock";
+      };
+    in
 
-    serviceConfig = {
-      Type = "notify";
-      ExecStart ="${pkgs.kubernetes}/bin/kube-apiserver";
-      RuntimeDirectory = "kubernetes";
+    {
+      wantedBy = [ "multi-user.target" ];
+
+      # Fixes: Unable to find suitable network address.error='no default routes
+      # found in \"/proc/net/route\" or \"/proc/net/ipv6_route\"'. Try to set the
+      # AdvertiseAddress directly or provide a valid BindAddress to fix this.
+      requires = [ "network-online.target" ];
+      after = [ "network-online.target" ];
+
+      serviceConfig = {
+        Type = "notify";
+        ExecStart = "${pkgs.kubernetes}/bin/kube-apiserver ${args}";
+        RuntimeDirectory = "kubernetes";
+      };
     };
-  };
 
   systemd.services.kubelet = {
     wantedBy = [ "multi-user.target" ];
