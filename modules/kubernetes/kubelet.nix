@@ -70,7 +70,7 @@ let
     # TODO: is this correct?
     resolvConf = "/run/systemd/resolve/resolv.conf";
 
-    containerRuntimeEndpoint = "/run/this-would-be-a-cri-if-we-had-one.sock";
+    containerRuntimeEndpoint = "unix:///var/run/crio/crio.sock";
 
     # kubeconfig = format.generate "kubeconfig.yaml" kubeconfigSettings;
   };
