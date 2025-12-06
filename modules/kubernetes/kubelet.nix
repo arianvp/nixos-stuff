@@ -80,6 +80,7 @@ in
   systemd.services.etcd = {
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
+      Type = "notify";
       StateDirectory = "etcd";
       ExecStart = "${pkgs.etcd}/bin/etcd --name %H --data-dir $STATE_DIRECTORY";
     };
@@ -88,6 +89,7 @@ in
   systemd.services.kube-apiserver = {
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
+      Type = "notify";
       ExecStart ="${pkgs.kubernetes}/bin/kube-apiserver";
       RuntimeDirectory = "kubernetes";
     };
