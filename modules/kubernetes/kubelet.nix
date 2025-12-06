@@ -77,6 +77,7 @@ in
 {
 
   # TODO: Configure with config file and best practises
+  # TODO: not localhost
   systemd.services.etcd = {
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
@@ -88,6 +89,13 @@ in
 
   systemd.services.kube-apiserver = {
     wantedBy = [ "multi-user.target" ];
+
+    # Fixes: Unable to find suitable network address.error='no default routes
+    # found in \"/proc/net/route\" or \"/proc/net/ipv6_route\"'. Try to set the
+    # AdvertiseAddress directly or provide a valid BindAddress to fix this.
+    requires = [ "network-online.target" ];
+    after = [ "network-online.target" ];
+
     serviceConfig = {
       Type = "notify";
       ExecStart ="${pkgs.kubernetes}/bin/kube-apiserver";
