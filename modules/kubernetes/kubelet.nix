@@ -28,6 +28,9 @@ let
       webhook.enabled = false;
     };
 
+    # TODO set to "Webhook"
+    authorization.mode = "AlwaysAllow";
+
     # authentication = {
     # x509 = {
     # clientCAFile = "";
