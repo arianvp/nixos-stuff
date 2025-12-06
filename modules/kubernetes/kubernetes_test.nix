@@ -2,7 +2,7 @@
   name = "kubelet";
   nodes.foo = {
     imports = [
-      ./kubelet.nix
+      ./kubernetes.nix
     ];
   };
 
