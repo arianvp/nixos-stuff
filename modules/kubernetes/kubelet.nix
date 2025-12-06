@@ -115,6 +115,7 @@ in
 
       serviceConfig = {
         Type = "notify";
+        WatchdogSec = "30s";
         # TODO: Key persistence or out-source to SPIRE
         ExecStartPre = "${pkgs.openssl}/bin/openssl ecparam -genkey -name prime256v1 -out /run/kubernetes/service-account.key";
         ExecStart = "${pkgs.kubernetes}/bin/kube-apiserver ${args}";
@@ -127,6 +128,7 @@ in
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
       Type = "notify";
+      WatchdogSec = "30s";
       StateDirectory = "kubelet";
       # TODO: enable watchdog
       ExecStart = "${pkgs.kubernetes}/bin/kubelet --config ${kubeletConfig}";
