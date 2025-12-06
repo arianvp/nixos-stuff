@@ -25,6 +25,7 @@ let
     # TODO: Something better
     authentication = {
       anonymous.enabled = true;
+      webhook.enabled = false;
     };
 
     # authentication = {
