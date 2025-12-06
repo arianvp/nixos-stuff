@@ -91,8 +91,9 @@ in
       args = lib.cli.toGNUCommandLineShell { } {
         etcd-servers = "http://localhost:2379";
         service-account-issuer = "https://spire.nixos.sh";
-        # Work without feature gate? lets see
-        service-account-signing-endpoint = "/run/signing.sock";
+        # TODO: delegate signing to SPIRE: https://github.com/kubernetes/enhancements/tree/master/keps/sig-auth/740-service-account-external-signing
+        # service-account-signing-endpoint = "/run/signing.sock";
+        service-account-signing-key-file = "/var/lib/kubernetes/service-account.key";
       };
     in
 
@@ -109,6 +110,7 @@ in
         Type = "notify";
         ExecStart = "${pkgs.kubernetes}/bin/kube-apiserver ${args}";
         RuntimeDirectory = "kubernetes";
+        StateDirectory = "kubernetes";
       };
     };
 
