@@ -88,7 +88,7 @@ in
   systemd.services.kube-apiserver =
 
     let
-      args = lib.cli.toGNUCommandLineShell { } {
+      args = lib.cli.toGNUCommandLineShell { } rec {
         etcd-servers = "http://localhost:2379";
         service-account-issuer = "https://spire.nixos.sh";
         # TODO: delegate signing to SPIRE: https://github.com/kubernetes/enhancements/tree/master/keps/sig-auth/740-service-account-external-signing
@@ -97,6 +97,10 @@ in
         service-account-key-file = "/run/kubernetes/service-account.key";
         # Used to sign
         service-account-signing-key-file = "/run/kubernetes/service-account.key";
+
+        # The default; but conceptually wrong when the issuer is external.
+        # TODO: change to the cluster api server address in the future
+        api-audiences = [ service-account-issuer ];
       };
     in
 
