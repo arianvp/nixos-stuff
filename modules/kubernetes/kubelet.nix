@@ -7,15 +7,8 @@ let
     apiVersion = "kubelet.config.k8s.io/v1beta1";
     kind = "KubeletConfiguration";
     enableServer = true;
-    # staticPodPath = "";
-    # podLogsDir = "/var/log/pods";
-    # syncFrequency = "1m";
-    # fileCheckFrequency = "20s";
-    # httpCheckFrequency  = "20s";
-    # staticPodURL = "";
-    # staticPodURLHeader = null; # map[string][]string
     address = "[::]";
-    # port = 10250;
+    port = 10250;
     #
     # TODO: Maybe useful if we wanna outsource to spire?
     # tlsCertFile  = "";
@@ -83,12 +76,17 @@ in
 
 {
   systemd.services.kubelet = {
+    wantedBy = [ "multi-user.target" ];
     serviceConfig = {
-      wantedBy = [ "multi-user.target" ];
       Type = "notify";
       StateDirectory = "kubelet";
       # TODO: enable watchdog
       ExecStart = "${pkgs.kubernetes}/bin/kubelet --config ${kubeletConfig}";
     };
   };
+
+  virtualisation.cri-o = {
+    enable = true;
+  };
+
 }
