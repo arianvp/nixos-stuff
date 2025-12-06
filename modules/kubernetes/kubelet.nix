@@ -93,7 +93,7 @@ in
         service-account-issuer = "https://spire.nixos.sh";
         # TODO: delegate signing to SPIRE: https://github.com/kubernetes/enhancements/tree/master/keps/sig-auth/740-service-account-external-signing
         # service-account-signing-endpoint = "/run/signing.sock";
-        service-account-signing-key-file = "/var/lib/kubernetes/service-account.key";
+        service-account-signing-key-file = "/run/kubernetes/service-account.key";
       };
     in
 
@@ -108,6 +108,8 @@ in
 
       serviceConfig = {
         Type = "notify";
+        # TODO: Key persistence or out-source to SPIRE
+        ExecStartPre = "${pkgs.openssl}/bin/ ecparam -genkey -name prime256v1 -out /run/kubernetes/service-account.key";
         ExecStart = "${pkgs.kubernetes}/bin/kube-apiserver ${args}";
         RuntimeDirectory = "kubernetes";
         StateDirectory = "kubernetes";
