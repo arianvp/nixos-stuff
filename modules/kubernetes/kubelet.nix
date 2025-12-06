@@ -75,6 +75,24 @@ let
 in
 
 {
+
+  # TODO: Configure with config file and best practises
+  systemd.services.etcd = {
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      StateDirectory = "etcd";
+      ExecStart = "${pkgs.etcd}/bin/etcd --name %H --data-dir $STATE_DIRECTORY";
+    };
+  };
+
+  systemd.services.kube-apiserver = {
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      ExecStart ="${pkgs.kubernetes}/bin/kube-apiserver";
+      RuntimeDirectory = "kubernetes";
+    };
+  };
+
   systemd.services.kubelet = {
     wantedBy = [ "multi-user.target" ];
     serviceConfig = {
