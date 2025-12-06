@@ -109,7 +109,7 @@ in
       serviceConfig = {
         Type = "notify";
         # TODO: Key persistence or out-source to SPIRE
-        ExecStartPre = "${pkgs.openssl}/bin/ ecparam -genkey -name prime256v1 -out /run/kubernetes/service-account.key";
+        ExecStartPre = "${pkgs.openssl}/bin/openssl ecparam -genkey -name prime256v1 -out /run/kubernetes/service-account.key";
         ExecStart = "${pkgs.kubernetes}/bin/kube-apiserver ${args}";
         RuntimeDirectory = "kubernetes";
         StateDirectory = "kubernetes";
