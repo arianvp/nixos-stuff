@@ -143,7 +143,14 @@ in
 
   systemd.services.kubelet = {
     wantedBy = [ "multi-user.target" ];
-    after = [ "crio.service"]; # apparently no socket activ
+    after = [
+      #
+      # It tries to auto-detect what to listen on
+      # TODO: explicitly configure instead
+      # E1206 15:52:07.056547     834 server.go:199] "Failed to listen and serve" err="listen tcp: lookup <nil>: no such host
+      "network-online.target"
+      "crio.service"]; # apparently no socket activ
+    requires = [ "network-online.target"];
     serviceConfig = {
       Type = "notify";
       WatchdogSec = "30s";
