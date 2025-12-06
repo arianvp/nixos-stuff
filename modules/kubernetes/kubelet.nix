@@ -93,7 +93,7 @@ in
         service-account-issuer = "https://spire.nixos.sh";
         # TODO: delegate signing to SPIRE: https://github.com/kubernetes/enhancements/tree/master/keps/sig-auth/740-service-account-external-signing
         # service-account-signing-endpoint = "/run/signing.sock";
-        service-account-signing-key-file = "/run/kubernetes/service-account.key";
+        service-account-key-file = "/run/kubernetes/service-account.key";
       };
     in
 
