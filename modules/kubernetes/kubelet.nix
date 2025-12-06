@@ -143,6 +143,7 @@ in
 
   systemd.services.kubelet = {
     wantedBy = [ "multi-user.target" ];
+    after = [ "crio.service"]; # apparently no socket activ
     serviceConfig = {
       Type = "notify";
       WatchdogSec = "30s";
