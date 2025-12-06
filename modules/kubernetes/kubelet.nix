@@ -3,6 +3,10 @@
 let
   format = pkgs.formats.yaml { };
 
+  kubeconfigSettings = {
+
+  };
+
   settings = {
     apiVersion = "kubelet.config.k8s.io/v1beta1";
     kind = "KubeletConfiguration";
@@ -17,7 +21,11 @@ let
     # TODO: Maybe useful if the kube-apiserver supports it
     # rotateCertificates = false;
     # serverTLSBootstrap = false;
-    #
+
+    # TODO: Something better
+    authentication = {
+      anonymous.enabled = true;
+    };
 
     # authentication = {
     # x509 = {
@@ -59,6 +67,8 @@ let
     resolvConf = "/run/systemd/resolve/resolv.conf";
 
     containerRuntimeEndpoint = "/run/this-would-be-a-cri-if-we-had-one.sock";
+
+    # kubeconfig = format.generate "kubeconfig.yaml" kubeconfigSettings;
   };
 
   /*
@@ -101,6 +111,9 @@ in
         # The default; but conceptually wrong when the issuer is external.
         # TODO: change to the cluster api server address in the future
         api-audiences = [ service-account-issuer ];
+
+        # TODO: Authentication
+        # TODO: Authorization
       };
     in
 
