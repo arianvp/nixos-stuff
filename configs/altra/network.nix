@@ -48,6 +48,7 @@
           networkConfig = {
             DHCP = "yes";
             MulticastDNS = "yes";
+            IPv6PrivacyExtensions = "no";
           };
         };
 
