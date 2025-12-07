@@ -20,7 +20,7 @@
     ../../modules/prometheus.nix
     ../../modules/alertmanager.nix
 
-    ../../modules/kubernetes.nix
+    ../../modules/kubernetes/kubernetes.nix
 
     # ../../websites/nixos.sh
   ];
