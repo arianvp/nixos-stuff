@@ -1,23 +1,14 @@
-{ pkgs, ... }:
 
-let
-  pause = pkgs.dockerTools.pullImage (import ./images/pause.nix);
-in
 {
+
   # TODO: Upstream sets watchdog. NixOS doesn't.
   # Again the problem is that NixOS sucks
   virtualisation.containers.enable = true;
   virtualisation.cri-o.enable = true;
   virtualisation.podman.enable = true;
 
-  systemd.services.podman-load-pause = {
-    wantedBy = [ "crio.service" ];
-    before = [ "crio.service" ];
-    serviceConfig = {
-      Type = "oneshot";
-      StandardInput = "file:${pause}";
-      ExecStart = "${pkgs.podman}/bin/podman load";
-    };
-  };
 
+  # TODO: The upstream module unconditionally pollutes /etc/cni.d
+  # https://github.com/NixOS/nixpkgs/blob/dda3dcd3fe03e991015e9a74b22d35950f264a54/nixos/modules/virtualisation/cri-o.nix#L151-L154
+  # https://github.com/NixOS/nixpkgs/issues/406296
 }
