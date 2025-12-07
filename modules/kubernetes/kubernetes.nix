@@ -12,6 +12,7 @@
     ./kube-controller-manager.nix
     ./kubelet.nix
     ./crio.nix
+    ./cni.nix
     ./kubeconfig.nix
   ];
 
@@ -128,6 +129,7 @@
         image = "docker.io/nginx:latest";
         ports = [{
           containerPort = 80;
+          hostPort = 3000;
           name = "http";
           protocol = "TCP";
         }];
