@@ -104,7 +104,6 @@
     settings.current-context = "kubelet";
   };
 
-  virtualisation.cri-o.enable = true;
 
   systemd.services.kubelet = {
     after = [ "crio.service" ];

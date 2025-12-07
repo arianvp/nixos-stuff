@@ -11,8 +11,6 @@
 
       networking.useNetworkd = true;
 
-      environment.systemPackages = [ pause ];
-
       systemd.network.config.networkConfig = {
         # crio cni config creates container bridge that is unmanaged but requires packet forwarding
         # TODO: Use a networkd-managed bridge to fix this
