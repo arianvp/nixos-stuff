@@ -113,20 +113,13 @@ in
       tracing-config-file = tracingConfigFile;
     };
 
-    systemd.services.kube-apiserver = {
+    systemd.services.kube-apiserver = lib.mkMerge [{
       wantedBy = [ "multi-user.target" ];
-      # Fixes: Unable to find suitable network address.error='no default routes
-      # found in "/proc/net/route" or "/proc/net/ipv6_route"'. Try to set the
-      # AdvertiseAddress directly or provide a valid BindAddress to fix this.
-      requires = [ "network-online.target" ];
-      after = [ "network-online.target" ];
 
       serviceConfig = {
         Type = "notify";
         WatchdogSec = "30s";
         RuntimeDirectory = "kubernetes";
-
-
         ExecStart =
           let
             args = lib.cli.toGNUCommandLineShell { } cfg.args;
@@ -136,6 +129,14 @@ in
         Restart = "on-failure";
         RestartSec = "5s";
       };
-    };
+    }
+    # TODO: Only when advertise-addr is unset
+    (lib.mkIf true {
+      # Fixes: Unable to find suitable network address.error='no default routes
+      # found in "/proc/net/route" or "/proc/net/ipv6_route"'. Try to set the
+      # AdvertiseAddress directly or provide a valid BindAddress to fix this.
+      requires = [ "network-online.target" ];
+      after = [ "network-online.target" ];
+    })];
   };
 }
