@@ -77,7 +77,6 @@ in
     systemd.services.kubelet = {
       wantedBy = [ "multi-user.target" ];
 
-
       serviceConfig = {
         Type = "notify";
         WatchdogSec = "30s";
@@ -85,11 +84,10 @@ in
 
         ExecStart =
           let
-            args = lib.cli.toGNUCommandLineShell { }
-              {
-                config = kubeletConfigFile;
-                kubeconfig = cfg.kubeconfig;
-              }
+            args = lib.cli.toGNUCommandLineShell { } {
+              config = kubeletConfigFile;
+              kubeconfig = cfg.kubeconfig;
+            };
           in
           "${lib.getExe' cfg.package "kubelet"} ${args}";
 

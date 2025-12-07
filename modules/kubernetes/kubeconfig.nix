@@ -1,11 +1,8 @@
 {
   pkgs,
   lib,
-  options,
-  config,
   ...
 }:
-
 let
   k8sFormats = import ./formats { inherit lib pkgs; };
 in
@@ -13,9 +10,19 @@ in
   options.kubernetes.kubeconfigs = lib.mkOption {
     type = lib.types.attrsOf (
       lib.types.submodule (
-        { config, options,... }:
+        {
+          name,
+          config,
+          options,
+          ...
+        }:
         {
           options = {
+            file = lib.mkOption {
+              type = lib.types.path;
+              description = "The generated kubeconfig file";
+            };
+
             settings = lib.mkOption {
               type = k8sFormats.kubeconfig.type;
               description = "Kubeconfig settings";
@@ -39,6 +46,7 @@ in
           };
 
           config = {
+            file = k8sFormats.kubeconfig.generate "${name}.conf" config.settings;
             settings = {
               clusters = lib.mapAttrsToList (name: cluster: {
                 inherit name;
@@ -66,11 +74,4 @@ in
       Each attribute name becomes the filename (with .conf appended).
     '';
   };
-
-  config.environment.etc = lib.mapAttrs' (
-    name: value:
-    lib.nameValuePair "kubernetes/${name}.conf" {
-      source = k8sFormats.kubeconfig.generate "${name}.conf" value.settings;
-    }
-  ) config.kubernetes.kubeconfigs;
 }
