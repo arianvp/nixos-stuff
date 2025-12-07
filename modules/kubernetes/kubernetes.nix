@@ -57,7 +57,7 @@
   # Set defaults for kubelet configuration
   kubernetes.kubelet = {
     enable = true;
-    kubeconfig = "${config.kubernetes.kubeconfigs.kubelet.file}";
+    # kubeconfig = "${config.kubernetes.kubeconfigs.kubelet.file}";
     settings = {
       enableServer = true;
       address = "::";
@@ -125,7 +125,7 @@
     spec = {
       containers = [{
         name = "nginx";
-        image = "nginx:latest";
+        image = "docker.io/nginx:latest";
         ports = [{
           containerPort = 80;
           name = "http";
