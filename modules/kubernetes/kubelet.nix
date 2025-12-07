@@ -71,7 +71,6 @@ in
 
   config = lib.mkIf cfg.enable {
 
-
     # We only support cgroups v2 so this is the only driver we support
     kubernetes.kubelet.settings.cgroupDriver = "systemd";
 
@@ -86,12 +85,11 @@ in
 
         ExecStart =
           let
-            args = lib.cli.toGNUCommandLineShell { } (
+            args = lib.cli.toGNUCommandLineShell { }
               {
                 config = kubeletConfigFile;
                 kubeconfig = cfg.kubeconfig;
               }
-            );
           in
           "${lib.getExe' cfg.package "kubelet"} ${args}";
 
