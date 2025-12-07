@@ -80,6 +80,8 @@
       resolvConf = "/run/systemd/resolve/resolv.conf";
       containerRuntimeEndpoint = "unix:///run/crio/crio.sock";
 
+      staticPodPath = "/etc/kubernetes/manifests";
+
     };
   };
 
@@ -108,5 +110,28 @@
   systemd.services.kubelet = {
     after = [ "crio.service" ];
     requires = [ "crio.service" ];
+  };
+
+  environment.etc."kubernetes/manifests/nginx.yaml".text = lib.generators.toYAML {} {
+    apiVersion = "v1";
+    kind = "Pod";
+    metadata = {
+      name = "nginx";
+      namespace = "default";
+      labels = {
+        app = "nginx";
+      };
+    };
+    spec = {
+      containers = [{
+        name = "nginx";
+        image = "nginx:latest";
+        ports = [{
+          containerPort = 80;
+          name = "http";
+          protocol = "TCP";
+        }];
+      }];
+    };
   };
 }
