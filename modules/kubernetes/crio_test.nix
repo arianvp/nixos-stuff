@@ -11,6 +11,7 @@
     in
     {
       imports = [ ./crio.nix ];
+      virtualisation.memorySize = 2048;
 
       systemd.services = lib.mapAttrs' (
         name: value:
@@ -42,7 +43,6 @@
   # and I think it might be a security issue: https://github.com/kubernetes/kubernetes/issues/90259
   testScript = ''
     machine.wait_for_unit("crio.service")
-    machine.succeed("critest --ginkgo.focus='Networking' --ginkgo.skip='runtime should support port mapping with host port and container port' --ginkgo.flake-attempts 1")
-    # machine.succeed("critest --ginko.flake-attempts=2")
+    machine.succeed("critest --ginkgo.skip='runtime should support port mapping with host port and container port' --ginkgo.flake-attempts 1")
   '';
 }
