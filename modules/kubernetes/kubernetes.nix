@@ -1,3 +1,4 @@
+{ config, ... }:
 {
   imports = [
     ./etcd.nix
@@ -15,27 +16,31 @@
   };
 
   # Set defaults for kubelet configuration
-  kubernetes.kubelet.settings = {
-    enableServer = true;
-    address = "::";
-    port = 10250;
+  kubernetes.kubelet = {
+    kubeconfig = "${config.kubernetes.kubeconfigs.kubelet.file}";
+    settings = {
+      enableServer = true;
+      address = "::";
+      port = 10250;
 
-    # Authentication & Authorization
-    # TODO: Change to secure defaults
-    authentication = {
-      anonymous.enabled = true;
-      webhook.enabled = false;
+      # Authentication & Authorization
+      # TODO: Change to secure defaults
+      authentication = {
+        anonymous.enabled = true;
+        webhook.enabled = false;
+      };
+
+      authorization.mode = "AlwaysAllow";
+
+      # Cluster configuration
+      # cluster.local is not RFC compliant and interferes with our network's mDNS
+      clusterDomain = "cluster.internal";
+
+      # Runtime configuration
+      resolvConf = "/run/systemd/resolve/resolv.conf";
+      containerRuntimeEndpoint = "unix:///run/crio/crio.sock";
+
     };
-
-    authorization.mode = "AlwaysAllow";
-
-    # Cluster configuration
-    # cluster.local is not RFC compliant and interferes with our network's mDNS
-    clusterDomain = "cluster.internal";
-
-    # Runtime configuration
-    resolvConf = "/run/systemd/resolve/resolv.conf";
-    containerRuntimeEndpoint = "unix:///run/crio/crio.sock";
   };
 
   # Generate default kubeconfig using the kubeconfig module
