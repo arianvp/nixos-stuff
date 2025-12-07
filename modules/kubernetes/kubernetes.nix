@@ -1,4 +1,9 @@
-{ lib, config, ... }:
+{
+  pkgs,
+  lib,
+  config,
+  ...
+}:
 {
   imports = [
     ./etcd.nix
@@ -10,29 +15,23 @@
     ./kubeconfig.nix
   ];
 
-  systemd.services.kubelet = {
-    after = [ "crio.service" ];
-    requires = [ "crio.service" ];
-  };
-
   kubernetes.kube-apiserver = {
+    enable = true;
     args = {
       # etcd
-      etcd-servers = ["http://127.0.0.1:2379"];
+      etcd-servers = [ "http://127.0.0.1:2379" ];
 
       # Service account configuration
       service-account-issuer = "https://spire.nixos.sh";
       # TODO: delegate signing to SPIRE: https://github.com/kubernetes/enhancements/tree/master/keps/sig-auth/740-service-account-external-signing
       # service-account-signing-endpoint = "/run/signing.sock";
 
-      # Used to verify. When unset; defaults to --tls-private-key-file
-      service-account-key-file = "/var/run/kubernetes/ca.key";
-      # Used to sign
-      service-account-signing-key-file = "/var/run/kubernetes/ca.key";
+      service-account-key-file = "/var/run/kubernetes/sa.key";
+      service-account-signing-key-file = "/var/run/kubernetes/sa.key";
 
       # The default; but conceptually wrong when the issuer is external.
       # TODO: change to the cluster api server address in the future
-      api-audiences = [ "https://spire.nixos.sh" ];
+      # api-audiences = [ "https://spire.nixos.sh" ];
 
       # Bind address
       bind-address = lib.mkDefault "::";
@@ -47,8 +46,17 @@
     };
   };
 
+  systemd.services.kube-apiserver.serviceConfig = {
+    # TODO: Key persistence or out-source to SPIRE
+    ExecStartPre = pkgs.writeShellScript "generate-sa-key" ''
+      ${pkgs.openssl}/bin/openssl ecparam -genkey -name prime256v1 -out /var/run/kubernetes/sa.key
+      ${pkgs.openssl}/bin/openssl ec -in /var/run/kubernetes/sa.key -pubout -out /var/run/kubernetes/sa.pub
+    '';
+  };
+
   # Set defaults for kubelet configuration
   kubernetes.kubelet = {
+    enable = true;
     kubeconfig = "${config.kubernetes.kubeconfigs.kubelet.file}";
     settings = {
       enableServer = true;
@@ -94,5 +102,12 @@
     };
 
     settings.current-context = "kubelet";
+  };
+
+  virtualisation.cri-o.enable = true;
+
+  systemd.services.kubelet = {
+    after = [ "crio.service" ];
+    requires = [ "crio.service" ];
   };
 }
