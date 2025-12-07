@@ -60,7 +60,7 @@ in
 
     kubeconfig = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
-      default = "/etc/kubernetes/kubelet.conf";
+      default = null;
       description = ''
         Path to kubeconfig file for kubelet to authenticate to API server.
         If null, runes kubelet in stand-alone mode.
