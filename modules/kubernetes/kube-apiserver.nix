@@ -127,6 +127,10 @@ in
       bind-address = lib.mkDefault "::";
       # advertise-address is auto-detected
       
+      # Service cluster IP range (must match bind-address IP family)
+      # Using IPv6 since bind-address defaults to "::"
+      service-cluster-ip-range = lib.mkDefault "fd00:10:96::/112";
+      
       # TODO: Authentication
       # TODO: Authorization
     } // lib.optionalAttrs (cfg.authenticationConfig != null) {
