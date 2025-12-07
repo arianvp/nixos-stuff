@@ -22,7 +22,7 @@
 
     ../../modules/kubernetes/kubernetes.nix
 
-    # ../../websites/nixos.sh
+    ../../websites/nixos.sh
   ];
 
   # TODO: Move into something more generic?
