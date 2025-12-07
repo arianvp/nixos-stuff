@@ -26,9 +26,9 @@
       # service-account-signing-endpoint = "/run/signing.sock";
 
       # Used to verify. When unset; defaults to --tls-private-key-file
-      service-account-key-file = "/var/lib/kubernetes/sa.key";
+      service-account-key-file = "/var/run/kubernetes/ca.key";
       # Used to sign
-      service-account-signing-key-file = "/var/lib/kubernetes/sa.key";
+      service-account-signing-key-file = "/var/run/kubernetes/ca.key";
 
       # The default; but conceptually wrong when the issuer is external.
       # TODO: change to the cluster api server address in the future
