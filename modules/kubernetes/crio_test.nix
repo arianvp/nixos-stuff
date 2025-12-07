@@ -9,6 +9,16 @@
     {
       imports = [ ./crio.nix ];
 
+      systemd.services.podman-load-pause = {
+        requiredBy = [ "crio.service" ];
+        before = [ "crio.service" ];
+        serviceConfig = {
+          Type = "oneshot";
+          StandardInput = "file:${pause}";
+          ExecStart = "${pkgs.podman}/bin/podman load";
+        };
+      };
+
       networking.useNetworkd = true;
 
       systemd.network.config.networkConfig = {
