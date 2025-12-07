@@ -4,7 +4,10 @@ let
   cfg = config.kubernetes.kubelet;
   k8sFormats = import ./formats { inherit lib pkgs; };
   
-  kubeletConfigFile = k8sFormats.kubeletConfiguration.generate "kubelet-config.yaml" cfg.settings;
+  # Filter out null values to avoid empty strings in YAML
+  filterNulls = attrs: lib.filterAttrsRecursive (n: v: v != null) attrs;
+  
+  kubeletConfigFile = k8sFormats.kubeletConfiguration.generate "kubelet-config.yaml" (filterNulls cfg.settings);
 in
 {
   options.kubernetes.kubelet = {
