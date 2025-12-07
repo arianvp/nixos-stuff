@@ -31,7 +31,7 @@
     #    ssl = true;
     #  }
     #];
-    #addSSL = true;
+    addSSL = true;
     enableACME = true;
     root = ./.;
   };
