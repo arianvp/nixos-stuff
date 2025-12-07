@@ -67,72 +67,17 @@ in
       '';
       example = "/etc/kubernetes/kubelet.conf";
     };
-
-    extraArgs = lib.mkOption {
-      type = lib.types.attrsOf lib.types.str;
-      default = { };
-      description = "Extra command-line arguments to pass to kubelet";
-      example = {
-        v = "2";
-      };
-    };
   };
 
   config = lib.mkIf cfg.enable {
-    # Set defaults for kubelet configuration
-    kubernetes.kubelet.settings = {
-      apiVersion = lib.mkDefault "kubelet.config.k8s.io/v1beta1";
-      kind = lib.mkDefault "KubeletConfiguration";
 
-      # Server configuration
-      enableServer = lib.mkDefault true;
-      address = lib.mkDefault "::";
-      port = lib.mkDefault 10250;
 
-      # Authentication & Authorization
-      # TODO: Change to secure defaults
-      authentication = lib.mkDefault {
-        anonymous.enabled = true;
-        webhook.enabled = false;
-      };
-
-      authorization.mode = lib.mkDefault "AlwaysAllow";
-
-      # Cluster configuration
-      # cluster.local is not RFC compliant and interferes with our network's mDNS
-      clusterDomain = lib.mkDefault "cluster.internal";
-
-      # Runtime configuration
-      cgroupDriver = lib.mkDefault "systemd";
-      resolvConf = lib.mkDefault "/run/systemd/resolve/resolv.conf";
-      containerRuntimeEndpoint = lib.mkDefault "unix:///run/crio/crio.sock";
-    };
-
-    # Generate default kubeconfig using the kubeconfig module
-    kubernetes.kubeconfigs.kubelet = {
-      clusterMap.kubernetes = {
-        server = "https://[::1]:6443";
-        # TODO: Add CA certificate verification
-        insecure-skip-tls-verify = true;
-      };
-
-      userMap.kubelet.exec = {
-        command = "k8s-spiffe-workload-jwt-exec-auth";
-        interactiveMode = "Never";
-      };
-
-      contextMap.kubelet = {
-        cluster = "kubernetes";
-        user = "kubelet";
-      };
-
-      settings.current-context = "kubelet";
-    };
+    # We only support cgroups v2 so this is the only driver we support
+    kubernetes.kubelet.settings.cgroupDriver = "systemd";
 
     systemd.services.kubelet = {
       wantedBy = [ "multi-user.target" ];
-      after = [ "crio.service" ];
-      requires = [ "crio.service" ];
+
 
       serviceConfig = {
         Type = "notify";
@@ -146,7 +91,6 @@ in
                 config = kubeletConfigFile;
                 kubeconfig = cfg.kubeconfig;
               }
-              // cfg.extraArgs
             );
           in
           "${lib.getExe' cfg.package "kubelet"} ${args}";
