@@ -19,6 +19,9 @@
     ../../modules/tailscale.nix
     ../../modules/prometheus.nix
     ../../modules/alertmanager.nix
+
+    ../../modules/kubernetes.nix
+
     # ../../websites/nixos.sh
   ];
 
