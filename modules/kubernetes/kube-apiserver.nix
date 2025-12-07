@@ -93,7 +93,7 @@ in
       description = "Command-line arguments to pass to kube-apiserver";
       example = lib.literalExpression ''
         {
-          etcd-servers = "https://[::1]:2379";
+          etcd-servers = "https://127.0.0.1:2379";
           service-account-issuer = "https://kubernetes.default.svc";
           service-account-key-file = "/etc/kubernetes/pki/sa.pub";
           service-account-signing-key-file = "/etc/kubernetes/pki/sa.key";
@@ -113,30 +113,33 @@ in
       tracing-config-file = tracingConfigFile;
     };
 
-    systemd.services.kube-apiserver = lib.mkMerge [{
-      wantedBy = [ "multi-user.target" ];
+    systemd.services.kube-apiserver = lib.mkMerge [
+      {
+        wantedBy = [ "multi-user.target" ];
 
-      serviceConfig = {
-        Type = "notify";
-        WatchdogSec = "30s";
-        RuntimeDirectory = "kubernetes";
-        ExecStart =
-          let
-            args = lib.cli.toGNUCommandLineShell { } cfg.args;
-          in
-          "${lib.getExe' cfg.package "kube-apiserver"} ${args}";
+        serviceConfig = {
+          Type = "notify";
+          # TODO: File issue upstream. Seems takes more than 30 seconds for apiserver to initialize?
+          # WatchdogSec = "30s";
+          RuntimeDirectory = "kubernetes";
+          ExecStart =
+            let
+              args = lib.cli.toGNUCommandLineShell { } cfg.args;
+            in
+            "${lib.getExe' cfg.package "kube-apiserver"} ${args}";
 
-        Restart = "on-failure";
-        RestartSec = "5s";
-      };
-    }
-    # TODO: Only when advertise-addr is unset
-    (lib.mkIf true {
-      # Fixes: Unable to find suitable network address.error='no default routes
-      # found in "/proc/net/route" or "/proc/net/ipv6_route"'. Try to set the
-      # AdvertiseAddress directly or provide a valid BindAddress to fix this.
-      requires = [ "network-online.target" ];
-      after = [ "network-online.target" ];
-    })];
+          Restart = "on-failure";
+          RestartSec = "5s";
+        };
+      }
+      # TODO: Only when advertise-addr is unset
+      (lib.mkIf true {
+        # Fixes: Unable to find suitable network address.error='no default routes
+        # found in "/proc/net/route" or "/proc/net/ipv6_route"'. Try to set the
+        # AdvertiseAddress directly or provide a valid BindAddress to fix this.
+        requires = [ "network-online.target" ];
+        after = [ "network-online.target" ];
+      })
+    ];
   };
 }
