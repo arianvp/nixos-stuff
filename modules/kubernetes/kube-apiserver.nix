@@ -119,8 +119,6 @@ in
 
         serviceConfig = {
           Type = "notify";
-          # TODO: File issue upstream. Seems takes more than 30 seconds for apiserver to initialize?
-          # WatchdogSec = "30s";
           RuntimeDirectory = "kubernetes";
           ExecStart =
             let
