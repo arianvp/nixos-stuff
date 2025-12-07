@@ -1,23 +1,30 @@
 {
   name = "crio";
   nodes.machine =
-    { pkgs, ... }:
-
+    { lib, pkgs, ... }:
     let
-      pause = pkgs.dockerTools.pullImage (import ./images/pause.nix);
+      images = {
+        pause = pkgs.dockerTools.pullImage (import ./images/pause.nix);
+        e2e-test-images-nginx = pkgs.dockerTools.pullImage (import ./images/e2e-test-images-nginx.nix);
+        busybox-test-images-nginx = pkgs.dockerTools.pullImage (import ./images/busybox.nix);
+      };
     in
     {
       imports = [ ./crio.nix ];
 
-      systemd.services.podman-load-pause = {
-        requiredBy = [ "crio.service" ];
-        before = [ "crio.service" ];
-        serviceConfig = {
-          Type = "oneshot";
-          StandardInput = "file:${pause}";
-          ExecStart = "${pkgs.podman}/bin/podman load";
-        };
-      };
+      systemd.services = lib.mapAttrs' (
+        name: value:
+        lib.nameValuePair "podman-load-${name}" {
+          description = "Load ${value}";
+          wantedBy = [ "crio.service" ];
+          serviceConfig = {
+            Type = "oneshot";
+            RemainAfterExit = true;
+            StandardInput = "file:${value}";
+            ExecStart = "${pkgs.podman}/bin/podman load";
+          };
+        }
+      ) images;
 
       networking.useNetworkd = true;
 
