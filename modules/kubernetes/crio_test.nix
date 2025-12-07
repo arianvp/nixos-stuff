@@ -1,31 +1,13 @@
 {
   name = "crio";
   nodes.machine =
-    { lib, pkgs, ... }:
-    let
-      images = {
-        pause = pkgs.dockerTools.pullImage (import ./images/pause.nix);
-        e2e-test-images-nginx = pkgs.dockerTools.pullImage (import ./images/e2e-test-images-nginx.nix);
-        busybox-test-images-nginx = pkgs.dockerTools.pullImage (import ./images/busybox.nix);
-      };
-    in
     {
-      imports = [ ./crio.nix ];
-      virtualisation.memorySize = 2048;
+      imports = [ ./crio.nix ./podman-preload.nix ];
 
-      systemd.services = lib.mapAttrs' (
-        name: value:
-        lib.nameValuePair "podman-load-${name}" {
-          description = "Load ${value}";
-          wantedBy = [ "crio.service" ];
-          serviceConfig = {
-            Type = "oneshot";
-            RemainAfterExit = true;
-            StandardInput = "file:${value}";
-            ExecStart = "${pkgs.podman}/bin/podman load";
-          };
-        }
-      ) images;
+      virtualisation.memorySize = 16384;
+
+      # cri-o tests OOMs too
+      boot.kernel.sysctl."vm.panic_on_oom" = 0;
 
       networking.useNetworkd = true;
 
