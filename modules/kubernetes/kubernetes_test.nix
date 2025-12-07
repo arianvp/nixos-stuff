@@ -13,6 +13,9 @@
       kube-controller-manager.enable = true;
       kubelet.enable = true;
     };
+    
+    # etcd is not configured via kubernetes.* namespace
+    # It's just a plain systemd service in etcd.nix
   };
 
   testScript = ''

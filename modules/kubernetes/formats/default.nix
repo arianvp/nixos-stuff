@@ -21,10 +21,8 @@
   # kind: KubeSchedulerConfiguration
   kubeSchedulerConfiguration = import ./kube-scheduler-config.nix { inherit lib pkgs; };
   
-  # Kube-controller-manager configuration format
-  # apiVersion: kubecontrollermanager.config.k8s.io/v1alpha1
-  # kind: KubeControllerManagerConfiguration
-  kubeControllerManagerConfiguration = import ./kube-controller-manager-config.nix { inherit lib pkgs; };
+  # NOTE: kube-controller-manager does NOT support --config flag
+  # It only accepts command-line arguments, no config file format available
   
   # Kube-apiserver configuration formats (multiple config types)
   # Returns an attrset with multiple configuration types:
