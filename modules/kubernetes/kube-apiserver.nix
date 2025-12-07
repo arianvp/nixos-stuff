@@ -125,17 +125,7 @@ in
         Type = "notify";
         WatchdogSec = "30s";
         RuntimeDirectory = "kubernetes";
-        StateDirectory = "kubernetes";
 
-        # TODO: Key persistence or out-source to SPIRE
-        ExecStartPre = lib.mkIf (cfg.args.service-account-key-file == "/var/lib/kubernetes/sa.key") (
-          pkgs.writeShellScript "generate-sa-key" ''
-            if [ ! -f /var/lib/kubernetes/sa.key ]; then
-              ${pkgs.openssl}/bin/openssl ecparam -genkey -name prime256v1 -out /var/lib/kubernetes/sa.key
-              ${pkgs.openssl}/bin/openssl ec -in /var/lib/kubernetes/sa.key -pubout -out /var/lib/kubernetes/sa.pub
-            fi
-          ''
-        );
 
         ExecStart =
           let
