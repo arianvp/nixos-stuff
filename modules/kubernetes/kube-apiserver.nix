@@ -10,25 +10,15 @@ let
   k8sFormats = import ./formats { inherit lib pkgs; };
 
   # Generate optional config files
-  authenticationConfigFile = lib.optionalAttrs (cfg.authenticationConfig != null) (
-    k8sFormats.kubeApiserverConfigurations.authenticationConfiguration.generate "authentication-config.yaml" cfg.authenticationConfig
-  );
+  authenticationConfigFile = lib.mapNullable (k8sFormats.kubeApiserverConfigurations.authenticationConfiguration.generate "authentication-config.yaml") cfg.authenticationConfig;
 
-  authorizationConfigFile = lib.optionalAttrs (cfg.authorizationConfig != null) (
-    k8sFormats.kubeApiserverConfigurations.authorizationConfiguration.generate "authorization-config.yaml" cfg.authorizationConfig
-  );
+  authorizationConfigFile = lib.mapNullable (k8sFormats.kubeApiserverConfigurations.authorizationConfiguration.generate "authorization-config.yaml") cfg.authorizationConfig;
 
-  admissionConfigFile = lib.optionalAttrs (cfg.admissionConfig != null) (
-    k8sFormats.kubeApiserverConfigurations.admissionConfiguration.generate "admission-config.yaml" cfg.admissionConfig
-  );
+  admissionConfigFile = lib.mapNullable (k8sFormats.kubeApiserverConfigurations.admissionConfiguration.generate "admission-config.yaml") cfg.admissionConfig;
 
-  encryptionConfigFile = lib.optionalAttrs (cfg.encryptionConfig != null) (
-    k8sFormats.kubeApiserverConfigurations.encryptionConfiguration.generate "encryption-config.yaml" cfg.encryptionConfig
-  );
+  encryptionConfigFile = lib.mapNullable (k8sFormats.kubeApiserverConfigurations.encryptionConfiguration.generate "encryption-config.yaml") cfg.encryptionConfig;
 
-  tracingConfigFile = lib.optionalAttrs (cfg.tracingConfig != null) (
-    k8sFormats.kubeApiserverConfigurations.tracingConfiguration.generate "tracing-config.yaml" cfg.tracingConfig
-  );
+  tracingConfigFile = lib.mapNullable (k8sFormats.kubeApiserverConfigurations.tracingConfiguration.generate "tracing-config.yaml") cfg.tracingConfig;
 in
 {
   options.kubernetes.kube-apiserver = {
@@ -89,12 +79,15 @@ in
     # Command-line arguments
     args = lib.mkOption {
       type = lib.types.attrsOf (
-        lib.types.oneOf [
-          lib.types.str
-          lib.types.int
-          lib.types.bool
-          (lib.types.listOf lib.types.str)
-        ]
+        lib.types.nullOr (
+          lib.types.oneOf [
+            lib.types.str
+            lib.types.int
+            lib.types.bool
+            lib.types.path
+            (lib.types.listOf lib.types.str)
+          ]
+        )
       );
       default = { };
       description = "Command-line arguments to pass to kube-apiserver";
@@ -112,24 +105,13 @@ in
 
   config = lib.mkIf cfg.enable {
     # Set defaults for kube-apiserver
-    kubernetes.kube-apiserver.args =
-      {
-      }
-      // lib.optionalAttrs (cfg.authenticationConfig != null) {
-        authentication-config = authenticationConfigFile;
-      }
-      // lib.optionalAttrs (cfg.authorizationConfig != null) {
-        authorization-config = authorizationConfigFile;
-      }
-      // lib.optionalAttrs (cfg.admissionConfig != null) {
-        admission-control-config-file = admissionConfigFile;
-      }
-      // lib.optionalAttrs (cfg.encryptionConfig != null) {
-        encryption-provider-config = encryptionConfigFile;
-      }
-      // lib.optionalAttrs (cfg.tracingConfig != null) {
-        tracing-config-file = tracingConfigFile;
-      };
+    kubernetes.kube-apiserver.args = {
+      authentication-config = authenticationConfigFile;
+      authorization-config = authorizationConfigFile;
+      admission-control-config-file = admissionConfigFile;
+      encryption-provider-config = encryptionConfigFile;
+      tracing-config-file = tracingConfigFile;
+    };
 
     systemd.services.kube-apiserver = {
       wantedBy = [ "multi-user.target" ];
