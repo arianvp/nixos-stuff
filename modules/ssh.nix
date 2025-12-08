@@ -1,7 +1,7 @@
 { pkgs, ... }:
 
 let
-  caKeys = pkgs.concatText "ca.pub" [
+  caFile = pkgs.concatText "ca.pub" [
     ../keys/yk-black/id_ed25519_sk_rk_ca_arian.pub
     ../keys/yk-yellow/id_ed25519_sk_rk_ca_arian.pub
   ];
@@ -18,6 +18,17 @@ in
     IdentityFile ~/.ssh/id_ed25519_sk_rk_arian
   '';
 
+  security.pam.ussh = {
+    enable = true;
+    inherit caFile;
+    authorizedPrincipalsFile = "/etc/ssh/authorized_principals.d/root";
+  };
+
+  # disable the shit from GNOME
+  services.gnome.gcr-ssh-agent.enable = false;
+  programs.ssh.startAgent = true;
+
+
   services.openssh.enable = true;
   services.openssh.ports = [ port ];
 
@@ -31,7 +42,7 @@ in
 
   services.openssh.settings = {
     PasswordAuthentication = false;
-    TrustedUserCAKeys = "${caKeys}";
+    TrustedUserCAKeys = "${caFile}";
     RevokedKeys = "${../keys/revoked_keys}";
   };
 
