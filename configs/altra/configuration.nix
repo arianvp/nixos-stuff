@@ -110,13 +110,12 @@
       extensions.bearertokenauth = {
         header = "x-honeycomb-team";
         scheme = "";
-        filename = "\${env:CREDENTIALS_DIRECTORY}/honeycomb-ingest-key";
+        filename = "/run/credentials/otel-collector.service/honeycomb-ingest-key";
       };
       exporters.otlp = {
         endpoint = "api.eu1.honeycomb.io:443";
         auth.authenticator = "bearertokenauth";
       };
-      exporters.debug.verbosity = "detailed";
       receivers.journald = {
         # TODO: Cursor
         directory = "/var/log/journal";
@@ -126,7 +125,7 @@
         pipelines = {
           logs = {
             receivers = [ "journald" ];
-            exporters = [ "otlp" "debug" ];
+            exporters = [ "otlp" ];
 
           };
         };
