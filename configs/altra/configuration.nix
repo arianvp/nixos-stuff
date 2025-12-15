@@ -68,7 +68,10 @@
 
   users.users.arian = {
     isNormalUser = true;
-    extraGroups = [ "nix-trusted-users" "wheel" ];
+    extraGroups = [
+      "nix-trusted-users"
+      "wheel"
+    ];
   };
 
   users.users.flokli = {
@@ -82,7 +85,6 @@
 
   # TODO: Do we need this?
   programs.zsh.enable = true;
-
 
   # TODO: Move to builder role?
   nix.settings.system-features = [
@@ -99,4 +101,30 @@
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
   system.stateVersion = "25.05"; # Did you read the comment?A
+
+  systemd.services.opentelemetry-collector.serviceConfig.LoadCredential = "honeycomb-ingest-key";
+  services.opentelemetry-collector = {
+    enable = true;
+    package = pkgs.opentelemetry-collector-contrib;
+    settings = {
+      extensions.bearertokenauth.filename = "\${env:CREDENTIALS_DIRECTORY}/honeycomb-ingest-key";
+      exporters.otlp = {
+        endpoint = "https://api.honeycomb.io";
+        auth.authenticator = "bearertokenauth";
+      };
+      receivers.journald = {
+        # TODO: Cursor
+        directory  = "/var/log/journal";
+      };
+      service = {
+        extensions = [ "bearertokenauth" ];
+        pipelines = {
+          logs = {
+            receivers = [ "journald" ];
+          };
+        };
+      };
+
+    };
+  };
 }
