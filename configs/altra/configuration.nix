@@ -109,7 +109,6 @@
     settings = {
       exporters.otlp = {
         endpoint = "api.eu1.honeycomb.io:443";
-        auth.authenticator = "bearertokenauth";
         headers = {
          "x-honeycomb-team"  = "\${env:HONEYCOMB_TOKEN}";
         };
