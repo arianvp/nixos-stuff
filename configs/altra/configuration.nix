@@ -107,9 +107,13 @@
     enable = true;
     package = pkgs.opentelemetry-collector-contrib;
     settings = {
-      extensions.bearertokenauth.filename = "\${env:CREDENTIALS_DIRECTORY}/honeycomb-ingest-key";
+      extensions.bearertokenauth = {
+        header = "x-honeycomb-team";
+        scheme = "";
+        filename = "\${env:CREDENTIALS_DIRECTORY}/honeycomb-ingest-key";
+      };
       exporters.otlp = {
-        endpoint = "https://api.honeycomb.io";
+        endpoint = "api.eu1.honeycomb.io:443";
         auth.authenticator = "bearertokenauth";
       };
       receivers.journald = {
