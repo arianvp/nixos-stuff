@@ -119,7 +119,6 @@
         directory = "/var/log/journal";
       };
       service = {
-        extensions = [ "bearertokenauth" ];
         pipelines = {
           logs = {
             receivers = [ "journald" ];
