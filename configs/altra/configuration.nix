@@ -114,13 +114,15 @@
       };
       receivers.journald = {
         # TODO: Cursor
-        directory  = "/var/log/journal";
+        directory = "/var/log/journal";
       };
       service = {
         extensions = [ "bearertokenauth" ];
         pipelines = {
           logs = {
             receivers = [ "journald" ];
+            exporters = [ "otlp" ];
+
           };
         };
       };
