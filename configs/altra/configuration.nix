@@ -126,7 +126,7 @@
         pipelines = {
           logs = {
             receivers = [ "journald" ];
-            exporters = [ "otlp" ];
+            exporters = [ "otlp" "debug" ];
 
           };
         };
