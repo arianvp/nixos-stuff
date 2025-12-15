@@ -116,6 +116,7 @@
         endpoint = "api.eu1.honeycomb.io:443";
         auth.authenticator = "bearertokenauth";
       };
+      exporters.debug.verbosity = "detailed";
       receivers.journald = {
         # TODO: Cursor
         directory = "/var/log/journal";
