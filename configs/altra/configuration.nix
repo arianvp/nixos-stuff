@@ -102,19 +102,17 @@
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
   system.stateVersion = "25.05"; # Did you read the comment?A
 
-  systemd.services.opentelemetry-collector.serviceConfig.LoadCredential = "honeycomb-ingest-key";
+  systemd.services.opentelemetry-collector.serviceConfig.EnvironmentFile = "/etc/credstore/honeycomb-ingest-key";
   services.opentelemetry-collector = {
     enable = true;
     package = pkgs.opentelemetry-collector-contrib;
     settings = {
-      extensions.bearertokenauth = {
-        header = "x-honeycomb-team";
-        scheme = "";
-        filename = "/run/credentials/otel-collector.service/honeycomb-ingest-key";
-      };
       exporters.otlp = {
         endpoint = "api.eu1.honeycomb.io:443";
         auth.authenticator = "bearertokenauth";
+        headers = {
+         "x-honeycomb-team"  = "\${env:HONEYCOMB_TOKEN}";
+        };
       };
       receivers.journald = {
         # TODO: Cursor
