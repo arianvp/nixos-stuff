@@ -128,8 +128,6 @@
         filesystem = {};
         network = {};
         system = {};
-        process = {};
-        processes = {};
       };
       processors."resourcedetection" = {
         detectors = [
