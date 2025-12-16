@@ -120,7 +120,7 @@
         # TODO: Cursor
         directory = "/var/log/journal";
       };
-      receivers.hostmetrics = {
+      receivers.hostmetrics.scrapers = {
         cpu = {};
         disk = {};
         load = {};
