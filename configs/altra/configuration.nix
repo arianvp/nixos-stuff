@@ -108,7 +108,6 @@
     package = pkgs.opentelemetry-collector-contrib;
     settings = {
       extensions.bearertokenauth = {
-        # filename = "/run/credentials/opentelemetry-collector.service/honeycomb-ingest-key";
         filename = "\${env:CREDENTIALS_DIRECTORY}/honeycomb-ingest-key";
         header = "x-honeycomb-team";
         scheme = "";
@@ -116,19 +115,36 @@
       exporters.otlp = {
         endpoint = "api.eu1.honeycomb.io:443";
         auth.authenticator = "bearertokenauth";
-        # headers = {
-        #  "x-honeycomb-team" = "\${env:HONEYCOMB_TOKEN}";
-        # };
       };
       receivers.journald = {
         # TODO: Cursor
         directory = "/var/log/journal";
       };
+      receivers.hostmetrics = {
+
+      };
+      processors."resourcedetection" = {
+        detectors = [
+          "system"
+          "env" # OTEL_RESOURCE_ATTRIBUTES
+        ];
+        system.hostname_sources = [ "os" ];
+      };
+      processors.batch = { };
       service = {
         extensions = [ "bearertokenauth" ];
         pipelines = {
+          metrics = {
+            receivers = [ "hostmetrics" ];
+            processors = [ "resourcedetection" ];
+            exporters = [ "otlp" ];
+          };
           logs = {
             receivers = [ "journald" ];
+            processors = [
+              "resourcedetection"
+              "batch"
+            ];
             exporters = [ "otlp" ];
           };
         };
