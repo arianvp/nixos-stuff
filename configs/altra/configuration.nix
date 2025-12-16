@@ -121,7 +121,15 @@
         directory = "/var/log/journal";
       };
       receivers.hostmetrics = {
-
+        cpu = {};
+        disk = {};
+        load = {};
+        memory = {};
+        filesystem = {};
+        network = {};
+        system = {};
+        process = {};
+        processes = {};
       };
       processors."resourcedetection" = {
         detectors = [
