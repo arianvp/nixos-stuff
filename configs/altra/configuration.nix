@@ -109,7 +109,8 @@
     package = pkgs.opentelemetry-collector-contrib;
     settings = {
       extensions.bearertokenauth = {
-        filename = "\${env:CREDENTIALS_DIRECTORY}/honeycomb-ingest-key";
+        filename = "/run/credentials/opentelemetry-collector.service/honeycomb-ingest-key";
+        # filename = "\${env:CREDENTIALS_DIRECTORY}/honeycomb-ingest-key";
         header = "x-honeycomb-team";
         scheme = "";
       };
