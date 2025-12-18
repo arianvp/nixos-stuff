@@ -17,7 +17,9 @@
           scheme = "";
         };
         "basicauth/grafana_cloud" = {
-          client_auth.htpasswd.file = "\${env:CREDENTIALS_DIRECTORY}/grafana-cloud-htpasswd";
+        bearertokenauth = {
+          filename = "\${env:CREDENTIALS_DIRECTORY}/grafana-cloud-basic-auth";
+          scheme = "Basic";
         };
       };
 
