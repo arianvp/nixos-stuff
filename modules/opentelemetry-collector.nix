@@ -2,7 +2,7 @@
 {
   systemd.services.opentelemetry-collector.serviceConfig.LoadCredential = [
     "honeycomb-ingest-key"
-    "grafana-cloud-token"
+    "grafana-cloud-htpasswd"
   ];
 
   services.opentelemetry-collector = {
@@ -17,10 +17,7 @@
           scheme = "";
         };
         "basicauth/grafana_cloud" = {
-          client_auth = {
-            username = "1473963";
-            password = "\${env:CREDENTIALS_DIRECTORY}/grafana-cloud-token";
-          };
+          client_auth.htpasswd.file = "\${env:CREDENTIALS_DIRECTORY}/grafana-cloud-htpasswd";
         };
       };
 
