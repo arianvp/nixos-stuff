@@ -16,8 +16,7 @@
           header = "x-honeycomb-team";
           scheme = "";
         };
-        "basicauth/grafana_cloud" = {
-        bearertokenauth = {
+        "bearertokenauth/grafana_cloud" = {
           filename = "\${env:CREDENTIALS_DIRECTORY}/grafana-cloud-basic-auth";
           scheme = "Basic";
         };
@@ -80,13 +79,13 @@
         };
         "otlphttp/grafana_cloud" = {
           endpoint = "https://otlp-gateway-prod-eu-west-2.grafana.net/otlp";
-          auth.authenticator = "basicauth/grafana_cloud";
+          auth.authenticator = "bearertokenauth/grafana_cloud";
         };
       };
 
       # Service configuration
       service = {
-        extensions = [ "bearertokenauth" "basicauth/grafana_cloud" ];
+        extensions = [ "bearertokenauth" "bearertokenauth/grafana_cloud" ];
         pipelines = {
           # Traces pipeline
           traces = {
