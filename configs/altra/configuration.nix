@@ -19,6 +19,7 @@
     ../../modules/tailscale.nix
     ../../modules/prometheus.nix
     ../../modules/alertmanager.nix
+    ../../modules/opentelemetry-collector.nix
 
     ../../modules/kubernetes/kubernetes.nix
 
@@ -101,60 +102,4 @@
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
   system.stateVersion = "25.05"; # Did you read the comment?A
-
-  systemd.services.opentelemetry-collector.serviceConfig.LoadCredential = "honeycomb-ingest-key";
-  services.opentelemetry-collector = {
-    enable = true;
-    package = pkgs.opentelemetry-collector-contrib;
-    settings = {
-      extensions.bearertokenauth = {
-        filename = "\${env:CREDENTIALS_DIRECTORY}/honeycomb-ingest-key";
-        header = "x-honeycomb-team";
-        scheme = "";
-      };
-      exporters.otlp = {
-        endpoint = "api.eu1.honeycomb.io:443";
-        auth.authenticator = "bearertokenauth";
-      };
-      receivers.journald = {
-        # TODO: Cursor
-        directory = "/var/log/journal";
-      };
-      receivers.hostmetrics.scrapers = {
-        cpu = {};
-        disk = {};
-        load = {};
-        memory = {};
-        filesystem = {};
-        network = {};
-        system = {};
-      };
-      processors."resourcedetection" = {
-        detectors = [
-          "system"
-          "env" # OTEL_RESOURCE_ATTRIBUTES
-        ];
-        system.hostname_sources = [ "os" ];
-      };
-      processors.batch = { };
-      service = {
-        extensions = [ "bearertokenauth" ];
-        pipelines = {
-          metrics = {
-            receivers = [ "hostmetrics" ];
-            processors = [ "resourcedetection" ];
-            exporters = [ "otlp" ];
-          };
-          logs = {
-            receivers = [ "journald" ];
-            processors = [
-              "resourcedetection"
-              "batch"
-            ];
-            exporters = [ "otlp" ];
-          };
-        };
-      };
-    };
-  };
 }
