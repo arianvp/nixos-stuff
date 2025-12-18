@@ -2,7 +2,7 @@
 {
   systemd.services.opentelemetry-collector.serviceConfig.LoadCredential = [
     "honeycomb-ingest-key"
-    "grafana-cloud-htpasswd"
+    "grafana-cloud-basic-auth"
   ];
 
   services.opentelemetry-collector = {
