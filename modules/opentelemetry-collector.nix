@@ -137,7 +137,6 @@ in
             {
               type = "severity_parser";
               parse_from = "body.PRIORITY";
-              to = ''attributes["log.severity_number"]'';
               mapping = {
                debug = 7;
                info = 6;
