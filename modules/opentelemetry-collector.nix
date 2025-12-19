@@ -133,9 +133,19 @@ in
               to = "attributes.log.record.uid";
             }
             {
-              type = "move";
+              type = "severity_parser";
               from = "body.PRIORITY";
               to = "attributes.log.severity_number";
+              mapping = {
+               debug = 7;
+               info = 6;
+               info2 = 5;
+               warn = 4;
+               error = 3;
+               error2 = 2;
+               error3 = 1;
+               fatal = 0;
+              };
               "if" = "body.PRIORITY != nil";
             }
             {
