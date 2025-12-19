@@ -156,12 +156,12 @@ in
               to = "attributes.code.lineno";
               on_error = "send_quiet";
             }
-            {
+            /*{
               type = "move";
               from = "body.TID";
               to = "attributes.thread.id";
               on_error = "send_quiet";
-            }
+              }*/
 
             # Resource attributes - process
             {
