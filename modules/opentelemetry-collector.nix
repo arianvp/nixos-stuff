@@ -74,32 +74,34 @@
           log_statements = [{
             context = "log";
             statements = [
-              # Unique identifier
+              # Unique identifier (log attribute)
               ''set(attributes["log.record.uid"], body["__CURSOR"])''
 
-              # Process attributes
-              ''set(attributes["process.pid"], body["_PID"])''
-              ''set(attributes["process.executable.path"], body["_EXE"])''
-              ''set(attributes["process.executable.name"], body["_COMM"])''
-              ''set(attributes["process.command_line"], body["_CMDLINE"])''
-              ''set(attributes["thread.id"], body["TID"])''
-
-              # Host/System attributes
-              ''set(attributes["host.name"], body["_HOSTNAME"])''
-              ''set(attributes["host.id"], body["_MACHINE_ID"])''
-
-              # Service/Unit attributes
-              ''set(attributes["service.name"], body["_SYSTEMD_UNIT"])''
-              ''set(attributes["service.instance.id"], body["_SYSTEMD_INVOCATION_ID"])''
-              ''set(attributes["process.linux.cgroup"], body["_SYSTEMD_CGROUP"])''
-
-              # Log severity
+              # Log severity (log attribute)
               ''set(attributes["log.severity_number"], body["PRIORITY"])''
 
-              # Code location attributes
+              # Code location attributes (log attributes)
               ''set(attributes["code.filepath"], body["CODE_FILE"])''
               ''set(attributes["code.function"], body["CODE_FUNC"])''
               ''set(attributes["code.lineno"], body["CODE_LINE"])''
+
+              # Thread ID (log attribute - per-log, not per-resource)
+              ''set(attributes["thread.id"], body["TID"])''
+
+              # Process attributes (resource attributes)
+              ''set(resource.attributes["process.pid"], body["_PID"])''
+              ''set(resource.attributes["process.executable.path"], body["_EXE"])''
+              ''set(resource.attributes["process.executable.name"], body["_COMM"])''
+              ''set(resource.attributes["process.command_line"], body["_CMDLINE"])''
+              ''set(resource.attributes["process.linux.cgroup"], body["_SYSTEMD_CGROUP"])''
+
+              # Host/System attributes (resource attributes)
+              ''set(resource.attributes["host.name"], body["_HOSTNAME"])''
+              ''set(resource.attributes["host.id"], body["_MACHINE_ID"])''
+
+              # Service/Unit attributes (resource attributes)
+              ''set(resource.attributes["service.name"], body["_SYSTEMD_UNIT"])''
+              ''set(resource.attributes["service.instance.id"], body["_SYSTEMD_INVOCATION_ID"])''
             ];
           }];
         };
