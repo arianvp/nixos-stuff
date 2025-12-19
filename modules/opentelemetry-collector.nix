@@ -59,7 +59,7 @@ let
       attrs="''${os_attrs}''${host_attrs}"
       attrs="''${attrs%,}"
 
-      echo "OTEL_RESOURCE_ATTRIBUTES=$attrs"
+      echo "OTEL_RESOURCE_ATTRIBUTES=$attrs" > /run/opentelemetry-collector-resource-attrs/resource-attrs.env
     '';
   };
 in
@@ -73,7 +73,6 @@ in
       Type = "oneshot";
       RuntimeDirectory = "opentelemetry-collector-resource-attrs";
       ExecStart = "${hostnamectlToOtel}/bin/hostnamectl-to-otel";
-      StandardOutput = "truncate:/run/opentelemetry-collector/resource-attrs.env";
       RemainAfterExit = true;
     };
   };
