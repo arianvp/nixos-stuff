@@ -166,7 +166,7 @@ in
               type = "move";
               from = "body.SYSLOG_IDENTIFIER";
               to = ''resource["service.name"]'';
-              "if" = ''resource["service.name"] != nil'';
+              "if" = ''body.SYSLOG_IDENTIFIER != nil && resource["service.name"] == nil'';
             }
             (moveResource "body._SYSTEMD_INVOCATION_ID" "service.instance.id")
 
