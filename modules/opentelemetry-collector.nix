@@ -46,25 +46,25 @@ let
       # Following https://opentelemetry.io/docs/specs/semconv/resource/os/
       os_attrs=""
       os_attrs="''${os_attrs}os.type=linux,"
-      [ -n "''${NAME:-}" ] && os_attrs="''${os_attrs}os.name=$NAME,"
-      [ -n "''${VERSION_ID:-}" ] && os_attrs="''${os_attrs}os.version=$VERSION_ID,"
-      [ -n "''${BUILD_ID:-}" ] && os_attrs="''${os_attrs}os.build_id=$BUILD_ID,"
-      [ -n "''${PRETTY_NAME:-}" ] && os_attrs="''${os_attrs}os.description=$PRETTY_NAME,"
+      [ -n "''${NAME:-}" ] && os_attrs="''${os_attrs}os.name=''${NAME},"
+      [ -n "''${VERSION_ID:-}" ] && os_attrs="''${os_attrs}os.version=''${VERSION_ID},"
+      [ -n "''${BUILD_ID:-}" ] && os_attrs="''${os_attrs}os.build_id=''${BUILD_ID},"
+      [ -n "''${PRETTY_NAME:-}" ] && os_attrs="''${os_attrs}os.description=''${PRETTY_NAME},"
 
       # Build host/device/deployment attributes from hostnamectl and os-release
       # Following https://opentelemetry.io/docs/specs/semconv/resource/host/
       # https://opentelemetry.io/docs/specs/semconv/resource/device/
       # https://opentelemetry.io/docs/specs/semconv/resource/deployment-environment/
       host_attrs=""
-      [ -n "''${HOSTNAME:-}" ] && host_attrs="''${host_attrs}host.name=$HOSTNAME,"
-      [ -n "''${MACHINE_ID:-}" ] && host_attrs="''${host_attrs}host.id=$MACHINE_ID,"
-      [ -n "''${CHASSIS:-}" ] && host_attrs="''${host_attrs}host.type=$CHASSIS,"
-      [ -n "''${ARCHITECTURE:-}" ] && host_attrs="''${host_attrs}host.arch=$ARCHITECTURE,"
-      [ -n "''${IMAGE_ID:-}" ] && host_attrs="''${host_attrs}host.image.id=$IMAGE_ID,"
-      [ -n "''${IMAGE_VERSION:-}" ] && host_attrs="''${host_attrs}host.image.version=$IMAGE_VERSION,"
-      [ -n "''${HARDWARE_VENDOR:-}" ] && host_attrs="''${host_attrs}device.manufacturer=$HARDWARE_VENDOR,"
-      [ -n "''${HARDWARE_MODEL:-}" ] && host_attrs="''${host_attrs}device.model.identifier=$HARDWARE_MODEL,"
-      [ -n "''${DEPLOYMENT:-}" ] && host_attrs="''${host_attrs}deployment.environment.name=$DEPLOYMENT,"
+      [ -n "''${HOSTNAME:-}" ] && host_attrs="''${host_attrs}host.name=''${HOSTNAME},"
+      [ -n "''${MACHINE_ID:-}" ] && host_attrs="''${host_attrs}host.id=''${MACHINE_ID},"
+      [ -n "''${CHASSIS:-}" ] && host_attrs="''${host_attrs}host.type=''${CHASSIS},"
+      [ -n "''${ARCHITECTURE:-}" ] && host_attrs="''${host_attrs}host.arch=''${ARCHITECTURE},"
+      [ -n "''${IMAGE_ID:-}" ] && host_attrs="''${host_attrs}host.image.id=''${IMAGE_ID},"
+      [ -n "''${IMAGE_VERSION:-}" ] && host_attrs="''${host_attrs}host.image.version=''${IMAGE_VERSION},"
+      [ -n "''${HARDWARE_VENDOR:-}" ] && host_attrs="''${host_attrs}device.manufacturer=''${HARDWARE_VENDOR},"
+      [ -n "''${HARDWARE_MODEL:-}" ] && host_attrs="''${host_attrs}device.model.identifier=''${HARDWARE_MODEL},"
+      [ -n "''${DEPLOYMENT:-}" ] && host_attrs="''${host_attrs}deployment.environment.name=''${DEPLOYMENT},"
 
       # Combine and remove trailing comma
       attrs="''${os_attrs}''${host_attrs}"
