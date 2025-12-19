@@ -136,70 +136,69 @@ in
               type = "move";
               from = "body.PRIORITY";
               to = "attributes.log.severity_number";
-              on_error = "send_quiet";
+              "if" = "body.PRIORITY != nil";
             }
             {
               type = "move";
               from = "body.CODE_FILE";
               to = "attributes.code.filepath";
-              on_error = "send_quiet";
+              "if" = "body.CODE_FILE != nil";
             }
             {
               type = "move";
               from = "body.CODE_FUNC";
               to = "attributes.code.function";
-              on_error = "send_quiet";
+              "if" = "body.CODE_FUNC != nil";
             }
             {
               type = "move";
               from = "body.CODE_LINE";
               to = "attributes.code.lineno";
-              on_error = "send_quiet";
+              "if" = "body.CODE_LINE != nil";
             }
-            /*{
+            {
               type = "move";
               from = "body.TID";
               to = "attributes.thread.id";
-              on_error = "send_quiet";
-              }*/
+              "if" = "body.TID != nil";
+            }
 
             # Resource attributes - process
             {
               type = "move";
               from = "body._PID";
               to = "resource.process.pid";
-              on_error = "send_quiet";
+              "if" = "body._PID != nil";
             }
             {
               type = "move";
               from = "body._EXE";
               to = "resource.process.executable.path";
-              on_error = "send_quiet";
+              "if" = "body._EXE != nil";
             }
             {
               type = "move";
               from = "body._COMM";
               to = "resource.process.executable.name";
-              on_error = "send_quiet";
+              "if" = "body._COMM != nil";
             }
             {
               type = "move";
               from = "body._CMDLINE";
               to = "resource.process.command_line";
-              on_error = "send_quiet";
+              "if" = "body._CMDLINE != nil";
             }
             {
               type = "move";
               from = "body._SYSTEMD_CGROUP";
               to = "resource.process.linux.cgroup";
-              on_error = "send_quiet";
+              "if" = "body._SYSTEMD_CGROUP != nil";
             }
             {
               type = "move";
               from = "body._SYSTEMD_UNIT";
               to = "resource.service.name";
               "if" = "body._SYSTEMD_UNIT != nil";
-              on_error = "send_quiet";
             }
 
             {
@@ -207,14 +206,13 @@ in
               from = "body.SYSLOG_IDENTIFIER";
               to = "resource.service.name";
               "if" = "resource.service.name != nil";
-              on_error = "send_quiet";
             }
 
             {
               type = "move";
               from = "body._SYSTEMD_INVOCATION_ID";
               to = "resource.service.instance.id";
-              on_error = "send_quiet";
+              "if" = "body._SYSTEMD_INVOCATION_ID != nil";
             }
 
             # TODO: Perhaps use STREAM_ID with recombine?
