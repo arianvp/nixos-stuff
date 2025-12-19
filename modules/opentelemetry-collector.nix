@@ -1,9 +1,17 @@
-{ pkgs, lib, config, ... }:
+{
+  pkgs,
+  lib,
+  config,
+  ...
+}:
 let
   # Convert hostnamectl JSON to shell-sourceable format (like /etc/machine-info)
   hostnamectlToEnv = pkgs.writeShellApplication {
     name = "hostnamectl-to-env";
-    runtimeInputs = [ pkgs.jq config.systemd.package ];
+    runtimeInputs = [
+      pkgs.jq
+      config.systemd.package
+    ];
     text = ''
       hostnamectl --json=pretty | jq -r '
         # Extract string fields and convert to UPPER_SNAKE_CASE
@@ -111,31 +119,88 @@ in
       receivers = {
         otlp = {
           protocols = {
-            grpc = {};
-            http = {};
+            grpc = { };
+            http = { };
           };
         };
         journald = {
           directory = "/var/log/journal";
           operators = [
             # Log-level attributes (not resource attributes)
-            { type = "move"; from = "body.__CURSOR"; to = "attributes.log.record.uid"; }
-            { type = "move"; from = "body.PRIORITY"; to = "attributes.log.severity_number"; }
-            { type = "move"; from = "body.CODE_FILE"; to = "attributes.code.filepath"; }
-            { type = "move"; from = "body.CODE_FUNC"; to = "attributes.code.function"; }
-            { type = "move"; from = "body.CODE_LINE"; to = "attributes.code.lineno"; }
-            { type = "move"; from = "body.TID"; to = "attributes.thread.id"; }
+            {
+              type = "move";
+              from = "body.__CURSOR";
+              to = "attributes.log.record.uid";
+            }
+            {
+              type = "move";
+              from = "body.PRIORITY";
+              to = "attributes.log.severity_number";
+              on_error = "send_quiet";
+            }
+            {
+              type = "move";
+              from = "body.CODE_FILE";
+              to = "attributes.code.filepath";
+              on_error = "send_quiet";
+            }
+            {
+              type = "move";
+              from = "body.CODE_FUNC";
+              to = "attributes.code.function";
+              on_error = "send_quiet";
+            }
+            {
+              type = "move";
+              from = "body.CODE_LINE";
+              to = "attributes.code.lineno";
+              on_error = "send_quiet";
+            }
+            {
+              type = "move";
+              from = "body.TID";
+              to = "attributes.thread.id";
+              on_error = "send_quiet";
+            }
 
             # Resource attributes - process
-            { type = "move"; from = "body._PID"; to = "resource.process.pid"; }
-            { type = "move"; from = "body._EXE"; to = "resource.process.executable.path"; }
-            { type = "move"; from = "body._COMM"; to = "resource.process.executable.name"; }
-            { type = "move"; from = "body._CMDLINE"; to = "resource.process.command_line"; }
-            { type = "move"; from = "body._SYSTEMD_CGROUP"; to = "resource.process.linux.cgroup"; }
+            {
+              type = "move";
+              from = "body._PID";
+              to = "resource.process.pid";
+            }
+            {
+              type = "move";
+              from = "body._EXE";
+              to = "resource.process.executable.path";
+            }
+            {
+              type = "move";
+              from = "body._COMM";
+              to = "resource.process.executable.name";
+            }
+            {
+              type = "move";
+              from = "body._CMDLINE";
+              to = "resource.process.command_line";
+            }
+            {
+              type = "move";
+              from = "body._SYSTEMD_CGROUP";
+              to = "resource.process.linux.cgroup";
+            }
 
             # Resource attributes - service
-            { type = "move"; from = "body._SYSTEMD_UNIT"; to = "resource.service.name"; }
-            { type = "move"; from = "body._SYSTEMD_INVOCATION_ID"; to = "resource.service.instance.id"; }
+            {
+              type = "move";
+              from = "body._SYSTEMD_UNIT";
+              to = "resource.service.name";
+            }
+            {
+              type = "move";
+              from = "body._SYSTEMD_INVOCATION_ID";
+              to = "resource.service.instance.id";
+            }
 
             # Move MESSAGE to body (do this last)
             # { type = "move"; from = "body.MESSAGE"; to = "body"; }
@@ -143,33 +208,35 @@ in
         };
         hostmetrics = {
           scrapers = {
-            cpu = {};
-            disk = {};
-            load = {};
-            memory = {};
-            filesystem = {};
-            network = {};
-            system = {};
+            cpu = { };
+            disk = { };
+            load = { };
+            memory = { };
+            filesystem = { };
+            network = { };
+            system = { };
           };
         };
       };
 
       # Processors
       processors = {
-        batch = {};
+        batch = { };
         resourcedetection = {
           detectors = [ "env" ];
           override = false;
         };
         "transform/add_resource_attributes_as_metric_attributes" = {
           error_mode = "ignore";
-          metric_statements = [{
-            context = "datapoint";
-            statements = [
-              ''set(attributes["deployment.environment"], resource.attributes["deployment.environment"])''
-              ''set(attributes["service.version"], resource.attributes["service.version"])''
-            ];
-          }];
+          metric_statements = [
+            {
+              context = "datapoint";
+              statements = [
+                ''set(attributes["deployment.environment"], resource.attributes["deployment.environment"])''
+                ''set(attributes["service.version"], resource.attributes["service.version"])''
+              ];
+            }
+          ];
         };
       };
 
@@ -187,19 +254,39 @@ in
 
       # Service configuration
       service = {
-        extensions = [ "bearertokenauth" "bearertokenauth/grafana_cloud" ];
+        extensions = [
+          "bearertokenauth"
+          "bearertokenauth/grafana_cloud"
+        ];
         pipelines = {
           # Traces pipeline
           traces = {
             receivers = [ "otlp" ];
-            processors = [ "resourcedetection" "batch" ];
-            exporters = [ "otlp/honeycomb" "otlphttp/grafana_cloud" "grafanacloud" ];
+            processors = [
+              "resourcedetection"
+              "batch"
+            ];
+            exporters = [
+              "otlp/honeycomb"
+              "otlphttp/grafana_cloud"
+              "grafanacloud"
+            ];
           };
           # Metrics pipeline
           metrics = {
-            receivers = [ "otlp" "hostmetrics" ];
-            processors = [ "resourcedetection" "transform/add_resource_attributes_as_metric_attributes" "batch" ];
-            exporters = [ "otlp/honeycomb" "otlphttp/grafana_cloud" ];
+            receivers = [
+              "otlp"
+              "hostmetrics"
+            ];
+            processors = [
+              "resourcedetection"
+              "transform/add_resource_attributes_as_metric_attributes"
+              "batch"
+            ];
+            exporters = [
+              "otlp/honeycomb"
+              "otlphttp/grafana_cloud"
+            ];
           };
           # Grafana Cloud specific metrics pipeline
           "metrics/grafanacloud" = {
@@ -209,9 +296,15 @@ in
           };
           # Logs pipeline
           logs = {
-            receivers = [ "otlp" "journald" ];
+            receivers = [
+              "otlp"
+              "journald"
+            ];
             processors = [ "batch" ];
-            exporters = [ "otlp/honeycomb" "otlphttp/grafana_cloud" ];
+            exporters = [
+              "otlp/honeycomb"
+              "otlphttp/grafana_cloud"
+            ];
           };
         };
       };
