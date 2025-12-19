@@ -64,14 +64,26 @@ let
   };
 in
 {
+  # Oneshot service to generate OTEL resource attributes from hostnamectl
+  systemd.services.opentelemetry-collector-resource-attrs = {
+    description = "Generate OpenTelemetry Collector Resource Attributes";
+    wantedBy = [ "opentelemetry-collector.service" ];
+    before = [ "opentelemetry-collector.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RuntimeDirectory = "opentelemetry-collector-resource-attrs";
+      ExecStart = "${hostnamectlToOtel}/bin/hostnamectl-to-otel";
+      StandardOutput = "truncate:/run/opentelemetry-collector/resource-attrs.env";
+      RemainAfterExit = true;
+    };
+  };
+
   systemd.services.opentelemetry-collector.serviceConfig = {
     LoadCredential = [
       "honeycomb-ingest-key"
       "grafana-cloud-basic-auth"
     ];
-    ExecStartPre = "${hostnamectlToOtel}/bin/hostnamectl-to-otel > /run/opentelemetry-collector/resource-attrs.env";
-    EnvironmentFile = "/run/opentelemetry-collector/resource-attrs.env";
-    RuntimeDirectory = "opentelemetry-collector";
+    EnvironmentFile = "-/run/opentelemetry-collector-resource-attrs/resource-attrs.env";
   };
 
   services.opentelemetry-collector = {
