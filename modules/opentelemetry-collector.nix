@@ -15,19 +15,22 @@ let
     text = ''
       hostnamectl --json=pretty | jq -r '
         # Extract string fields and convert to UPPER_SNAKE_CASE
-        to_entries |
-        map(
-          select(.value != null and .value != "" and (.value | type) == "string") |
-          # Convert PascalCase to UPPER_SNAKE_CASE (e.g., HardwareVendor -> HARDWARE_VENDOR)
-          .key |= (gsub("(?<a>[a-z])(?<b>[A-Z])"; "\(.a)_\(.b)") | ascii_upcase) |
-          "\(.key)=\"\(.value)\""
-        ) |
-        .[] ;
-
+        (
+          to_entries |
+          map(
+            select(.value != null and .value != "" and (.value | type) == "string") |
+            # Convert PascalCase to UPPER_SNAKE_CASE (e.g., HardwareVendor -> HARDWARE_VENDOR)
+            .key |= (gsub("(?<a>[a-z])(?<b>[A-Z])"; "\(.a)_\(.b)") | ascii_upcase) |
+            "\(.key)=\"\(.value)\""
+          ) |
+          .[]
+        ),
         # Extract OperatingSystemReleaseData array and convert to shell variables
-        .OperatingSystemReleaseData // [] |
-        map(select(. != null and . != "")) |
-        .[]
+        (
+          .OperatingSystemReleaseData // [] |
+          map(select(. != null and . != "")) |
+          .[]
+        )
       '
     '';
   };
@@ -67,7 +70,7 @@ let
       attrs="''${os_attrs}''${host_attrs}"
       attrs="''${attrs%,}"
 
-      echo "OTEL_RESOURCE_ATTRIBUTES=$attrs" > /run/opentelemetry-collector-resource-attrs/resource-attrs.env
+      echo "OTEL_RESOURCE_ATTRIBUTES=$attrs"
     '';
   };
 in
@@ -80,6 +83,7 @@ in
     serviceConfig = {
       Type = "oneshot";
       RuntimeDirectory = "opentelemetry-collector-resource-attrs";
+      StandardOutput = "truncate:/run/opentelemetry-collector-resource-attrs/resource-attrs.env";
       ExecStart = "${hostnamectlToOtel}/bin/hostnamectl-to-otel";
       RemainAfterExit = true;
     };
@@ -270,7 +274,7 @@ in
               "otlp"
               "journald"
             ];
-            processors = [ "batch" ];
+            processors = [ "resourcedetection" "batch" ];
             exporters = [
               "otlp/honeycomb"
               "otlphttp/grafana_cloud"
