@@ -15,22 +15,14 @@ let
     text = ''
       hostnamectl --json=pretty | jq -r '
         # Extract string fields and convert to UPPER_SNAKE_CASE
-        (
-          to_entries |
-          map(
-            select(.value != null and .value != "" and (.value | type) == "string") |
-            # Convert PascalCase to UPPER_SNAKE_CASE (e.g., HardwareVendor -> HARDWARE_VENDOR)
-            .key |= (gsub("(?<a>[a-z])(?<b>[A-Z])"; "\(.a)_\(.b)") | ascii_upcase) |
-            "\(.key)=\"\(.value)\""
-          ) |
-          .[]
-        ),
-        # Extract OperatingSystemReleaseData array and convert to shell variables
-        (
-          .OperatingSystemReleaseData // [] |
-          map(select(. != null and . != "")) |
-          .[]
-        )
+        to_entries |
+        map(
+          select(.value != null and .value != "" and (.value | type) == "string") |
+          # Convert PascalCase to UPPER_SNAKE_CASE (e.g., HardwareVendor -> HARDWARE_VENDOR)
+          .key |= (gsub("(?<a>[a-z])(?<b>[A-Z])"; "\(.a)_\(.b)") | ascii_upcase) |
+          "\(.key)=\"\(.value)\""
+        ) |
+        .[]
       '
     '';
   };
@@ -39,7 +31,10 @@ let
     name = "hostnamectl-to-otel";
     runtimeInputs = [ hostnamectlToEnv ];
     text = ''
-      # Source hostnamectl info (includes os-release data from OperatingSystemReleaseData)
+      # Source os-release directly (properly quoted)
+      . /etc/os-release
+
+      # Source hostnamectl info
       eval "$(hostnamectl-to-env)"
 
       # Build OS attributes from os-release
