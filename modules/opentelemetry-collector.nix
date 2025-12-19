@@ -125,17 +125,19 @@ in
         };
         journald = {
           directory = "/var/log/journal";
-          operators = [
+          operators =
+             let
+               move = from: to: { type = "move"; inherit from to; "if" = "${from} != nil"; };
+               moveAttr = from: to:  move from ''attributes["${to}"]'';
+               moveResource = from: to: move from ''resource["${to}"]'';
+               in
+          [
             # Log-level attributes (not resource attributes)
-            {
-              type = "move";
-              from = "body.__CURSOR";
-              to = "attributes.log.record.uid";
-            }
+            (moveAttr "body.__CURSOR" "log.record.uid")
             {
               type = "severity_parser";
               parse_from = "body.PRIORITY";
-              to = "attributes.log.severity_number";
+              to = ''attributes["log.severity_number"]'';
               mapping = {
                debug = 7;
                info = 6;
@@ -148,82 +150,25 @@ in
               };
               "if" = "body.PRIORITY != nil";
             }
-            {
-              type = "move";
-              from = "body.CODE_FILE";
-              to = "attributes.code.filepath";
-              "if" = "body.CODE_FILE != nil";
-            }
-            {
-              type = "move";
-              from = "body.CODE_FUNC";
-              to = "attributes.code.function";
-              "if" = "body.CODE_FUNC != nil";
-            }
-            {
-              type = "move";
-              from = "body.CODE_LINE";
-              to = "attributes.code.lineno";
-              "if" = "body.CODE_LINE != nil";
-            }
-            {
-              type = "move";
-              from = "body.TID";
-              to = "attributes.thread.id";
-              "if" = "body.TID != nil";
-            }
+            (moveAttr "body.CODE_FILE" "code.filepath")
+            (moveAttr "body.CODE_FUNC" "code.function")
+            (moveAttr "body.CODE_LINE" "code.lineno")
+            (moveAttr "body.TID" "thread.id")
 
             # Resource attributes - process
-            {
-              type = "move";
-              from = "body._PID";
-              to = "resource.process.pid";
-              "if" = "body._PID != nil";
-            }
-            {
-              type = "move";
-              from = "body._EXE";
-              to = "resource.process.executable.path";
-              "if" = "body._EXE != nil";
-            }
-            {
-              type = "move";
-              from = "body._COMM";
-              to = "resource.process.executable.name";
-              "if" = "body._COMM != nil";
-            }
-            {
-              type = "move";
-              from = "body._CMDLINE";
-              to = "resource.process.command_line";
-              "if" = "body._CMDLINE != nil";
-            }
-            {
-              type = "move";
-              from = "body._SYSTEMD_CGROUP";
-              to = "resource.process.linux.cgroup";
-              "if" = "body._SYSTEMD_CGROUP != nil";
-            }
-            {
-              type = "move";
-              from = "body._SYSTEMD_UNIT";
-              to = "resource.service.name";
-              "if" = "body._SYSTEMD_UNIT != nil";
-            }
-
+            (moveResource "body._PID" "process.pid")
+            (moveResource "body._EXE" "process.executable.path")
+            (moveResource "body._COMM" "process.executable.name")
+            (moveResource "body._CMDLINE" "process.command_line")
+            (moveResource "body._SYSTEMD_CGROUP" "process.linux.cgroup")
+            (moveResource "body._SYSTEMD_UNIT" "service.name")
             {
               type = "move";
               from = "body.SYSLOG_IDENTIFIER";
-              to = "resource.service.name";
-              "if" = "resource.service.name != nil";
+              to = ''resource["service.name"]'';
+              "if" = ''resource["service.name"] != nil'';
             }
-
-            {
-              type = "move";
-              from = "body._SYSTEMD_INVOCATION_ID";
-              to = "resource.service.instance.id";
-              "if" = "body._SYSTEMD_INVOCATION_ID != nil";
-            }
+            (moveResource "body._SYSTEMD_INVOCATION_ID" "service.instance.id")
 
             # TODO: Perhaps use STREAM_ID with recombine?
             # https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/stanza/docs/operators/recombine.md
