@@ -138,14 +138,14 @@ in
               type = "severity_parser";
               parse_from = "body.PRIORITY";
               mapping = {
-               debug = 7;
-               info = 6;
-               info2 = 5;
-               warn = 4;
-               error = 3;
-               error2 = 2;
-               error3 = 1;
-               fatal = 0;
+               debug = { min = 7; max = 7; };
+               info =  { min = 6; max = 7; };
+               info2 = { min = 5; max = 5; };
+               warn = { min = 4; max = 4; };
+               error = { min = 3; max = 3; };
+               error2 = {min = 2; max = 2;};
+               error3 = { min = 1; max = 1; };
+               fatal = { min = 0; max = 0; };
               };
               "if" = "body.PRIORITY != nil";
             }
