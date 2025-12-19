@@ -199,6 +199,7 @@ in
               from = "body._SYSTEMD_UNIT";
               to = "resource.service.name";
               "if" = "body._SYSTEMD_UNIT != nil";
+              on_error = "send_quiet";
             }
 
             {
@@ -206,6 +207,7 @@ in
               from = "body.SYSLOG_IDENTIFIER";
               to = "resource.service.name";
               "if" = "resource.service.name != nil";
+              on_error = "send_quiet";
             }
 
             {
