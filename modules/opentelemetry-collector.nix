@@ -117,6 +117,29 @@ in
         };
         journald = {
           directory = "/var/log/journal";
+          operators = [
+            # Log-level attributes (not resource attributes)
+            { type = "move"; from = "body.__CURSOR"; to = "attributes.log.record.uid"; }
+            { type = "move"; from = "body.PRIORITY"; to = "attributes.log.severity_number"; }
+            { type = "move"; from = "body.CODE_FILE"; to = "attributes.code.filepath"; }
+            { type = "move"; from = "body.CODE_FUNC"; to = "attributes.code.function"; }
+            { type = "move"; from = "body.CODE_LINE"; to = "attributes.code.lineno"; }
+            { type = "move"; from = "body.TID"; to = "attributes.thread.id"; }
+
+            # Resource attributes - process
+            { type = "move"; from = "body._PID"; to = "resource.process.pid"; }
+            { type = "move"; from = "body._EXE"; to = "resource.process.executable.path"; }
+            { type = "move"; from = "body._COMM"; to = "resource.process.executable.name"; }
+            { type = "move"; from = "body._CMDLINE"; to = "resource.process.command_line"; }
+            { type = "move"; from = "body._SYSTEMD_CGROUP"; to = "resource.process.linux.cgroup"; }
+
+            # Resource attributes - service
+            { type = "move"; from = "body._SYSTEMD_UNIT"; to = "resource.service.name"; }
+            { type = "move"; from = "body._SYSTEMD_INVOCATION_ID"; to = "resource.service.instance.id"; }
+
+            # Move MESSAGE to body (do this last)
+            # { type = "move"; from = "body.MESSAGE"; to = "body"; }
+          ];
         };
         hostmetrics = {
           scrapers = {
@@ -147,57 +170,6 @@ in
               ''set(attributes["service.version"], resource.attributes["service.version"])''
             ];
           }];
-        };
-        "transform/journal_semantic_conventions" = {
-          error_mode = "ignore";
-          log_statements = [{
-            context = "log";
-            statements = [
-              # Unique identifier (log attribute)
-              ''set(attributes["log.record.uid"], body["__CURSOR"])''
-
-              # Log severity (log attribute)
-              ''set(attributes["log.severity_number"], body["PRIORITY"])''
-
-              # Code location attributes (log attributes)
-              ''set(attributes["code.filepath"], body["CODE_FILE"])''
-              ''set(attributes["code.function"], body["CODE_FUNC"])''
-              ''set(attributes["code.lineno"], body["CODE_LINE"])''
-
-              # Thread ID (log attribute)
-              ''set(attributes["thread.id"], body["TID"])''
-
-              # Extract to attributes first, groupbyattrs will promote to resource
-              ''set(attributes["process.pid"], body["_PID"])''
-              ''set(attributes["process.executable.path"], body["_EXE"])''
-              ''set(attributes["process.executable.name"], body["_COMM"])''
-              ''set(attributes["process.command_line"], body["_CMDLINE"])''
-              ''set(attributes["process.linux.cgroup"], body["_SYSTEMD_CGROUP"])''
-
-              # NOTE: host.name and host.id come from journal fields (_HOSTNAME, _MACHINE_ID)
-              # which correctly identify the source (host/container/VM). We use the collector's
-              # host info from resourcedetection/env for the physical collector host.
-              # TODO: Figure out what to do with merged logs from containers. For now lets ignore
-              # ''set(attributes["host.name"], body["_HOSTNAME"])''
-              # ''set(attributes["host.id"], body["_MACHINE_ID"])''
-
-              ''set(attributes["service.name"], body["_SYSTEMD_UNIT"])''
-              ''set(attributes["service.instance.id"], body["_SYSTEMD_INVOCATION_ID"])''
-            ];
-          }];
-        };
-        "groupbyattrs/journal_semantic_conventions" = {
-          keys = [
-            "service.name"
-            "service.instance.id"
-            #  "host.name"
-            # "host.id"
-            "process.pid"
-            "process.executable.path"
-            "process.executable.name"
-            "process.command_line"
-            "process.linux.cgroup"
-          ];
         };
       };
 
@@ -238,7 +210,7 @@ in
           # Logs pipeline
           logs = {
             receivers = [ "otlp" "journald" ];
-            processors = [ "transform/journal_semantic_conventions" "groupbyattrs/journal_semantic_conventions" "batch" ];
+            processors = [ "batch" ];
             exporters = [ "otlp/honeycomb" "otlphttp/grafana_cloud" ];
           };
         };
