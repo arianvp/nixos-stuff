@@ -85,25 +85,36 @@
               ''set(attributes["code.function"], body["CODE_FUNC"])''
               ''set(attributes["code.lineno"], body["CODE_LINE"])''
 
-              # Thread ID (log attribute - per-log, not per-resource)
+              # Thread ID (log attribute)
               ''set(attributes["thread.id"], body["TID"])''
 
-              # Process attributes (resource attributes)
-              ''set(resource.attributes["process.pid"], body["_PID"])''
-              ''set(resource.attributes["process.executable.path"], body["_EXE"])''
-              ''set(resource.attributes["process.executable.name"], body["_COMM"])''
-              ''set(resource.attributes["process.command_line"], body["_CMDLINE"])''
-              ''set(resource.attributes["process.linux.cgroup"], body["_SYSTEMD_CGROUP"])''
+              # Extract to attributes first, groupbyattrs will promote to resource
+              ''set(attributes["process.pid"], body["_PID"])''
+              ''set(attributes["process.executable.path"], body["_EXE"])''
+              ''set(attributes["process.executable.name"], body["_COMM"])''
+              ''set(attributes["process.command_line"], body["_CMDLINE"])''
+              ''set(attributes["process.linux.cgroup"], body["_SYSTEMD_CGROUP"])''
 
-              # Host/System attributes (resource attributes)
-              ''set(resource.attributes["host.name"], body["_HOSTNAME"])''
-              ''set(resource.attributes["host.id"], body["_MACHINE_ID"])''
+              ''set(attributes["host.name"], body["_HOSTNAME"])''
+              ''set(attributes["host.id"], body["_MACHINE_ID"])''
 
-              # Service/Unit attributes (resource attributes)
-              ''set(resource.attributes["service.name"], body["_SYSTEMD_UNIT"])''
-              ''set(resource.attributes["service.instance.id"], body["_SYSTEMD_INVOCATION_ID"])''
+              ''set(attributes["service.name"], body["_SYSTEMD_UNIT"])''
+              ''set(attributes["service.instance.id"], body["_SYSTEMD_INVOCATION_ID"])''
             ];
           }];
+        };
+        "groupbyattrs/journal_semantic_conventions" = {
+          keys = [
+            "service.name"
+            "service.instance.id"
+            "host.name"
+            "host.id"
+            "process.pid"
+            "process.executable.path"
+            "process.executable.name"
+            "process.command_line"
+            "process.linux.cgroup"
+          ];
         };
       };
 
@@ -144,7 +155,7 @@
           # Logs pipeline
           logs = {
             receivers = [ "otlp" "journald" ];
-            processors = [ "resourcedetection" "transform/journal_semantic_conventions" "batch" ];
+            processors = [ "transform/journal_semantic_conventions" "groupbyattrs/journal_semantic_conventions" "batch" ];
             exporters = [ "otlp/honeycomb" "otlphttp/grafana_cloud" ];
           };
         };
