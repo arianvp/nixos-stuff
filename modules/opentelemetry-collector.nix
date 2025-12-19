@@ -168,39 +168,55 @@ in
               type = "move";
               from = "body._PID";
               to = "resource.process.pid";
+              on_error = "send_quiet";
             }
             {
               type = "move";
               from = "body._EXE";
               to = "resource.process.executable.path";
+              on_error = "send_quiet";
             }
             {
               type = "move";
               from = "body._COMM";
               to = "resource.process.executable.name";
+              on_error = "send_quiet";
             }
             {
               type = "move";
               from = "body._CMDLINE";
               to = "resource.process.command_line";
+              on_error = "send_quiet";
             }
             {
               type = "move";
               from = "body._SYSTEMD_CGROUP";
               to = "resource.process.linux.cgroup";
+              on_error = "send_quiet";
             }
-
-            # Resource attributes - service
             {
               type = "move";
               from = "body._SYSTEMD_UNIT";
               to = "resource.service.name";
+              "if" = "body._SYSTEMD_UNIT != nil";
             }
+
+            {
+              type = "move";
+              from = "body.SYSLOG_IDENTIFIER";
+              to = "resource.service.name";
+              "if" = "resource.service.name != nil";
+            }
+
             {
               type = "move";
               from = "body._SYSTEMD_INVOCATION_ID";
               to = "resource.service.instance.id";
+              on_error = "send_quiet";
             }
+
+            # TODO: Perhaps use STREAM_ID with recombine?
+            # https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/stanza/docs/operators/recombine.md
 
             # Move MESSAGE to body (do this last)
             # { type = "move"; from = "body.MESSAGE"; to = "body"; }
