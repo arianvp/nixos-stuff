@@ -19,7 +19,12 @@
     ../../modules/tailscale.nix
     ../../modules/prometheus.nix
     ../../modules/alertmanager.nix
-    ../../modules/opentelemetry-collector.nix
+    ../../modules/opentelemetry-collector
+    ../../modules/opentelemetry-collector/resource-attributes.nix
+    ../../modules/opentelemetry-collector/journald-receiver.nix
+    # ../../modules/opentelemetry-collector/exporter-honeycomb.nix
+    ../../modules/opentelemetry-collector/exporter-dash0.nix
+    # ../../modules/opentelemetry-collector/exporter-grafanacloud.nix
 
     ../../modules/kubernetes/kubernetes.nix
 
