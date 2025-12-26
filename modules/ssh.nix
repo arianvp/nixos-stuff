@@ -20,8 +20,8 @@ in
   '';
 
   # Configure SSH askpass for GNOME
-  programs.ssh.enableAskPassword = lib.mkIf config.services.xserver.desktopManager.gnome.enable true;
-  programs.ssh.askPassword = lib.mkIf config.services.xserver.desktopManager.gnome.enable "${pkgs.gnome-ssh-askpass4}/bin/gnome-ssh-askpass4";
+  programs.ssh.enableAskPassword = lib.mkIf config.services.desktopManager.gnome.enable true;
+  programs.ssh.askPassword = lib.mkIf config.services.desktopManager.gnome.enable "${pkgs.gnome-ssh-askpass4}/bin/gnome-ssh-askpass4";
 
 
   security.pam.ussh = {
