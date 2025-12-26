@@ -19,6 +19,7 @@
     ../../modules/tailscale.nix
     ../../modules/prometheus.nix
     ../../modules/alertmanager.nix
+    ../../modules/opentelemetry-collector.nix
 
     ../../modules/kubernetes/kubernetes.nix
 
@@ -68,7 +69,10 @@
 
   users.users.arian = {
     isNormalUser = true;
-    extraGroups = [ "nix-trusted-users" "wheel" ];
+    extraGroups = [
+      "nix-trusted-users"
+      "wheel"
+    ];
   };
 
   users.users.flokli = {
@@ -82,7 +86,6 @@
 
   # TODO: Do we need this?
   programs.zsh.enable = true;
-
 
   # TODO: Move to builder role?
   nix.settings.system-features = [

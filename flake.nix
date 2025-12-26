@@ -48,6 +48,7 @@
         prometheus = ./modules/prometheus.nix;
         alertmanager = ./modules/alertmanager.nix;
         grafana = ./modules/grafana.nix;
+        opentelemetry-collector = ./modules/opentelemetry-collector.nix;
         spire-server = ./modules/spire/server.nix;
         spire-agent = ./modules/spire/agent.nix;
         spire-controller-manager = ./modules/spire/controller-manager.nix;

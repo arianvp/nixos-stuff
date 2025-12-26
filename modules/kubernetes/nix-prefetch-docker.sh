@@ -12,6 +12,9 @@ images=(
   "gcr.io/k8s-staging-cri-tools/test-image-tag:all"
   "gcr.io/k8s-staging-cri-tools/test-image-latest:latest"
   "gcr.io/k8s-staging-cri-tools/test-image-user-uid:latest"
+  "gcr.io/k8s-staging-cri-tools/test-image-user-username:latest"
+  "gcr.io/k8s-staging-cri-tools/test-image-user-uid-group:latest"
+  "gcr.io/k8s-staging-cri-tools/test-image-user-username-group:latest"
   "gcr.io/k8s-staging-cri-tools/test-image-1:latest"
   "gcr.io/k8s-staging-cri-tools/test-image-2:latest"
   "gcr.io/k8s-staging-cri-tools/test-image-3:latest"
@@ -46,6 +49,12 @@ for image_spec in "${images[@]}"; do
 
   # Create directory
   mkdir -p "$output_path"
+
+  # Skip if default.nix already exists
+  if [[ -f "$output_path/default.nix" ]]; then
+    echo "Skipping $display_ref (already exists)"
+    continue
+  fi
 
   echo "Fetching $display_ref..."
   nix run nixpkgs#nix-prefetch-docker -- --arch "$ARCH" --os "$OS" "$image" "$tag_or_digest" > "$output_path/default.nix"
