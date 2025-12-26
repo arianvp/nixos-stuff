@@ -63,6 +63,7 @@
               ./overlays/neovim.nix
               ./overlays/spire.nix
               ./overlays/openssh-audit.nix
+              ./overlays/gnome-ssh-askpass4.nix
             ];
           };
       };

@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, config, lib, ... }:
 
 let
   caFile = pkgs.concatText "ca.pub" [
@@ -12,11 +12,17 @@ in
   imports = [ ./ssh-authorized-principals.nix ];
 
   programs.ssh.extraConfig = ''
+    AddKeysToAgent yes
     CertificateFile ${../keys/yk-black/id_ed25519_sk_rk_arian-cert.pub}
     CertificateFile ${../keys/yk-yellow/id_ed25519_sk_rk_arian-cert.pub}
     # run ssh-keygen -K to download
     IdentityFile ~/.ssh/id_ed25519_sk_rk_arian
   '';
+
+  # Configure SSH askpass for GNOME
+  programs.ssh.enableAskPassword = lib.mkIf config.services.xserver.desktopManager.gnome.enable true;
+  programs.ssh.askPassword = lib.mkIf config.services.xserver.desktopManager.gnome.enable "${pkgs.gnome-ssh-askpass4}/bin/gnome-ssh-askpass4";
+
 
   security.pam.ussh = {
     enable = true;
