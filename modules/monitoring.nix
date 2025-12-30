@@ -1,17 +1,23 @@
-{ pkgs, config, ... }:
+{
+  lib,
+  pkgs,
+  config,
+  ...
+}:
 {
   services.prometheus.exporters = {
     node.enable = true;
     cgroup.enable = true;
-    smartctl.enable = true;
-    smartctl.group = "disk";
+    # smartctl.enable = true;
     systemd.enable = true;
   };
 
   # workaround for upstream bug. it only does it on ADD
-  services.udev.extraRules = ''
-    ACTION=="change", SUBSYSTEM=="nvme", KERNEL=="nvme[0-9]*", RUN+="${pkgs.acl}/bin/setfacl -m g:smartctl-exporter-access:rw /dev/$kernel"
-  '';
+  /*
+    services.udev.extraRules = ''
+      ACTION=="change", SUBSYSTEM=="nvme", KERNEL=="nvme[0-9]*", RUN+="${pkgs.acl}/bin/setfacl -m g:smartctl-exporter-access:rw /dev/$kernel"
+    '';
+  */
 
   systemd.dnssd.services = {
     node-exporter = {
