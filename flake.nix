@@ -88,6 +88,7 @@
         }
       );
 
+
       # TODO: move to Phaer's thing
       # packages.x86_64-linux.digitalOceanImage = nixos-generators.nixosGenerate {
       #   pkgs = unstable.legacyPackages.x86_64-linux;

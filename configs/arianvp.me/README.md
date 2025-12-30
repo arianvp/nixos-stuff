@@ -1,5 +1,5 @@
 # Deploying
 
 ```
-nix build .#digitalOceanImage
+nixos-rebuild build-image --flake .#arianvp-me --image-variant digital-ocean
 ```
