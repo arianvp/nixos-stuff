@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ config, pkgs, ... }:
 let
   caFile = pkgs.concatText "ca.pub" [
     ../keys/yk-black/id_ed25519_sk_rk_ca_arian.pub
@@ -32,6 +32,12 @@ in
   services.opkssh = {
     enable = true;
     authorizations = [
+      # Allow deploys from Github Actions
+      {
+        user = "root";
+        principal = "repo:arianvp/nixos-stuff:environment:${config.system.name}";
+        issuer = "https://token.actions.githubusercontent.com";
+      }
       {
         user = "arian";
         principal = "arian.vanputten@gmail.com";
