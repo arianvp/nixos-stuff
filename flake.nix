@@ -69,15 +69,6 @@
           };
       };
 
-      # TODO: use?
-      /*
-        packages.x86_64-linux.frameworkISO = nixos-generators.nixosGenerate {
-        pkgs = unstable.legacyPackages.x86_64-linux;
-        modules = [ nixos-hardware.nixosModules.framework-11th-gen-intel ];
-        format = "iso";
-        };
-      */
-
       packages = unstable.lib.genAttrs [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ] (
         system:
         let
@@ -87,16 +78,6 @@
           inherit (pkgs) spire-controller-manager spire-tpm-plugin spire;
         }
       );
-
-
-      # TODO: move to Phaer's thing
-      # packages.x86_64-linux.digitalOceanImage = nixos-generators.nixosGenerate {
-      #   pkgs = unstable.legacyPackages.x86_64-linux;
-      #   modules = [
-      #     ./configs/arianvp.me
-      #   ];
-      #   format = "do";
-      # };
 
       checks = unstable.lib.genAttrs [ "x86_64-linux" "aarch64-linux" ] (
         system:
