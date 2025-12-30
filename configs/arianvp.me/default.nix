@@ -9,7 +9,7 @@
   imports = [
     (modulesPath + "/virtualisation/digital-ocean-config.nix")
     ./network.nix
-    ../modules/sshd.nix
+    ../../modules/sshd.nix
   ];
 
   system.stateVersion = "25.05";
