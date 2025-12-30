@@ -45,7 +45,6 @@
 
   networking.hostName = "framework";
   networking.firewall.enable = true;
-  services.openssh.enable = true;
   services.smartd.enable = true;
   services.displayManager.gdm.enable = true;
   services.desktopManager.gnome.enable = true;

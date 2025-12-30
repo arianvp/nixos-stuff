@@ -32,9 +32,6 @@
     ../../websites/nixos.sh
   ];
 
-  # TODO: Move into something more generic?
-  services.openssh.enable = true;
-
   services.yggdrasil.persistentKeys = true;
   security.tpm2.enable = true;
 
