@@ -30,7 +30,7 @@ in
     };
   };
   services.opkssh = {
-    enable = true;
+    enable = false;
     authorizations = [
       # Allow deploys from Github Actions
       {
