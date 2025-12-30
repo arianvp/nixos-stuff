@@ -14,6 +14,7 @@
     ../../modules/hostname.nix
 
     ../../modules/ssh.nix
+    ../../modules/sshd.nix
     ../../modules/monitoring.nix
     ../../modules/yggdrasil.nix
     ../../modules/tailscale.nix
