@@ -17,7 +17,7 @@
             inherit from to;
             "if" = "${from} != nil";
           };
-          moveFromAttr = fromAttr: moveIfNotNil ''attributes["${fromAttr}"'';
+          moveFromAttr = fromAttr: moveIfNotNil ''attributes["${fromAttr}"]'';
           # moveToAttr = from: to: moveIfNotNil from ''attributes["${to}"]'';
           moveAttr = from: to: moveFromAttr from ''attributes["${to}"]'';
           moveResource = from: to: moveFromAttr from ''resource["${to}"]'';
