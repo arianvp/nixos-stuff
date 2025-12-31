@@ -14,6 +14,9 @@
 
   services.fwupd.enable = true;
 
+  environment.shellAliases.sudo = "run0";
+  security.sudo.enable = false;
+
   fileSystems = {
     "/tmp" = {
       device = "tmpfs";
