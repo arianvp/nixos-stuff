@@ -82,35 +82,35 @@
           # TODO: find semantic variant
           (moveAttr "DOCUMENTATION" "systemd.documentation")
 
-            # delegated
-            (moveAttr "OBJECT_PID" "process.pid")
-            (moveAttr "OBJECT_CWD" "process.working_directory")
-            (moveAttr "OBJECT_EXE" "process.executable.path")
-            (moveAttr "OBJECT_CMDLINE" "process.command_line")
-            (moveAttr "OBJECT_UID" "process.user.id")
-            (moveAttr "OBJECT_GID" "process.group.id")
-            (moveAttr "OBJECT_SYSTEMD_CGROUP" "process.linux.cgroup")
-            (moveAttr "OBJECT_CAP_EFFECTIVE" "process.capabilities.effective")
-            (moveAttr "OBJECT_SYSTEMD_UNIT" "systemd.unit")
-            (moveAttr "OBJECT_SYSTEMD_SLICE" "systemd.slice")
-            (moveAttr "OBJECT_SYSTEMD_INVOCATION_ID" "systemd.invocation.id")
+          # delegated
+          (moveAttr "OBJECT_PID" "process.pid")
+          (moveAttr "OBJECT_CWD" "process.working_directory")
+          (moveAttr "OBJECT_EXE" "process.executable.path")
+          (moveAttr "OBJECT_CMDLINE" "process.command_line")
+          (moveAttr "OBJECT_UID" "process.user.id")
+          (moveAttr "OBJECT_GID" "process.group.id")
+          (moveAttr "OBJECT_SYSTEMD_CGROUP" "process.linux.cgroup")
+          (moveAttr "OBJECT_CAP_EFFECTIVE" "process.capabilities.effective")
+          (moveAttr "OBJECT_SYSTEMD_UNIT" "systemd.unit")
+          (moveAttr "OBJECT_SYSTEMD_SLICE" "systemd.slice")
+          (moveAttr "OBJECT_SYSTEMD_INVOCATION_ID" "systemd.invocation.id")
 
-            # coredump-delegated
-            (moveAttr "COREDUMP_PID" "process.pid")
-            (moveAttr "COREDUMP_CWD" "process.working_directory")
-            (moveAttr "COREDUMP_COMM" "process.executable.name")
-            (moveAttr "COREDUMP_EXE" "process.executable.path")
-            (moveAttr "COREDUMP_CMDLINE" "process.command_line")
-            (moveAttr "COREDUMP_UID" "process.user.id")
-            (moveAttr "COREDUMP_GID" "process.group.id")
-            (moveAttr "COREDUMP_CGROUP" "process.linux.cgroup")
-            (moveAttr "COREDUMP_UNIT" "systemd.unit")
-            (moveAttr "COREDUMP_SLICE" "systemd.slice")
+          # coredump-delegated
+          (moveAttr "COREDUMP_PID" "process.pid")
+          (moveAttr "COREDUMP_CWD" "process.working_directory")
+          (moveAttr "COREDUMP_COMM" "process.executable.name")
+          (moveAttr "COREDUMP_EXE" "process.executable.path")
+          (moveAttr "COREDUMP_CMDLINE" "process.command_line")
+          (moveAttr "COREDUMP_UID" "process.user.id")
+          (moveAttr "COREDUMP_GID" "process.group.id")
+          (moveAttr "COREDUMP_CGROUP" "process.linux.cgroup")
+          (moveAttr "COREDUMP_UNIT" "systemd.unit")
+          (moveAttr "COREDUMP_SLICE" "systemd.slice")
 
-            # TODO: Bit of a bitch to map to
-            # https://opentelemetry.io/docs/specs/semconv/registry/attributes/process/#process-environment-variable
-            # due to it not being a map
-            # COREDUMP_ENVIRON
+          # TODO: Bit of a bitch to map to
+          # https://opentelemetry.io/docs/specs/semconv/registry/attributes/process/#process-environment-variable
+          # due to it not being a map
+          # COREDUMP_ENVIRON
 
           # Resource attributes - process
           (moveResource "_PID" "process.pid")
