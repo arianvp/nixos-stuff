@@ -54,6 +54,8 @@
 
       # Service configuration
       service = {
+      	# TODO: is this otlp?
+      	telemetry.logs.encoding = "json";
         pipelines = {
           # Traces pipeline
           traces = {
