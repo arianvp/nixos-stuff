@@ -23,6 +23,9 @@
     ../../modules/opentelemetry-collector
     ../../modules/opentelemetry-collector/resource-attributes.nix
     ../../modules/opentelemetry-collector/journald-receiver.nix
+    ../../modules/opentelemetry-collector/journald-receiver-prometheus.nix
+    ../../modules/opentelemetry-collector/journald-receiver-etcd.nix
+    # ../../modules/opentelemetry-collector/journald-receiver-raw.nix
     # ../../modules/opentelemetry-collector/exporter-honeycomb.nix
     ../../modules/opentelemetry-collector/exporter-dash0.nix
     # ../../modules/opentelemetry-collector/exporter-grafanacloud.nix

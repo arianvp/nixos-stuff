@@ -12,15 +12,18 @@
       operators =
 
         let
-          moveIfNotNil = from: to: {
-            type = "move";
+          copyIfNotNil = from: to: {
+            type = "copy";
             inherit from to;
             "if" = "${from} != nil";
           };
-          moveFromAttr = fromAttr: moveIfNotNil ''attributes["${fromAttr}"]'';
+          copyFromAttr = fromAttr: copyIfNotNil ''attributes["${fromAttr}"]'';
           # moveToAttr = from: to: moveIfNotNil from ''attributes["${to}"]'';
-          moveAttr = from: to: moveFromAttr from ''attributes["${to}"]'';
-          moveResource = from: to: moveFromAttr from ''resource["${to}"]'';
+          copyAttr = from: to: copyFromAttr from ''attributes["${to}"]'';
+          copyResource = from: to: {
+	    from = ''attributes["${from}"]'';
+	    to = ''resource["${to}"]'';
+	  };
         in
 
         [
@@ -49,63 +52,63 @@
             parse_from = ''attributes["PRIORITY"]'';
             overwrite_text = true;
             mapping = {
-              debug = 7;
-              info = 6;
-              info2 = 5;
-              warn = 4;
-              error = 3;
-              error2 = 2;
-              error3 = 1;
-              fatal = 0;
+              debug = 7;   # Debug: debug-level messages
+              info = 6;    # Informational: informational messages
+              info2 = 5;   # Notice: normal but significant condition
+              warn = 4;    # Warning: warning conditions
+              error = 3;   # Error: error conditions
+              error2 = 2;  # Critical: critical conditions
+              fatal = 1;   # Alert: action must be taken immediately
+              fatal4 = 0;  # Emergency: system is unusable
             };
             "if" = ''attributes["PRIORITY"] != nil'';
           }
-          (moveAttr "__CURSOR" "log.record.uid")
-          (moveAttr "CODE_FILE" "code.filepath")
-          (moveAttr "CODE_FUNC" "code.function")
-          (moveAttr "CODE_LINE" "code.lineno")
-          (moveAttr "TID" "thread.id")
+          (copyAttr "__CURSOR" "log.record.uid")
+          (copyAttr "CODE_FILE" "code.filepath")
+          (copyAttr "CODE_FUNC" "code.function")
+          (copyAttr "CODE_LINE" "code.lineno")
+          (copyAttr "TID" "thread.id")
 
-          (moveAttr "_TRANSPORT" "log.iostream")
-          (moveAttr "_STREAM_ID" "systemd.stream.id")
+          (copyAttr "_TRANSPORT" "log.iostream")
+          (copyAttr "_STREAM_ID" "systemd.stream.id")
 
           # The message type
           # TODO: SemConv equiv?
-          (moveAttr "MESSAGE_ID" "systemd.message.id")
-          (moveAttr "ERRNO" "systemd.errno")
+          (copyAttr "MESSAGE_ID" "systemd.message.id")
+          (copyAttr "ERRNO" "systemd.errno")
 
           # systemd
-          (moveAttr "INVOCATION_ID" "systemd.invocation.id")
-          (moveAttr "USER_INVOCATION_ID" "systemd.user.invocation.id")
-          (moveAttr "UNIT" "systemd.unit")
+          (copyAttr "INVOCATION_ID" "systemd.invocation.id")
+          (copyAttr "USER_INVOCATION_ID" "systemd.user.invocation.id")
+          (copyAttr "UNIT" "systemd.unit")
 
           # TODO: find semantic variant
-          (moveAttr "DOCUMENTATION" "systemd.documentation")
+          (copyAttr "DOCUMENTATION" "systemd.documentation")
 
           # delegated
-          (moveAttr "OBJECT_PID" "process.pid")
-          (moveAttr "OBJECT_CWD" "process.working_directory")
-          (moveAttr "OBJECT_EXE" "process.executable.path")
-          (moveAttr "OBJECT_CMDLINE" "process.command_line")
-          (moveAttr "OBJECT_UID" "process.user.id")
-          (moveAttr "OBJECT_GID" "process.group.id")
-          (moveAttr "OBJECT_SYSTEMD_CGROUP" "process.linux.cgroup")
-          (moveAttr "OBJECT_CAP_EFFECTIVE" "process.capabilities.effective")
-          (moveAttr "OBJECT_SYSTEMD_UNIT" "systemd.unit")
-          (moveAttr "OBJECT_SYSTEMD_SLICE" "systemd.slice")
-          (moveAttr "OBJECT_SYSTEMD_INVOCATION_ID" "systemd.invocation.id")
+          (copyAttr "OBJECT_PID" "process.pid")
+          (copyAttr "OBJECT_CWD" "process.working_directory")
+          (copyAttr "OBJECT_EXE" "process.executable.path")
+          (copyAttr "OBJECT_CMDLINE" "process.command_line")
+          (copyAttr "OBJECT_UID" "process.user.id")
+          (copyAttr "OBJECT_GID" "process.group.id")
+          (copyAttr "OBJECT_SYSTEMD_CGROUP" "process.linux.cgroup")
+          (copyAttr "OBJECT_CAP_EFFECTIVE" "process.capabilities.effective")
+          (copyAttr "OBJECT_SYSTEMD_UNIT" "systemd.unit")
+          (copyAttr "OBJECT_SYSTEMD_SLICE" "systemd.slice")
+          (copyAttr "OBJECT_SYSTEMD_INVOCATION_ID" "systemd.invocation.id")
 
           # coredump-delegated
-          (moveAttr "COREDUMP_PID" "process.pid")
-          (moveAttr "COREDUMP_CWD" "process.working_directory")
-          (moveAttr "COREDUMP_COMM" "process.executable.name")
-          (moveAttr "COREDUMP_EXE" "process.executable.path")
-          (moveAttr "COREDUMP_CMDLINE" "process.command_line")
-          (moveAttr "COREDUMP_UID" "process.user.id")
-          (moveAttr "COREDUMP_GID" "process.group.id")
-          (moveAttr "COREDUMP_CGROUP" "process.linux.cgroup")
-          (moveAttr "COREDUMP_UNIT" "systemd.unit")
-          (moveAttr "COREDUMP_SLICE" "systemd.slice")
+          (copyAttr "COREDUMP_PID" "process.pid")
+          (copyAttr "COREDUMP_CWD" "process.working_directory")
+          (copyAttr "COREDUMP_COMM" "process.executable.name")
+          (copyAttr "COREDUMP_EXE" "process.executable.path")
+          (copyAttr "COREDUMP_CMDLINE" "process.command_line")
+          (copyAttr "COREDUMP_UID" "process.user.id")
+          (copyAttr "COREDUMP_GID" "process.group.id")
+          (copyAttr "COREDUMP_CGROUP" "process.linux.cgroup")
+          (copyAttr "COREDUMP_UNIT" "systemd.unit")
+          (copyAttr "COREDUMP_SLICE" "systemd.slice")
 
           # TODO: Bit of a bitch to map to
           # https://opentelemetry.io/docs/specs/semconv/registry/attributes/process/#process-environment-variable
@@ -113,21 +116,31 @@
           # COREDUMP_ENVIRON
 
           # Resource attributes - process
-          (moveResource "_PID" "process.pid")
-          (moveResource "_UID" "process.user.id")
-          (moveResource "_GID" "process.group.id")
-          (moveResource "_EXE" "process.executable.path")
-          (moveResource "_COMM" "process.executable.name")
-          (moveResource "_CMDLINE" "process.command_line")
-          (moveResource "_CAP_EFFECTIVE" "process.capabilities.effective")
-          (moveResource "_SYSTEMD_CGROUP" "process.linux.cgroup")
+	  (copyResource "_HOSTNAME" "host.name")
+	  (copyResource "_MACHINE_ID" "host.id")
+          (copyResource "_PID" "process.pid")
+
+	  # TODO: HUH These are not in https://opentelemetry.io/docs/specs/semconv/resource/process/#selecting-process-attributes
+          (copyResource "_UID" "process.user.id")
+          (copyResource "_GID" "process.group.id")
+
+
+          (copyResource "_EXE" "process.executable.path")
+          (copyResource "_COMM" "process.executable.name")
+          (copyResource "_CMDLINE" "process.command_line")
+
+
+          (copyResource "_SYSTEMD_CGROUP" "process.linux.cgroup")
+
+	  # NOTE: Made this one up
+          (copyResource "_CAP_EFFECTIVE" "process.capabilities.effective")
 
           # TODO: What to do with SYSLOG_IDENTIFIER?
 
-          (moveResource "_SYSTEMD_CGROUP" "systemd.cgroup")
-          (moveResource "_SYSTEMD_SLICE" "systemd.slice")
-          (moveResource "_SYSTEMD_INVOCATION_ID" "systemd.invocation_id")
-          (moveResource "_SYSTEMD_UNIT" "systemd.unit")
+          (copyResource "_SYSTEMD_CGROUP" "systemd.cgroup")
+          (copyResource "_SYSTEMD_SLICE" "systemd.slice")
+          (copyResource "_SYSTEMD_INVOCATION_ID" "systemd.invocation_id")
+          (copyResource "_SYSTEMD_UNIT" "systemd.unit")
         ];
     };
   };
