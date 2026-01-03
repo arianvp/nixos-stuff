@@ -15,7 +15,9 @@
   services.fwupd.enable = true;
 
   environment.shellAliases.sudo = "run0";
+
   security.sudo.enable = false;
+
 
   fileSystems = {
     "/tmp" = {
@@ -55,6 +57,8 @@
     MOZ_ENABLE_WAYLAND = "1";
   };
   environment.systemPackages = with pkgs; [
+    gh
+    git
     chromium
     cntr
     neovim
