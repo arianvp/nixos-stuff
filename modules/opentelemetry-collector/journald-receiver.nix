@@ -21,9 +21,9 @@
           # moveToAttr = from: to: moveIfNotNil from ''attributes["${to}"]'';
           copyAttr = from: to: copyFromAttr from ''attributes["${to}"]'';
           copyResource = from: to: {
-	    from = ''attributes["${from}"]'';
-	    to = ''resource["${to}"]'';
-	  };
+            from = ''attributes["${from}"]'';
+            to = ''resource["${to}"]'';
+          };
         in
 
         [
@@ -52,14 +52,14 @@
             parse_from = ''attributes["PRIORITY"]'';
             overwrite_text = true;
             mapping = {
-              debug = 7;   # Debug: debug-level messages
-              info = 6;    # Informational: informational messages
-              info2 = 5;   # Notice: normal but significant condition
-              warn = 4;    # Warning: warning conditions
-              error = 3;   # Error: error conditions
-              error2 = 2;  # Critical: critical conditions
-              fatal = 1;   # Alert: action must be taken immediately
-              fatal4 = 0;  # Emergency: system is unusable
+              debug = 7; # Debug: debug-level messages
+              info = 6; # Informational: informational messages
+              info2 = 5; # Notice: normal but significant condition
+              warn = 4; # Warning: warning conditions
+              error = 3; # Error: error conditions
+              error2 = 2; # Critical: critical conditions
+              fatal = 1; # Alert: action must be taken immediately
+              fatal4 = 0; # Emergency: system is unusable
             };
             "if" = ''attributes["PRIORITY"] != nil'';
           }
@@ -115,24 +115,27 @@
           # due to it not being a map
           # COREDUMP_ENVIRON
 
+
+
           # Resource attributes - process
-	  (copyResource "_HOSTNAME" "host.name")
-	  (copyResource "_MACHINE_ID" "host.id")
+          (copyResource "_HOSTNAME" "host.name")
+          (copyResource "_MACHINE_ID" "host.id")
           (copyResource "_PID" "process.pid")
 
-	  # TODO: HUH These are not in https://opentelemetry.io/docs/specs/semconv/resource/process/#selecting-process-attributes
+          # TODO: Find semantic convention version of this
+          (copyResource "_BOOT_ID" "systemd.boot.id")
+
+          # TODO: HUH These are not in https://opentelemetry.io/docs/specs/semconv/resource/process/#selecting-process-attributes
           (copyResource "_UID" "process.user.id")
           (copyResource "_GID" "process.group.id")
-
 
           (copyResource "_EXE" "process.executable.path")
           (copyResource "_COMM" "process.executable.name")
           (copyResource "_CMDLINE" "process.command_line")
 
-
           (copyResource "_SYSTEMD_CGROUP" "process.linux.cgroup")
 
-	  # NOTE: Made this one up
+          # NOTE: Made this one up
           (copyResource "_CAP_EFFECTIVE" "process.capabilities.effective")
 
           # TODO: What to do with SYSLOG_IDENTIFIER?
@@ -141,6 +144,34 @@
           (copyResource "_SYSTEMD_SLICE" "systemd.slice")
           (copyResource "_SYSTEMD_INVOCATION_ID" "systemd.invocation_id")
           (copyResource "_SYSTEMD_UNIT" "systemd.unit")
+
+          # Service identification: use systemd.unit as service.name
+          {
+            type = "copy";
+            from = ''resource["systemd.unit"]'';
+            to = ''resource["service.name"]'';
+            "if" = ''resource["systemd.unit"] != nil'';
+          }
+          {
+            type = "copy";
+            from = ''resource["systemd.invocation_id"]'';
+            to = ''resource["service.instance.id"]'';
+            "if" = ''resource["systemd.unit"] != nil'';
+          }
+
+          # Service identification: use log.iostream (kernel/audit) as service.name
+          {
+            type = "copy";
+            from = ''attributes["log.iostream"]'';
+            to = ''resource["service.name"]'';
+            "if" = ''attributes["log.iostream"] == "kernel" or attributes["log.iostream"] == "audit"'';
+          }
+          {
+            type = "copy";
+            from = ''resource["systemd.boot.id"]'';
+            to = ''resource["service.instance.id"]'';
+            "if" = ''attributes["log.iostream"] == "kernel" or attributes["log.iostream"] == "audit"'';
+          }
         ];
     };
   };
