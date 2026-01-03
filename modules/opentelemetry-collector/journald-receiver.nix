@@ -21,9 +21,11 @@
           # moveToAttr = from: to: moveIfNotNil from ''attributes["${to}"]'';
           copyAttr = from: to: copyFromAttr from ''attributes["${to}"]'';
           copyResource = from: to: {
-            from = ''attributes["${from}"]'';
-            to = ''resource["${to}"]'';
-          };
+	    type = "copy";
+	    from = ''attributes["${from}"]'';
+	    to = ''resource["${to}"]'';
+	    "if" = ''attributes["${from}"] != nil'';
+	  };
         in
 
         [
