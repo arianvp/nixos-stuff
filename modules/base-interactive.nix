@@ -37,6 +37,8 @@
       pkgs.btop
       pkgs.nixd
       pkgs.go
+      pkgs.jujutsu
+      pkgs.jjui
       pkgs.binutils
       pkgs.dnsutils
       pkgs.unixtools.netstat
