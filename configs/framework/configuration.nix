@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 {
   imports = [
     ./hardware-configuration.nix
@@ -10,14 +10,25 @@
     ../../modules/tpm2.nix
     ./rice.nix
     ./silent-boot.nix
+    ./ampex210.nix
   ];
+
+  boot.enableContainers = true;
+
+  nixpkgs.config.allowUnfreePredicate =
+    pkg:
+    builtins.elem (lib.getName pkg) [
+      "steam"
+      "steam-unwrapped"
+      "claude-code"
+    ];
 
   services.fwupd.enable = true;
 
   environment.shellAliases.sudo = "run0";
 
   security.sudo.enable = false;
-
+  programs.steam.enable = true;
 
   fileSystems = {
     "/tmp" = {
@@ -29,7 +40,6 @@
 
   services.tailscale.enable = true;
   programs.mtr.enable = true;
-
 
   boot.initrd.systemd.enable = true;
   # console.earlySetup = lib.mkForce false;
@@ -71,7 +81,10 @@
   users.users.arian = {
     isNormalUser = true;
     createHome = true;
-    extraGroups = [ "wheel" "tss" ];
+    extraGroups = [
+      "wheel"
+      "tss"
+    ];
   };
 
   services.fprintd.enable = false;
