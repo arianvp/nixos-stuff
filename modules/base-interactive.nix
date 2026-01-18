@@ -31,6 +31,7 @@
     extraGroups = [ "wheel" "nix-trusted-users" ];
     packages = [
       pkgs.git
+      pkgs.tig
       pkgs.nixfmt
       pkgs.jujutsu
       pkgs.jjui
