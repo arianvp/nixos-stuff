@@ -1,16 +1,22 @@
 {
   description = "Arian's computers";
-  inputs.unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
-  inputs.stable.url = "github:NixOS/nixpkgs/nixos-25.05";
-  inputs.nixos-hardware.url = "github:NixOS/nixos-hardware";
-  inputs.lanzaboote = {
-    url = "github:nix-community/lanzaboote";
-    inputs.nixpkgs.follows = "unstable";
-  };
 
-  inputs.cgroup-exporter = {
-    url = "github:arianvp/cgroups-exporter";
-    inputs.nixpkgs.follows = "unstable";
+  inputs = {
+    unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
+    stable.url = "github:NixOS/nixpkgs/nixos-25.11";
+    nixos-hardware.url = "github:NixOS/nixos-hardware";
+    lanzaboote = {
+      url = "github:nix-community/lanzaboote";
+      inputs.nixpkgs.follows = "unstable";
+    };
+    cgroup-exporter = {
+      url = "github:arianvp/cgroups-exporter";
+      inputs.nixpkgs.follows = "unstable";
+    };
+    home-manager = {
+      url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "unstable";
+    };
   };
 
   outputs =
@@ -21,6 +27,7 @@
       stable,
       unstable,
       nixos-hardware,
+      home-manager,
       ...
     }:
     {
@@ -40,6 +47,13 @@
       overlays.spire = import ./overlays/spire.nix;
 
       nixosModules = {
+        # TODO: Clean this up? e.g. also support darwin? idk; it's a start
+        home-manager = {
+          imports = [ home-manager.nixosModules.home-manager ];
+          home-manager.useGlobalPkgs = true;
+          home-manager.useUserPackages = true;
+          home-manager.users.arian = ./modules/home-manager/home.nix;
+        };
         cachix = ./modules/cachix.nix;
         direnv = ./modules/direnv.nix;
         diff = ./modules/diff.nix;
@@ -87,12 +101,14 @@
 
           # Recursively find all _test.nix files in a directory
           # Returns list of { name, path } attrs
-          findTestsIn = baseDir: relPath:
+          findTestsIn =
+            baseDir: relPath:
             let
               fullPath = baseDir + relPath;
               entries = builtins.readDir fullPath;
 
-              processEntry = name: type:
+              processEntry =
+                name: type:
                 let
                   newRelPath = relPath + "/${name}";
                 in
@@ -105,12 +121,14 @@
                     testConfig = import testPath;
                     testName = testConfig.name or (lib.removeSuffix "_test.nix" (lib.removePrefix "/" newRelPath));
                   in
-                  [{
-                    name = testName;
-                    path = testPath;
-                  }]
+                  [
+                    {
+                      name = testName;
+                      path = testPath;
+                    }
+                  ]
                 else
-                  [];
+                  [ ];
             in
             lib.flatten (lib.mapAttrsToList processEntry entries);
 
@@ -118,12 +136,14 @@
           moduleTests = findTestsIn ./modules "";
 
           # Convert to attribute set of checks
-          discoveredChecks = builtins.listToAttrs (map (test: {
-            name = test.name;
-            value = pkgs.testers.runNixOSTest {
-              imports = [ test.path ];
-            };
-          }) moduleTests);
+          discoveredChecks = builtins.listToAttrs (
+            map (test: {
+              name = test.name;
+              value = pkgs.testers.runNixOSTest {
+                imports = [ test.path ];
+              };
+            }) moduleTests
+          );
 
         in
         # Merge manually defined tests with discovered module tests
@@ -140,7 +160,8 @@
           bootloader = pkgs.testers.runNixOSTest {
             imports = [ ./modules/bootloader/test.nix ];
           };
-        } // discoveredChecks
+        }
+        // discoveredChecks
       );
 
       /*
@@ -166,6 +187,7 @@
             modules = modules ++ [
               nixos-hardware.nixosModules.framework-11th-gen-intel
               lanzaboote.nixosModules.lanzaboote
+              self.nixosModules.home-manager
               ./configs/framework/configuration.nix
             ];
           };

@@ -15,6 +15,10 @@
 
   boot.enableContainers = true;
 
+  virtualisation.podman.enable = true;
+  virtualisation.podman.dockerSocket.enable = true;
+  virtualisation.podman.dockerCompat = true;
+
   nixpkgs.config.allowUnfreePredicate =
     pkg:
     builtins.elem (lib.getName pkg) [
@@ -63,6 +67,8 @@
   services.smartd.enable = true;
   services.displayManager.gdm.enable = true;
   services.desktopManager.gnome.enable = true;
+  services.dbus.implementation = "broker";
+
   environment.variables = {
     MOZ_ENABLE_WAYLAND = "1";
   };
@@ -84,6 +90,7 @@
     extraGroups = [
       "wheel"
       "tss"
+      "podman"
     ];
   };
 
