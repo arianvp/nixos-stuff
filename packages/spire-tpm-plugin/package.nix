@@ -10,15 +10,17 @@
 buildGoModule (finalAttrs: {
   pname = "spire-tpm-plugin";
   version = "1.10.0pre";
-  src = fetchFromGitHub {
+  rev = "push-nqnpzowlptmz";
+  src = /home/arian/Projects/spire-tpm-plugin;
+  /*src = fetchFromGitHub {
     owner = "arianvp";
     repo = "spire-tpm-plugin";
-    rev = "f2861cc26599d79d6bb625ce56e6dad793f354cf";
+    rev = "push-nqnpzowlptmz";
     # tag = "v${finalAttrs.version}";
-    hash = "sha256-iIlRDq1eId2iYgDTQyL5uUyhVtwmd3PCm2ZHbbvk+/c=";
-  };
+    hash = "sha256-FKVI0ZFR6tzy06M4nLVdq6qVK9kyG4WEydeQIqPs/88=";
+    };*/
 
-  vendorHash = "sha256-0HkJdgIweB8SnnTsOgl3m3XL72OBhw+nBbe9GuTMY20=";
+  vendorHash = "sha256-00duHqpPRPzs57yo3BLpMGvo/ntYcxzZqz6nk/jchRw=";
 
   nativeBuildInputs = [
     pkg-config

@@ -81,7 +81,8 @@ in
   };
   # TODO: use ekcert based provisioning
   testScript = ''
-    print(agent.succeed("ls -la /dev/tpmrm0"))
+    import pprint
+    import json
     pubhash = agent.succeed("get_tpm_pubhash").strip()
     server.succeed("mkdir -p /etc/spire/server/hashes")
     server.succeed(f"touch /etc/spire/server/hashes/{pubhash}")
@@ -100,5 +101,10 @@ in
     # FIXME: workaround for https://github.com/spiffe/spire/issues/6257
     agent.wait_for_console_text("Creating X509-SVID")
     agent.succeed("spire-agent api fetch x509 -socketPath $SPIFFE_ENDPOINT_SOCKET -write .")
+    agents = json.loads(
+       server.succeed("spire-server agent list -socketPath $SPIRE_SERVER_ADMIN_SOCKET -output json")
+    )
+    pprint.pp(agents)
+
   '';
 }
