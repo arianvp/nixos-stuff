@@ -16,7 +16,7 @@ in
           server.spec = {
             parentID = "spiffe://${trustDomain}/spire/server";
             spiffeID = "spiffe://${trustDomain}/server/agent";
-            selectors = [ "tpm:pub_hash:$PUBHASH" ];
+            selectors = [ "tpm:tpm_model:ST33HTPHAHD4" ];
           };
           services.spec = {
             selectors = [ "systemd:id:backdoor.service" ];
@@ -89,12 +89,6 @@ in
   testScript = ''
     import pprint
     import json
-
-    # Get the pubhash for entry registration (still needed for SPIFFE ID matching)
-    pubhash = agent.succeed("get_tpm_pubhash").strip()
-    server.succeed(f"systemctl set-environment PUBHASH={pubhash}")
-    # NOTE: to pick up the new env var
-    server.succeed("systemctl restart spire-controller-manager")
 
     server.wait_for_unit("spire-server.socket")
     bundle = server.succeed("spire-server bundle show -socketPath $SPIRE_SERVER_ADMIN_SOCKET")

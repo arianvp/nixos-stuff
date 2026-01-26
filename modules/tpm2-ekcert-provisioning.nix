@@ -46,29 +46,16 @@ in
   options.virtualisation.tpm.provisioningRootCA = {
     enable = lib.mkEnableOption "TPM EKCert provisioning with a root CA";
     key = lib.mkOption {
-      type = lib.types.nullOr lib.types.path;
-      default = null;
+      type = lib.types.path;
       description = "Path to the CA private key for signing EKCerts";
     };
     certificate = lib.mkOption {
-      type = lib.types.nullOr lib.types.path;
-      default = null;
+      type = lib.types.path;
       description = "Path to the CA certificate";
     };
   };
 
   config = lib.mkIf cfg.enable {
-    assertions = [
-      {
-        assertion = cfg.key != null;
-        message = "virtualisation.tpm.provisioningRootCA.key must be set when enable is true";
-      }
-      {
-        assertion = cfg.certificate != null;
-        message = "virtualisation.tpm.provisioningRootCA.certificate must be set when enable is true";
-      }
-    ];
-
     virtualisation.tpm = {
       enable = true;
       provisioning = ''
