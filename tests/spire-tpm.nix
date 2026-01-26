@@ -42,23 +42,30 @@ in
             };
             NodeAttestor.tpm = {
               plugin_cmd = lib.getExe' pkgs.spire-tpm-plugin "tpm_attestor_server";
-              plugin_data.hash_path = "/etc/spire/server/hashes";
+              plugin_data.ca_path = "/etc/spire/server/certs";
             };
           };
         };
       };
+
+      environment.etc."spire/server/certs/tpm-ca.crt".source = ./tpm-ca.crt;
     };
     agent = {
-      imports = [ ../modules/spire/agent.nix ../modules/spire/agent-tpm.nix ];
+      imports = [
+        ../modules/spire/agent.nix
+        ../modules/spire/agent-tpm.nix
+        ../modules/tpm2-ekcert-provisioning.nix
+      ];
       networking.firewall.allowedTCPPorts = [ 80 ];
       systemd.services.spire-agent.serviceConfig.LoadCredential = "spire-server-bundle";
 
       environment.systemPackages = [ pkgs.spire-tpm-plugin ];
 
-      # TODO: use the swtpm-setup tooling instead. But that is supposed to run before tpm2_startup IIRC
-
-      virtualisation.tpm = {
+      # Provision an EK and EKCert signed by this CA
+      virtualisation.tpm.provisioningRootCA = {
         enable = true;
+        key = ./tpm-ca.key;
+        certificate = ./tpm-ca.crt;
       };
 
       spire.agent = {
@@ -79,16 +86,16 @@ in
       };
     };
   };
-  # TODO: use ekcert based provisioning
   testScript = ''
     import pprint
     import json
+
+    # Get the pubhash for entry registration (still needed for SPIFFE ID matching)
     pubhash = agent.succeed("get_tpm_pubhash").strip()
-    server.succeed("mkdir -p /etc/spire/server/hashes")
-    server.succeed(f"touch /etc/spire/server/hashes/{pubhash}")
     server.succeed(f"systemctl set-environment PUBHASH={pubhash}")
     # NOTE: to pick up the new env var
     server.succeed("systemctl restart spire-controller-manager")
+
     server.wait_for_unit("spire-server.socket")
     bundle = server.succeed("spire-server bundle show -socketPath $SPIRE_SERVER_ADMIN_SOCKET")
     with open("bundle.pem", "w") as f:
