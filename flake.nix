@@ -97,7 +97,7 @@
         system:
         let
           pkgs = unstable.legacyPackages.${system}.extend (import ./overlays/spire.nix);
-          lib = unstable.lib;
+          inherit (unstable) lib;
 
           # Recursively find all _test.nix files in a directory
           # Returns list of { name, path } attrs
@@ -138,7 +138,7 @@
           # Convert to attribute set of checks
           discoveredChecks = builtins.listToAttrs (
             map (test: {
-              name = test.name;
+              inherit (test) name;
               value = pkgs.testers.runNixOSTest {
                 imports = [ test.path ];
               };
@@ -175,6 +175,7 @@
 
       nixosConfigurations =
         let
+          foo = 3;
           modules = with self.nixosModules; [
             inputs
             dnssd

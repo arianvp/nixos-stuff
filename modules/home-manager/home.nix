@@ -6,10 +6,27 @@
       ui.default-command = "log";
       user.name = "Arian van Putten";
       user.email = "arian@arianvp.me";
-
-      fix.tools.nixfmt = {
-        command = [ (lib.getExe pkgs.nixfmt) ];
-        patterns = [ "glob:'**/*.nix'" ];
+      fix.tools = {
+        "99-gofmt" = {
+          command = [
+            (lib.getExe' pkgs.go "gofmt")
+            "-s"
+          ];
+          patterns = [ "glob:'**/*.go" ];
+        };
+        "99-nixfmt" = {
+          command = [ (lib.getExe pkgs.nixfmt) ];
+          patterns = [ "glob:'**/*.nix'" ];
+        };
+        "00-statix" = {
+          command = [
+            (lib.getExe pkgs.statix)
+            "fix"
+            "-s"
+          ];
+          patterns = [ "glob:'**/*.nix'" ];
+          enabled = false;
+        };
       };
       signing = {
         behavior = "drop";
