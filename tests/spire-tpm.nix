@@ -61,11 +61,16 @@ in
 
       environment.systemPackages = [ pkgs.spire-tpm-plugin ];
 
-      # Provision an EK and EKCert signed by this CA
-      virtualisation.tpm.provisioningRootCA = {
-        enable = true;
-        key = ./tpm-ca.key;
-        certificate = ./tpm-ca.crt;
+      virtualisation = {
+        useEFIBoot = true;
+        efi.OVMF = pkgs.OVMFFull.fd;
+
+        # Provision an EK and EKCert signed by this CA
+        tpm.provisioningRootCA = {
+          enable = true;
+          key = ./tpm-ca.key;
+          certificate = ./tpm-ca.crt;
+        };
       };
 
       spire.agent = {
