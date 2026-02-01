@@ -3,10 +3,14 @@
 set -euo pipefail
 
 scope="${1:-}"
-
-user="$USER"
+user="${2:-}"
 application="ssh:$scope"
 comment="$application"
+
+
+suffix="${scope:+_${scope}}${user:+_${user}}"
+
+file="id_ed25519_sk_${resident:+rk}${scope:+_${scope}}${user:+_${user}}"
 
 ssh-keygen -t ed25519-sk \
   -O resident \
@@ -15,7 +19,8 @@ ssh-keygen -t ed25519-sk \
   -O "application=$application" \
   -C "$comment" \
   -N "" \
-  -f "id_ed25519_sk_rk${scope:+_${scope}}${user:+_${user}}"
+  -f "$file" \
+  -O write-attestation="${file}.att"
 
 
 

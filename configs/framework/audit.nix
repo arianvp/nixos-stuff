@@ -75,6 +75,7 @@ in
     ];
 
   systemd.sockets."systemd-journald-audit".wantedBy = [ "sockets.target" ];
+  security.audit.enable = true;
 
   security.auditd.enable = true;
 }

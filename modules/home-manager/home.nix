@@ -12,7 +12,7 @@
             (lib.getExe' pkgs.go "gofmt")
             "-s"
           ];
-          patterns = [ "glob:'**/*.go" ];
+          patterns = [ "glob:'**/*.go'" ];
         };
         "99-nixfmt" = {
           command = [ (lib.getExe pkgs.nixfmt) ];

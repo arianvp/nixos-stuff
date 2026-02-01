@@ -13,6 +13,8 @@
     ./ampex210.nix
   ];
 
+  services.openssh.enable = true;
+
   boot.enableContainers = true;
 
   virtualisation.podman.enable = true;
