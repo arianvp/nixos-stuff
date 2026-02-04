@@ -15,6 +15,9 @@
 
   services.openssh.enable = true;
 
+  # HACK: pasta network isolation broken on ipv6-only networks like at Facebook
+  nix.settings.pasta-path = "";
+
   boot.enableContainers = true;
 
   virtualisation.podman.enable = true;

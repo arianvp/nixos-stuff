@@ -86,6 +86,11 @@
     extraGroups = [ "nix-trusted-users" ];
   };
 
+  users.users.picnoir = {
+    isNormalUser = true;
+    extraGroups = [ "nix-trusted-users" ];
+  };
+
   environment.systemPackages = [
     pkgs.kitty.terminfo
   ];

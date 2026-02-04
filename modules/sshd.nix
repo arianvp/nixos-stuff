@@ -13,6 +13,7 @@ let
     "arian"
     "arian.vanputten@gmail.com"
   ];
+  principals.picnoir = [ "picnoir" ];
 in
 {
   imports = [ ./ssh-authorized-principals.nix ];
@@ -23,10 +24,8 @@ in
       TrustedUserCAKeys = "${caFile}";
       RevokedKeys = "${../keys/revoked_keys}";
     };
-    authorizedPrincipals = {
+    authorizedPrincipals = principals // {
       root = principals.arian ++ principals.flokli;
-      arian = principals.arian;
-      flokli = principals.flokli;
     };
   };
   services.opkssh = {
