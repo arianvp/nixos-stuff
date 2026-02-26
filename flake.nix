@@ -17,6 +17,10 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "unstable";
     };
+    noctalia = {
+      url = "github:noctalia-dev/noctalia-shell";
+      inputs.nixpkgs.follows = "unstable";
+    };
   };
 
   outputs =
@@ -28,6 +32,7 @@
       unstable,
       nixos-hardware,
       home-manager,
+      noctalia,
       ...
     }:
     {
@@ -52,6 +57,8 @@
           imports = [ home-manager.nixosModules.home-manager ];
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
+          home-manager.sharedModules = [ noctalia.homeModules.default ];
+          home-manager.extraSpecialArgs = { inherit noctalia; };
           home-manager.users.arian = ./modules/home-manager/home.nix;
         };
         cachix = ./modules/cachix.nix;
@@ -67,7 +74,9 @@
         spire-agent = ./modules/spire/agent.nix;
         spire-controller-manager = ./modules/spire/controller-manager.nix;
         inputs = {
-          _module.args.inputs.self = self;
+          _module.args.inputs = {
+            inherit self noctalia;
+          };
         };
         overlays =
           { pkgs, ... }:

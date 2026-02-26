@@ -1,5 +1,13 @@
 { lib, pkgs, ... }:
 {
+
+  programs.noctalia-shell = {
+    systemd.enable = true;
+    settings = {
+    };
+    # this may also be a string or a path to a JSON file.
+  };
+
   programs.jujutsu = {
     enable = true;
     settings = {
@@ -7,7 +15,7 @@
       user.name = "Arian van Putten";
       user.email = "arian@arianvp.me";
       fix.tools = {
-        "99-gofmt" = {
+        "20-gofmt" = {
           command = [
             (lib.getExe' pkgs.go "gofmt")
             "-s"
