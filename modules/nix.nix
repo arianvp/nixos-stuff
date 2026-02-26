@@ -19,7 +19,7 @@
     "fetch-closure"
   ];
 
-  nix.settings.use-cgroups = true;
+  # nix.settings.use-cgroups = true;
 
   users.groups.nix-trusted-users = { };
 }
