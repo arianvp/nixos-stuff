@@ -17,7 +17,7 @@
     generateCaches = true;
   };
 
-  nixpkgs.config.allowUnfreePredicate = pkg: lib.elem (lib.getName pkg) [ "claude-code" ];
+  nixpkgs.config.allowUnfreePredicate = pkg: lib.elem (lib.getName pkg) [ ];
 
   programs.direnv.enable = true;
 
@@ -38,7 +38,6 @@
       inherit (pkgs)
         binutils
         btop
-        claude-code
         dnsutils
         ghostty
         git
