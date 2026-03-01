@@ -14,10 +14,8 @@
 
   documentation.man = {
     enable = true;
-    generateCaches = true;
+    cache.enable = true;
   };
-
-  nixpkgs.config.allowUnfreePredicate = pkg: lib.elem (lib.getName pkg) [ "claude-code" ];
 
   programs.direnv.enable = true;
 
@@ -27,6 +25,8 @@
     viAlias = false;
     vimAlias = true;
   };
+
+  environment.systemPackages = [ pkgs.ghostty.terminfo ];
 
   users.users.arian = {
     isNormalUser = true;
@@ -38,7 +38,6 @@
       inherit (pkgs)
         binutils
         btop
-        claude-code
         dnsutils
         ghostty
         git

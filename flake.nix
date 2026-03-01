@@ -2,7 +2,8 @@
   description = "Arian's computers";
 
   inputs = {
-    unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
+    unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
+    unstable-small.url = "github:NixOS/nixpkgs/nixos-unstable-small";
     stable.url = "github:NixOS/nixpkgs/nixos-25.11";
     nixos-hardware.url = "github:NixOS/nixos-hardware";
     lanzaboote = {
@@ -30,6 +31,7 @@
       lanzaboote,
       stable,
       unstable,
+      unstable-small,
       nixos-hardware,
       home-manager,
       noctalia,
@@ -184,7 +186,6 @@
 
       nixosConfigurations =
         let
-          foo = 3;
           modules = with self.nixosModules; [
             inputs
             dnssd
@@ -201,19 +202,19 @@
               ./configs/framework/configuration.nix
             ];
           };
-          utm = stable.lib.nixosSystem {
+          utm = unstable-small.lib.nixosSystem {
             modules = modules ++ [
               { networking.hostName = "utm"; }
               ./configs/utm/configuration.nix
             ];
           };
-          altra = unstable.lib.nixosSystem {
+          altra = unstable-small.lib.nixosSystem {
             modules = modules ++ [
               nixos-hardware.nixosModules.asrock-rack-altrad8ud-1l2t
               ./configs/altra/configuration.nix
             ];
           };
-          arianvp-me = unstable.lib.nixosSystem {
+          arianvp-me = unstable-small.lib.nixosSystem {
             modules = modules ++ [
               ./configs/arianvp.me
             ];
