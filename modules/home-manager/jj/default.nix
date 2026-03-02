@@ -1,3 +1,4 @@
+{ pkgs, config, ... }:
 {
 
   imports = [
@@ -9,6 +10,34 @@
   programs.jujutsu = {
     enable = true;
     settings = {
+
+      aliases.fetch-pr =
+        let
+          fetch-pr = pkgs.writeShellApplication {
+            name = "fetch-pr";
+            runtimeInputs = [
+              pkgs.gh
+              config.programs.jujutsu.package
+              pkgs.jq
+            ];
+            text = ''
+              pr="$1"
+              read -r branch owner repo_url < <(
+                gh pr view "$pr" \
+                  --template '{{.headRefName}}{{"\t"}}{{.headRepositoryOwner.login}}{{"\t"}}{{.headRepository.url}}{{"\n"}}'
+              )
+              jj git remote add "$owner" "$repo_url" || true
+              jj git fetch -r "$owner" -b "$branch"
+            '';
+          };
+        in
+        [
+          "util"
+          "exec"
+          "--"
+          fetch-pr
+        ];
+
       # ui.default-command = "log";
       user.name = "Arian van Putten";
       user.email = "arian@arianvp.me";
@@ -22,6 +51,7 @@
         key = "~/.ssh/id_ed25519_sk";
       };
       # git.sign-on-push = true;
+
     };
   };
 }
