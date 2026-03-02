@@ -73,6 +73,7 @@
   services.displayManager.gdm.enable = true;
   services.desktopManager.gnome.enable = true;
   services.dbus.implementation = "broker";
+  services.userdbd.enable = true;
 
   environment.variables = {
     MOZ_ENABLE_WAYLAND = "1";
