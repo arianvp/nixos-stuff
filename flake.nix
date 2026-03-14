@@ -61,7 +61,7 @@
           home-manager.useUserPackages = true;
           home-manager.sharedModules = [ noctalia.homeModules.default ];
           home-manager.extraSpecialArgs = { inherit noctalia; };
-          home-manager.users.arian = ./modules/home-manager/home.nix;
+          home-manager.users.arian = ./modules/home/home.nix;
         };
         cachix = ./modules/cachix.nix;
         direnv = ./modules/direnv.nix;
@@ -199,24 +199,24 @@
               nixos-hardware.nixosModules.framework-11th-gen-intel
               lanzaboote.nixosModules.lanzaboote
               self.nixosModules.home-manager
-              ./configs/framework/configuration.nix
+              ./hosts/framework/configuration.nix
             ];
           };
           utm = unstable-small.lib.nixosSystem {
             modules = modules ++ [
               { networking.hostName = "utm"; }
-              ./configs/utm/configuration.nix
+              ./hosts/utm/configuration.nix
             ];
           };
           altra = unstable-small.lib.nixosSystem {
             modules = modules ++ [
               nixos-hardware.nixosModules.asrock-rack-altrad8ud-1l2t
-              ./configs/altra/configuration.nix
+              ./hosts/altra/configuration.nix
             ];
           };
           arianvp-me = unstable-small.lib.nixosSystem {
             modules = modules ++ [
-              ./configs/arianvp.me
+              ./hosts/arianvp.me/configuration.nix
             ];
           };
         };
