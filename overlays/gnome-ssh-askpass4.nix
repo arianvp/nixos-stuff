@@ -1,3 +1,3 @@
 final: prev: {
-  gnome-ssh-askpass4 = prev.callPackage ../pkgs/gnome-ssh-askpass4.nix { };
+  gnome-ssh-askpass4 = prev.callPackage ../packages/gnome-ssh-askpass4.nix { };
 }

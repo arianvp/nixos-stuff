@@ -54,7 +54,7 @@
       "arianvp.me" = {
         forceSSL = true;
         enableACME = true;
-        locations."/".root = ../../website;
+        locations."/".root = ../../websites/arianvp.me;
       };
     };
   };
