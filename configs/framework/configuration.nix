@@ -103,12 +103,5 @@
 
   programs.chromium.enable = true;
 
-  programs.neovim = {
-    enable = true;
-    defaultEditor = true;
-    viAlias = true;
-    vimAlias = true;
-  };
-
   system.stateVersion = "25.05"; # Did you read the comment?
 }
