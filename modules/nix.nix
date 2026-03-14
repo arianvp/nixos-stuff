@@ -19,6 +19,13 @@
     "fetch-closure"
   ];
 
+  nix.gc = {
+    automatic = true;
+    dates = [ "13:00" ];
+  };
+
+  nix.optimise.automatic = true;
+
   # nix.settings.use-cgroups = true;
 
   users.groups.nix-trusted-users = { };
