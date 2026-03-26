@@ -48,7 +48,6 @@ D(
   TXT("@", "v=spf1 -all"),
   TXT("_dmarc", "v=DMARC1;p=reject;"),
   CNAME("*.altra", "altra"),
-  AAAA("altra", "224:1fad:743f:7e4f:746f:20a6:c20a:5338"),
   SSHFP("altra", 1, 1, "ad445dc455aba0169f429714eb34dd04e0df9dbe"),
   SSHFP(
     "altra",
