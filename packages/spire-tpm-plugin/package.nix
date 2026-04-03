@@ -15,7 +15,7 @@ buildGoModule (finalAttrs: {
     repo = "spire-tpm-plugin";
     rev = "push-kwxpnknqlouo";
     # tag = "v${finalAttrs.version}";
-    hash = "sha256-SXlnXIU22oBBCwnD2gfkrzXCBlH0caBbIWlh/ARb/E0=";
+    hash = "sha256-hYdPoK+pjEo/HDEquMoXepmMTAY5G1Ly3n9igJMeapg=";
   };
 
   proxyVendor = true;
