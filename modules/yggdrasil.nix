@@ -24,7 +24,7 @@
       MulticastInterfaces = [
         # ethernet is preferred over wifi
         {
-          Regex = "(eth,|en).*";
+          Regex = "(eth|en|bond).*";
           Beacon = true;
           Listen = true;
           Port = 5400;
