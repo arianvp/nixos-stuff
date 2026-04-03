@@ -16,7 +16,7 @@ in
           server.spec = {
             parentID = "spiffe://${trustDomain}/spire/server";
             spiffeID = "spiffe://${trustDomain}/server/agent";
-            selectors = [ ];
+            selectors = [ "tpm:tpm_model:ST33HTPHAHD4" ];
           };
           services.spec = {
             selectors = [ "systemd:id:backdoor.service" ];
