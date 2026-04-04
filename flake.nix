@@ -55,14 +55,17 @@
 
       nixosModules = {
         # TODO: Clean this up? e.g. also support darwin? idk; it's a start
-        home-manager = {
-          imports = [ home-manager.nixosModules.home-manager ];
-          home-manager.useGlobalPkgs = true;
-          home-manager.useUserPackages = true;
-          home-manager.sharedModules = [ noctalia.homeModules.default ];
-          home-manager.extraSpecialArgs = { inherit noctalia; };
-          home-manager.users.arian = ./modules/home/home.nix;
-        };
+        home-manager =
+          { lib, ... }:
+          {
+            imports = [ home-manager.nixosModules.home-manager ];
+            nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [ "claude-code" ];
+            home-manager.useGlobalPkgs = true;
+            home-manager.useUserPackages = true;
+            home-manager.sharedModules = [ noctalia.homeModules.default ];
+            home-manager.extraSpecialArgs = { inherit noctalia; };
+            home-manager.users.arian = ./modules/home/home.nix;
+          };
         cachix = ./modules/cachix.nix;
         direnv = ./modules/direnv.nix;
         diff = ./modules/diff.nix;

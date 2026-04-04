@@ -29,7 +29,6 @@
     builtins.elem (lib.getName pkg) [
       "steam"
       "steam-unwrapped"
-      "claude-code"
     ];
 
   services.fwupd.enable = true;
