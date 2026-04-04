@@ -24,14 +24,7 @@
   virtualisation.podman.dockerSocket.enable = true;
   virtualisation.podman.dockerCompat = true;
 
-  nixpkgs.config.allowUnfreePredicate =
-    pkg:
-    builtins.elem (lib.getName pkg) [
-      "steam"
-      "steam-unwrapped"
-    ];
-
-  services.fwupd.enable = true;
+services.fwupd.enable = true;
 
   environment.shellAliases.sudo = "run0";
 

@@ -59,7 +59,10 @@
           { lib, ... }:
           {
             imports = [ home-manager.nixosModules.home-manager ];
-            nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [ "claude-code" ];
+            nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [
+              "steam"
+              "steam-unwrapped"
+            ];
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
             home-manager.sharedModules = [ noctalia.homeModules.default ];

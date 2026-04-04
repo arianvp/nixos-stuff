@@ -8,47 +8,19 @@ let
 in
 {
 
-  boot.initrd.systemd.additionalUpstreamUnits = [ "systemd-pcrphase-initrd.service" ];
-
-  boot.initrd.systemd.targets.initrd.wants = [ "systemd-pcrphase-initrd.service" ];
-
-  boot.initrd.systemd.tpm2.enable = true;
-  boot.initrd.systemd.storePaths = [
-    "${config.boot.initrd.systemd.package}/lib/systemd/systemd-pcrextend"
-  ];
-
-  systemd.additionalUpstreamSystemUnits = [
-    "systemd-pcrextend@.service"
-    "systemd-pcrextend.socket"
-    "systemd-pcrfs-root.service"
-    "systemd-pcrfs@.service"
-    "systemd-pcrmachine.service"
-    "systemd-pcrphase.service"
-    "systemd-pcrphase-sysinit.service"
-
-    "systemd-pcrlock-firmware-code.service"
-
-    # TODO: Can not lock PCR1 as EFI_HANDOFF_TABLES event seems to change across boots.
-    # Probably caused by SMBIOS measurements done by Insyde firmware being non-deterministic.
-    # "systemd-pcrlock-firmware-config.service"
-
-    "systemd-pcrlock-file-system.service"
-    "systemd-pcrlock-machine-id.service"
-    "systemd-pcrlock-make-policy.service"
-    "systemd-pcrlock-secureboot-authority.service"
-    "systemd-pcrlock-secureboot-policy.service"
-    # "systemd-pcrlock@.service"
-    # "systemd-pcrlock.socket"
-  ];
-  systemd.targets.sysinit.wants = [
-    "systemd-pcrlock-file-system.service"
-    "systemd-pcrlock-firmware-code.service"
-    "systemd-pcrlock-firmware-config.service"
-    "systemd-pcrlock-machine-id.service"
-    "systemd-pcrlock-make-policy.service"
-    "systemd-pcrlock-secureboot-authority.service"
-    "systemd-pcrlock-secureboot-policy.service"
-  ];
-  environment.etc."pcrlock.d".source = "${config.systemd.package}/lib/pcrlock.d";
+  boot.lanzaboote = {
+    configurationLimit = 8;
+    measuredBoot = {
+      enable = true;
+      pcrs = [
+        0
+        # 1  # das ist kaka slopper.  It seems that the SMBIOS measurements are not reproducible across boots
+        2 # I have no option roms
+        3 # I have no option roms 
+        4 # systemd-boot and UKIs
+        7
+      ];
+    };
+  };
 
 }
