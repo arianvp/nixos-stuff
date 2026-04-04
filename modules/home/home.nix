@@ -1,9 +1,7 @@
 { lib, pkgs, ... }:
 {
 
-  imports = [ ./jj ];
-
-  nixpkgs.config.allowUnfreePredicate = pkg: lib.elem (lib.getName pkg) [ "claude-code" ];
+  imports = [ ./jj ./claude-code.nix ];
 
   programs.noctalia-shell = {
     systemd.enable = true;
@@ -14,7 +12,6 @@
 
   programs.direnv.enable = true;
 
-  home.packages = [ pkgs.claude-code ];
 
   home.stateVersion = "26.05";
 }

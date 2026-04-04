@@ -62,6 +62,7 @@
             nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [
               "steam"
               "steam-unwrapped"
+              "claude-code"
             ];
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
