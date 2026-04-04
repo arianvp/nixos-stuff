@@ -211,6 +211,7 @@
           altra = unstable-small.lib.nixosSystem {
             modules = modules ++ [
               nixos-hardware.nixosModules.asrock-rack-altrad8ud-1l2t
+              self.nixosModules.home-manager
               ./hosts/altra/configuration.nix
             ];
           };
