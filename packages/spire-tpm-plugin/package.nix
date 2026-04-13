@@ -15,11 +15,11 @@ buildGoModule (finalAttrs: {
     repo = "spire-tpm-plugin";
     rev = "push-kwxpnknqlouo";
     # tag = "v${finalAttrs.version}";
-    hash = "sha256-hYdPoK+pjEo/HDEquMoXepmMTAY5G1Ly3n9igJMeapg=";
+    hash = "sha256-8235RO+o5rZ6JsXvfoIS/OaacmsyC7tkYckTVZv5uEA=";
   };
 
   proxyVendor = true;
-  vendorHash = "sha256-RnEeTyLDoldxQ6VjdXDA9X0SebhtNsTeSth0h3dZx8Y=";
+  vendorHash = "sha256-cENDkx/iz6H/AhAO1lKypHhOFz+F3gC3bMg8Jw7eeo0=";
 
   nativeBuildInputs = [
     pkg-config
