@@ -1,6 +1,6 @@
 {pkgs, lib, ...}:
 {
-  programs.jujutsu.settings ={
+  programs.jujutsu.settings.fix.tools = {
     "20-nixfmt" = {
       command = [ (lib.getExe pkgs.nixfmt) ];
       patterns = [ "glob:'**/*.nix'" ];

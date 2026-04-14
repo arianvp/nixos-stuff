@@ -12,6 +12,7 @@
 
   programs.direnv.enable = true;
 
+  home.packages = [ pkgs.claude-code ];
 
   home.stateVersion = "26.05";
 }
