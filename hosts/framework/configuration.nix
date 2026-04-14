@@ -29,7 +29,6 @@ services.fwupd.enable = true;
   environment.shellAliases.sudo = "run0";
 
   security.sudo.enable = false;
-  programs.steam.enable = true;
 
   fileSystems = {
     "/tmp" = {

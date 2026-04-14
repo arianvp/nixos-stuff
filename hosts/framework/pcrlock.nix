@@ -1,13 +1,8 @@
-{ pkgs, config, ... }:
-
-let
-  bootLoaderLock = pkgs.runCommand "240-boot-loader.pcrlock" { } ''
-    ${config.systemd.package}/lib/systemd-pcrlock lock-pe 
-  '';
-
-in
+{ pkgs, config, lib, ... }:
 {
-
+  environment.systemPackages = [
+    (pkgs.writeShellScriptBin "systemd-pcrlock" ''exec ${pkgs.systemd}/lib/systemd/systemd-pcrlock "$@"'')
+  ];
   boot.lanzaboote = {
     configurationLimit = 8;
     measuredBoot = {
