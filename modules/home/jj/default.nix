@@ -1,4 +1,9 @@
-{ pkgs, config, ... }:
+{
+  pkgs,
+  lib,
+  config,
+  ...
+}:
 {
 
   imports = [
@@ -10,7 +15,7 @@
   programs.jujutsu = {
     enable = true;
     settings = {
-
+      ui.default-command = "st";
       aliases.fetch-pr =
         let
           fetch-pr = pkgs.writeShellApplication {
@@ -24,10 +29,11 @@
               pr="$1"
               read -r branch owner repo_url < <(
                 gh pr view "$pr" \
-                  --template '{{.headRefName}}{{"\t"}}{{.headRepositoryOwner.login}}{{"\t"}}{{.headRepository.url}}{{"\n"}}'
+                  --json headRefName,headRepositoryOwner,headRepository \
+                  --jq '[.headRefName, .headRepositoryOwner.login, ("https://github.com/" + .headRepository.nameWithOwner)] | @tsv'
               )
-              jj git remote add "$owner" "$repo_url" || true
-              jj git fetch -r "$owner" -b "$branch"
+              jj git remote add "$owner" "$repo_url" 2>/dev/null || true
+              jj git fetch --remote "$owner" -b "$branch"
             '';
           };
         in
@@ -35,13 +41,13 @@
           "util"
           "exec"
           "--"
-          fetch-pr
+          "gh pr checkout --detach"
         ];
 
       # ui.default-command = "log";
       user.name = "Arian van Putten";
       user.email = "arian@arianvp.me";
-      templates.git_push_bookmark = ''"arianvp/push-" ++ change_id.short()'';
+      # templates.git_push_bookmark = ''"arianvp/push-" ++ change_id.short()'';
       snapshot.auto-track = "none()";
       signing = {
         behavior = "drop";
