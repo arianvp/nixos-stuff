@@ -1,0 +1,5 @@
+[ui]
+default-command = "st"
+
+[snapshot]
+auto-track = "none()"

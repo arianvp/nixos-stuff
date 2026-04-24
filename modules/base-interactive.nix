@@ -44,8 +44,6 @@
         go
         gopls
         ijq
-        jjui
-        jujutsu
         jq
         nixd
         nixfmt
