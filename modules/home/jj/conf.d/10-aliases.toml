@@ -2,6 +2,67 @@
 mine = ["log", "-r", "ancestors(mine() & mutable(), 3)"]
 fetch = ["fetch", "--all-remotes", "--tracked"]
 fetch-pr = ["util", "exec", "--", "gh", "pr", "checkout", "--detach"]
+check = ["util", "exec", "--", "bash", "-c", '''
+set -eu
+revset="@"
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    -r|--revisions) revset="$2"; shift 2 ;;
+    -r*) revset="${1#-r}"; shift ;;
+    --revisions=*) revset="${1#--revisions=}"; shift ;;
+    --) shift; break ;;
+    *) break ;;
+  esac
+done
+if [ "$#" -eq 0 ]; then
+  echo "usage: jj check [-r REVSET] <cmd> [args...]" >&2
+  exit 2
+fi
+root=$(jj workspace root)
+session="jj-check-$$"
+sessiondir="$root/.jj/check-workspaces/$session"
+mkdir -p "$sessiondir"
+jj workspace update-stale >/dev/null 2>&1 || true
+lock="$sessiondir/.lock"
+: >"$lock"
+mapfile -t commits < <(jj log --no-graph --no-pager -r "$revset" -T 'change_id ++ "\n"')
+n=${#commits[@]}
+if [ "$n" -eq 0 ]; then
+  echo "Error: revset \"$revset\" matches no commits" >&2
+  exit 2
+fi
+declare -A pids
+cleanup() {
+  for pid in "${pids[@]}"; do kill "$pid" 2>/dev/null || true; done
+  if [ "${#commits[@]}" -gt 0 ]; then
+    jj workspace forget "${commits[@]}" >/dev/null 2>&1 || true
+  fi
+  rm -rf "$sessiondir"
+}
+trap cleanup EXIT
+for c in "${commits[@]}"; do
+  echo "Running check at $c"
+  (
+    flock "$lock" jj workspace add --name "$c" -r "$c" "$sessiondir/$c" >/dev/null
+    cd "$sessiondir/$c" && exec "$@"
+  ) &
+  pids[$c]=$!
+done
+failed=()
+for c in "${commits[@]}"; do
+  if wait "${pids[$c]}"; then
+    echo "Check passed at $c"
+  else
+    echo "Check failed at $c"
+    failed+=("$c")
+  fi
+done
+if [ "${#failed[@]}" -gt 0 ]; then
+  echo "Checked $n commits, ${#failed[@]} failed" >&2
+  exit 1
+fi
+echo "Checked $n commits"
+''', "jj-check"]
 
 [revset-aliases]
 "mine()" = 'author("arian@arianvp.me") | author("arian.vanputten@gmail.com")'

@@ -7,3 +7,6 @@ behavior = "drop"
 backend = "ssh"
 # TODO: point to whatever yubikey is inserted. I wonder if we can do this with udev
 key = "~/.ssh/id_ed25519_sk"
+
+[git]
+abandon-unreachable-commits = false

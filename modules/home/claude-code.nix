@@ -35,6 +35,7 @@
           "Bash(jj st)"
           "Bash(jj diff)"
           "Bash(jj root)"
+          "Bash(jj show)"
         ];
       };
     };
