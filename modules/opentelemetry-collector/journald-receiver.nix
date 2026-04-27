@@ -1,6 +1,23 @@
-{ lib, ... }:
+{ lib, config, ... }:
+let
+  cfg = config.services.opentelemetry-collector.journald;
+in
 {
-  services.opentelemetry-collector.settings = {
+  options.services.opentelemetry-collector.journald = {
+    serviceNameStrategy = lib.mkOption {
+      type = lib.types.enum [ "unit" "host" ];
+      default = "host";
+      description = ''
+        How `service.name` is derived for journald logs.
+        - "unit": one service per systemd unit (and `kernel`/`audit` for kernel/audit logs).
+          High cardinality — can blow past Honeycomb free-tier service limits.
+        - "host": a single service per host (uses `host.name`). Bounded count.
+        `systemd.unit` is always preserved as a resource attribute for filtering.
+      '';
+    };
+  };
+
+  config.services.opentelemetry-collector.settings = {
     extensions."file_storage/journald" = {
       directory = "\${env:STATE_DIRECTORY}";
     };
@@ -26,6 +43,54 @@
 	    to = ''resource["${to}"]'';
 	    "if" = ''attributes["${from}"] != nil'';
 	  };
+
+          serviceNameOps = {
+            unit = [
+              # Service identification: use systemd.unit as service.name
+              {
+                type = "copy";
+                from = ''resource["systemd.unit"]'';
+                to = ''resource["service.name"]'';
+                "if" = ''resource["systemd.unit"] != nil'';
+              }
+              {
+                type = "copy";
+                from = ''resource["systemd.invocation_id"]'';
+                to = ''resource["service.instance.id"]'';
+                "if" = ''resource["systemd.unit"] != nil'';
+              }
+
+              # Service identification: use log.iostream (kernel/audit) as service.name
+              {
+                type = "copy";
+                from = ''attributes["log.iostream"]'';
+                to = ''resource["service.name"]'';
+                "if" = ''attributes["log.iostream"] == "kernel" or attributes["log.iostream"] == "audit"'';
+              }
+              {
+                type = "copy";
+                from = ''resource["systemd.boot.id"]'';
+                to = ''resource["service.instance.id"]'';
+                "if" = ''attributes["log.iostream"] == "kernel" or attributes["log.iostream"] == "audit"'';
+              }
+            ];
+            host = [
+              # Service identification: bundle all journald logs (units, kernel, audit)
+              # under a single per-host service to keep Honeycomb service count bounded.
+              {
+                type = "copy";
+                from = ''resource["host.name"]'';
+                to = ''resource["service.name"]'';
+                "if" = ''resource["host.name"] != nil'';
+              }
+              {
+                type = "copy";
+                from = ''resource["systemd.boot.id"]'';
+                to = ''resource["service.instance.id"]'';
+                "if" = ''resource["systemd.boot.id"] != nil'';
+              }
+            ];
+          };
         in
 
         [
@@ -147,40 +212,13 @@
           (copyResource "_SYSTEMD_INVOCATION_ID" "systemd.invocation_id")
           (copyResource "_SYSTEMD_UNIT" "systemd.unit")
 
-          # Service identification: use systemd.unit as service.name
-          {
-            type = "copy";
-            from = ''resource["systemd.unit"]'';
-            to = ''resource["service.name"]'';
-            "if" = ''resource["systemd.unit"] != nil'';
-          }
-          {
-            type = "copy";
-            from = ''resource["systemd.invocation_id"]'';
-            to = ''resource["service.instance.id"]'';
-            "if" = ''resource["systemd.unit"] != nil'';
-          }
-
-          # Service identification: use log.iostream (kernel/audit) as service.name
-          {
-            type = "copy";
-            from = ''attributes["log.iostream"]'';
-            to = ''resource["service.name"]'';
-            "if" = ''attributes["log.iostream"] == "kernel" or attributes["log.iostream"] == "audit"'';
-          }
-          {
-            type = "copy";
-            from = ''resource["systemd.boot.id"]'';
-            to = ''resource["service.instance.id"]'';
-            "if" = ''attributes["log.iostream"] == "kernel" or attributes["log.iostream"] == "audit"'';
-          }
-        ];
+        ] ++ serviceNameOps.${cfg.serviceNameStrategy};
     };
   };
 
   # Add journald receiver to logs pipeline
-  services.opentelemetry-collector.settings.service.pipelines.logs.receivers = [ "journald" ];
+  config.services.opentelemetry-collector.settings.service.pipelines.logs.receivers = [ "journald" ];
 
   # Add file_storage extension to service extensions
-  services.opentelemetry-collector.settings.service.extensions = [ "file_storage/journald" ];
+  config.services.opentelemetry-collector.settings.service.extensions = [ "file_storage/journald" ];
 }
