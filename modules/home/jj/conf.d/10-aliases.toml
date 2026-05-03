@@ -2,6 +2,7 @@
 mine = ["log", "-r", "ancestors(mine() & mutable(), 3)"]
 fetch = ["fetch", "--all-remotes", "--tracked"]
 fetch-pr = ["util", "exec", "--", "gh", "pr", "checkout", "--detach"]
+yeet = ["util", "exec", "--", "bash", "-c", "set -eu; jj bookmark advance && jj git push", "jj-yeet"]
 check = ["util", "exec", "--", "bash", "-c", '''
 set -eu
 revset="@"

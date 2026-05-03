@@ -1,4 +1,30 @@
 { pkgs, lib, ... }:
+let
+  worktreeCreate = pkgs.writeShellApplication {
+    name = "cc-jj-worktree-create";
+    runtimeInputs = with pkgs; [ jq jujutsu coreutils ];
+    text = ''
+      input=$(cat)
+      sid=$(echo "$input" | jq -r '.session_id')
+      cwd=$(echo "$input" | jq -r '.cwd')
+      ws="$cwd/.work/cc-$sid"
+      mkdir -p "$cwd/.work"
+      (cd "$cwd" && jj workspace add --name "cc-$sid" "$ws" >&2)
+      echo "$ws"
+    '';
+  };
+  worktreeRemove = pkgs.writeShellApplication {
+    name = "cc-jj-worktree-remove";
+    runtimeInputs = with pkgs; [ jq jujutsu coreutils ];
+    text = ''
+      input=$(cat)
+      sid=$(echo "$input" | jq -r '.session_id')
+      cwd=$(echo "$input" | jq -r '.cwd')
+      (cd "$cwd" && jj workspace forget "cc-$sid" 2>/dev/null) || true
+      rm -rf "$cwd/.work/cc-$sid"
+    '';
+  };
+in
 {
   programs.claude-code = {
     enable = true;
@@ -37,6 +63,20 @@
           "Bash(jj root)"
           "Bash(jj show)"
         ];
+      };
+      hooks = {
+        WorktreeCreate = [{
+          hooks = [{
+            type = "command";
+            command = lib.getExe worktreeCreate;
+          }];
+        }];
+        WorktreeRemove = [{
+          hooks = [{
+            type = "command";
+            command = lib.getExe worktreeRemove;
+          }];
+        }];
       };
     };
   };
