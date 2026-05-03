@@ -30,7 +30,9 @@ in
     enable = true;
     settings = {
       sandbox = {
-        enabled = true;
+        # TODO: Buggy as fuck because Antrophics has no software engineers and couldn't make a bugless program if their lives depended on it:
+        # https://github.com/anthropics/claude-code/issues/52525
+        enabled = false;
         failIfUnavailable = true;
         filesystem = {
           denyWrite = [ "/" ];
