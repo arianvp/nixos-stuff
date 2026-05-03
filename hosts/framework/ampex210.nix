@@ -36,10 +36,10 @@
   # 1. no explicit loginProgram (util-linux agetty already sets it?)
   #    (Though we currently patch it to use shadow?)
   # 2. No @I;  instead use - as stdin is connected to the tty
-  systemd.services."serial-getty@".serviceConfig.ExecStart = [
+  /*systemd.services."serial-getty@".serviceConfig.ExecStart = [
     ""
-    "${pkgs.util-linux}/bin/agetty --no-reset --noclear --issue-file=/etc/issue --keep-baud 19200,9600 - $${TERM}"
-  ];
+    "${pkgs.util-linux}/bin/agetty --no-reset --noclear --issue-file=/etc/issue 9600 - $${TERM}"
+  ];*/
   
   # TODO: all the agetty stuff
 }
