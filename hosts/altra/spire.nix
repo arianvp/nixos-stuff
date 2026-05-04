@@ -1,9 +1,13 @@
-{ lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 {
   imports = [
     ../../modules/spire/controller-manager.nix
   ];
-
 
   services.spire.agent = {
     enable = true;
@@ -16,14 +20,19 @@
         log_level = "debug";
       };
       plugins.KeyManager.disk.plugin_data.directory = "$STATE_DIRECTORY";
-      plugins.WorkloadAttestor.unix.plugin_data = {};
-      plugins.WorkloadAttestor.systemd.plugin_data = {};
+      plugins.WorkloadAttestor.unix.plugin_data = { };
+      plugins.WorkloadAttestor.systemd.plugin_data = { };
       plugins.NodeAttestor.tpm = {
         plugin_cmd = lib.getExe' pkgs.spire-tpm-plugin "tpm_attestor_agent";
         plugin_data = { };
       };
     };
   };
+
+  environment.variables.SPIFFE_ENDPOINT_SOCKET =
+    config.services.spire.agent.settings.agent.socket_path;
+  systemd.globalEnvironment.SPIFFE_ENDPOINT_SOCKET =
+    config.services.spire.agent.settings.agent.socket_path;
 
   environment.systemPackages = [ pkgs.spire-tpm-plugin ];
 
