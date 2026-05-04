@@ -97,6 +97,7 @@
               ./overlays/spire.nix
               ./overlays/openssh-audit.nix
               ./overlays/gnome-ssh-askpass4.nix
+              ./overlays/he-ddns.nix
             ];
           };
       };
@@ -104,10 +105,20 @@
       packages = unstable.lib.genAttrs [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ] (
         system:
         let
-          pkgs = unstable.legacyPackages.${system}.extend (import ./overlays/spire.nix);
+          pkgs = unstable.legacyPackages.${system}.extend (
+            unstable.lib.composeManyExtensions [
+              (import ./overlays/spire.nix)
+              (import ./overlays/he-ddns.nix)
+            ]
+          );
         in
         {
-          inherit (pkgs) spire-controller-manager spire-tpm-plugin spire;
+          inherit (pkgs)
+            spire-controller-manager
+            spire-tpm-plugin
+            spire
+            he-ddns
+            ;
         }
       );
 

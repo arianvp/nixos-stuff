@@ -8,6 +8,7 @@
     ./network.nix
     ./spire.nix
     ./prometheus.nix
+    ./he-ddns.nix
 
     # TODO: something better
     ../../modules/base-interactive.nix
