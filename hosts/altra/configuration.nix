@@ -67,8 +67,6 @@
     443
   ];
 
-  services.nginx.enable = true;
-
   users.users.m = {
     extraGroups = [ "nix-trusted-users" ];
     isNormalUser = true;

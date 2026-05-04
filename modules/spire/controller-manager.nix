@@ -6,18 +6,18 @@
 }:
 
 let
-  cfg = config.spire.controllerManager;
+  cfg = config.services.spire.controllerManager;
   settings = {
     apiVersion = "spire.spiffe.io/v1alpha1";
     kind = "ControllerManagerConfig";
     metadata.name = "config";
-    trustDomain = config.spire.server.settings.server.trust_domain;
+    trustDomain = config.services.spire.server.settings.server.trust_domain;
 
     # TODO: I don't think this *does* anything in static manifest mode but it's required
     clusterName = "scm";
     clusterDomain = "local";
 
-    spireServerSocketPath = config.spire.server.settings.server.socket_path;
+    spireServerSocketPath = config.services.spire.server.settings.server.socket_path;
     staticManifestPath = "/etc/spire/server/manifests";
     expandEnvStaticManifests = true;
   };
@@ -124,7 +124,7 @@ let
 in
 
 {
-  options.spire.controllerManager = {
+  options.services.spire.controllerManager = {
 
     enable = lib.mkEnableOption "SPIRE Controller Manager";
 

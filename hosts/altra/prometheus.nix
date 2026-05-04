@@ -4,7 +4,7 @@
   systemd.services.prometheus.serviceConfig.ExecStartPre =
     "${lib.getExe' pkgs.spire "spire-agent"} api fetch x509 -socketPath $SPIFFE_ENDPOINT_SOCKET -write $RUNTIME_DIRECTORY";
 
-  spire.controllerManager.staticEntries = {
+  services.spire.controllerManager.staticEntries = {
     prometheus.spec = {
       parentID = "spiffe://nixos.sh/server/altra";
       spiffeID = "spiffe://nixos.sh/service/prometheus";
