@@ -8,7 +8,7 @@
     serviceConfig = {
       Type = "exec";
       ExecStart = "${lib.getExe pkgs.he-ddns} -interface bond0 -hostname altra.nixos.sh";
-      LoadCredential = "he-ddns.key:/etc/credstore/he-ddns-altra.key";
+      LoadCredential = "he-ddns.key";
       Restart = "always";
       RestartSec = "5s";
     };

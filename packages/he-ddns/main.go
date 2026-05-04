@@ -58,7 +58,7 @@ func main() {
 		log.Fatalf("netlink addrlist: %v", err)
 	}
 	for _, a := range existing {
-		if !globalStable(a.Scope, a.Flags) {
+		if !eligible(a.IP, a.Scope, a.Flags) {
 			continue
 		}
 		if err := updateHE(*hostname, key, a.IP); err != nil {
@@ -70,7 +70,7 @@ func main() {
 		if !upd.NewAddr || upd.LinkIndex != ifindex || upd.LinkAddress.IP.To4() != nil {
 			continue
 		}
-		if !globalStable(upd.Scope, upd.Flags) {
+		if !eligible(upd.LinkAddress.IP, upd.Scope, upd.Flags) {
 			continue
 		}
 		if err := updateHE(*hostname, key, upd.LinkAddress.IP); err != nil {
@@ -80,8 +80,11 @@ func main() {
 	log.Fatal("netlink subscription closed")
 }
 
-func globalStable(scope, flags int) bool {
-	return scope == int(unix.RT_SCOPE_UNIVERSE) && flags&unix.IFA_F_TEMPORARY == 0
+func eligible(ip net.IP, scope, flags int) bool {
+	if scope != int(unix.RT_SCOPE_UNIVERSE) || flags&unix.IFA_F_TEMPORARY != 0 {
+		return false
+	}
+	return !ip.IsPrivate()
 }
 
 func updateHE(hostname, key string, ip net.IP) error {
