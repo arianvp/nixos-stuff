@@ -19,13 +19,6 @@
 
   programs.direnv.enable = true;
 
-  programs.neovim = {
-    enable = true;
-    defaultEditor = true;
-    viAlias = false;
-    vimAlias = true;
-  };
-
   environment.systemPackages = [ pkgs.ghostty.terminfo ];
 
   users.users.arian = {

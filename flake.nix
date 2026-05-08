@@ -18,6 +18,10 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "unstable";
     };
+    nix-darwin = {
+      url = "github:nix-darwin/nix-darwin/master";
+      inputs.nixpkgs.follows = "unstable";
+    };
     noctalia = {
       url = "github:noctalia-dev/noctalia-shell";
       inputs.nixpkgs.follows = "unstable";
@@ -34,6 +38,7 @@
       unstable-small,
       nixos-hardware,
       home-manager,
+      nix-darwin,
       noctalia,
       ...
     }:
@@ -53,6 +58,22 @@
 
       overlays.spire = import ./overlays/spire.nix;
 
+      darwinModules = {
+        home-manager = {
+          imports = [ home-manager.darwinModules.home-manager ];
+          nixpkgs.config.allowUnfreePredicate =
+            pkg:
+            builtins.elem (unstable.lib.getName pkg) [
+              "claude-code"
+            ];
+          home-manager.useGlobalPkgs = true;
+          home-manager.useUserPackages = true;
+          home-manager.backupFileExtension = "bak";
+          home-manager.extraSpecialArgs = { isLinux = false; };
+          home-manager.users.arian = ./modules/home/home.nix;
+        };
+      };
+
       nixosModules = {
         # TODO: Clean this up? e.g. also support darwin? idk; it's a start
         home-manager =
@@ -68,7 +89,10 @@
             home-manager.useUserPackages = true;
             home-manager.backupFileExtension = "hm-bak";
             home-manager.sharedModules = [ noctalia.homeModules.default ];
-            home-manager.extraSpecialArgs = { inherit noctalia; };
+            home-manager.extraSpecialArgs = {
+              inherit noctalia;
+              isLinux = true;
+            };
             home-manager.users.arian = ./modules/home/home.nix;
           };
         cachix = ./modules/cachix.nix;
@@ -240,5 +264,14 @@
             ];
           };
         };
+
+      darwinConfigurations = {
+        "Arians-MacBook-Pro" = nix-darwin.lib.darwinSystem {
+          modules = [
+            self.darwinModules.home-manager
+            ./hosts/Arians-MacBook-Pro/configuration.nix
+          ];
+        };
+      };
     };
 }
