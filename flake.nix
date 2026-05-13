@@ -66,6 +66,7 @@
             ];
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
+            home-manager.backupFileExtension = "hm-bak";
             home-manager.sharedModules = [ noctalia.homeModules.default ];
             home-manager.extraSpecialArgs = { inherit noctalia; };
             home-manager.users.arian = ./modules/home/home.nix;

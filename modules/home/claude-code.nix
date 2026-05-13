@@ -1,4 +1,4 @@
-{ pkgs, lib, ... }:
+{ pkgs, lib, config, ... }:
 let
   worktreeCreate = pkgs.writeShellApplication {
     name = "cc-jj-worktree-create";
@@ -47,6 +47,9 @@ let
   });
 in
 {
+  home.file.".claude/skills".source =
+    config.lib.file.mkOutOfStoreSymlink "${config.repoRoot}/modules/home/claude-code/skills";
+
   programs.claude-code = {
     enable = true;
     settings = {
