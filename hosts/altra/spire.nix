@@ -16,6 +16,8 @@
         trust_bundle_url = "https://spire-server.nixos.sh";
         trust_bundle_format = "spiffe";
         server_address = "spire-server.nixos.sh";
+        rebootstrap_mode = "auto";
+        rebootstrap_delay = "2m";
         trust_domain = "nixos.sh";
         log_level = "debug";
       };
@@ -42,9 +44,9 @@
       parentID = "spiffe://nixos.sh/spire/server";
       spiffeID = "spiffe://nixos.sh/server/altra";
       selectors = [
-        "tpm:tpm_manufacturer:id:4E544300"
-        "tpm:tpm_model:NPCT75x"
-        "tpm:tpm_version:id:00070002"
+        "tpm:manufacturer:id:4E544300"
+        "tpm:model:NPCT75x"
+        "tpm:version:id:00070002"
         "tpm:pub_hash:856dd0443668292a66fabd29f778345f7c1a82bbc9b55d99ceb462cdba0897f6"
       ];
     };
