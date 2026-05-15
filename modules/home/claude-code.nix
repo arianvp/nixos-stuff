@@ -90,6 +90,12 @@ in
           "Bash(jj show)"
         ];
       };
+      mcpServers = {
+        linear = {
+          type = "sse";
+          url = "https://mcp.linear.app/sse";
+        };
+      };
       hooks = {
         PreToolUse = [{
           matcher = "Bash";
