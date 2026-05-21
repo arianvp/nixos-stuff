@@ -1,4 +1,10 @@
 { lib, config, ... }:
+let
+  scrapeIntervalSeconds = 15;
+  scrapeInterval = "${toString scrapeIntervalSeconds}s";
+  # Grafana's $__rate_interval rule of thumb: at least 4x scrape interval.
+  rateInterval = "${toString (scrapeIntervalSeconds * 4)}s";
+in
 {
   imports = [ ./prometheus-rules.nix ];
 
@@ -13,7 +19,7 @@
   services.prometheus = {
     enable = true;
     alertmanagers = [ { dns_sd_configs = [ { names = [ "alertmanager._http._tcp.local" ]; } ]; } ];
-    globalConfig.scrape_interval = "15s";
+    globalConfig.scrape_interval = scrapeInterval;
     scrapeConfigs = [
       {
         job_name = "cgroup";
@@ -108,7 +114,7 @@
                   }:
                   {
                     alert = "${metric}_${type}_${toString threshold}";
-                    expr = "rate(cgroup_${metric}_pressure_${type}_seconds_total[1m]) > ${toString (threshold / 100.0)}";
+                    expr = "rate(cgroup_${metric}_pressure_${type}_seconds_total[${rateInterval}]) > ${toString (threshold / 100.0)}";
                     labels.severity =
                       if type == "waiting" then
                         "notice"
