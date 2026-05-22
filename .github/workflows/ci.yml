@@ -1,0 +1,50 @@
+on:
+  pull_request:
+  merge_group:
+  push:
+    branches: [master]
+jobs:
+  lint:
+    runs-on: ubuntu-24.04-arm
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: cachix/install-nix-action@8aa03977d8d733052d78f4e008a241fd1dbf36b3 # v31.10.6
+      - run: nix run --inputs-from . nixpkgs#zizmor -- .
+      - run: nix run --inputs-from . nixpkgs#actionlint
+  nix-diff:
+    runs-on: ubuntu-24.04-arm
+    permissions:
+      contents: read
+    # on pull requests: HEAD^ is the base commit of the pull request
+    # on merge queue: HEAD^ is the item ahead of us in the queue
+    # on master: HEAD^ is the previous commit
+    steps:
+      - name: checkout head 
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 2
+          path: head
+          persist-credentials: false
+      - name: determine base
+        id: base
+        working-directory: head
+        run: echo "sha=$(git rev-parse HEAD^)" >> "$GITHUB_OUTPUT"
+      - name: checkout base
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ steps.base.outputs.sha }}
+          path: base
+          persist-credentials: false
+      - uses: cachix/install-nix-action@8aa03977d8d733052d78f4e008a241fd1dbf36b3 # v31.10.6
+      - name: nix build base
+        run: nix --quiet --print-build-logs build ./base#nixosConfigurations.altra.config.system.build.toplevel --out-link ./base-result
+      - name: nix build head
+        run: nix --quiet --print-build-logs build ./head#nixosConfigurations.altra.config.system.build.toplevel --out-link ./head-result
+      - name: nvd diff
+        run: nix --quiet run --inputs-from ./head nixpkgs#nvd -- --color=always diff ./base-result ./head-result
+      - name: nix-diff
+        run: nix --quiet run --inputs-from ./head nixpkgs#nix-diff -- --color=always ./base-result ./head-result
