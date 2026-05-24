@@ -272,6 +272,12 @@
             ./hosts/Arians-MacBook-Pro/configuration.nix
           ];
         };
+        "Arians-Mac-mini" = nix-darwin.lib.darwinSystem {
+          modules = [
+            self.darwinModules.home-manager
+            ./hosts/Arians-Mac-mini/configuration.nix
+          ];
+        };
       };
     };
 }
