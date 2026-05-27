@@ -59,6 +59,7 @@
       overlays.spire = import ./overlays/spire.nix;
 
       darwinModules = {
+        ssh = ./modules/darwin/ssh.nix;
         home-manager = {
           imports = [ home-manager.darwinModules.home-manager ];
           nixpkgs.config.allowUnfreePredicate =
@@ -268,12 +269,14 @@
       darwinConfigurations = {
         "Arians-MacBook-Pro" = nix-darwin.lib.darwinSystem {
           modules = [
+            self.darwinModules.ssh
             self.darwinModules.home-manager
             ./hosts/Arians-MacBook-Pro/configuration.nix
           ];
         };
         "Arians-Mac-mini" = nix-darwin.lib.darwinSystem {
           modules = [
+            self.darwinModules.ssh
             self.darwinModules.home-manager
             ./hosts/Arians-Mac-mini/configuration.nix
           ];
