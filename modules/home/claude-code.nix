@@ -25,26 +25,6 @@ let
     '';
   };
 
-  gitDenyResponse = pkgs.writeText "claude-git-deny.json" (builtins.toJSON {
-    hookSpecificOutput = {
-      hookEventName = "PreToolUse";
-      permissionDecision = "deny";
-      permissionDecisionReason = ''
-        git is not available in this environment. This repo uses jj (Jujutsu).
-
-        Use jj instead:
-          jj log             - history
-          jj st              - status
-          jj diff            - working-copy diff
-          jj show <rev>      - inspect a commit
-          jj file list <rev> - list files at a revision
-          jj file show <rev> <path> - file contents at a revision
-          jj help            - full command list
-
-        Do NOT retry the same command via git, git -C, git --git-dir, etc. - they are all denied.
-      '';
-    };
-  });
 in
 {
   home.file.".claude/skills".source =
@@ -81,7 +61,6 @@ in
         };
       };
       permissions = {
-        deny = [ "Bash(git *)" ];
         allow = [
           "Bash(jj log)"
           "Bash(jj st)"
@@ -97,14 +76,6 @@ in
         };
       };
       hooks = {
-        PreToolUse = [{
-          matcher = "Bash";
-          hooks = [{
-            type = "command";
-            "if" = "Bash(git *)";
-            command = "cat ${gitDenyResponse}";
-          }];
-        }];
         WorktreeCreate = [{
           hooks = [{
             type = "command";
