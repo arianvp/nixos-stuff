@@ -4,7 +4,7 @@
   inputs = {
     unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     unstable-small.url = "github:NixOS/nixpkgs/nixos-unstable-small";
-    stable.url = "github:NixOS/nixpkgs/nixos-25.11";
+    stable.url = "github:NixOS/nixpkgs/nixos-26.05";
     nixos-hardware.url = "github:NixOS/nixos-hardware";
     lanzaboote = {
       url = "github:nix-community/lanzaboote";
