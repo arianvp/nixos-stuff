@@ -49,8 +49,6 @@ jobs:
       - name: nix-diff
         run: nix --quiet run --inputs-from ./head nixpkgs#nix-diff -- --color=always ./base-result ./head-result
   submit-dependencies:
-    # Skip merge_group: same commits will be re-submitted on the post-merge push to master.
-    if: github.event_name != 'merge_group'
     runs-on: ubuntu-24.04-arm
     permissions:
       contents: write
