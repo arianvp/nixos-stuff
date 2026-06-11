@@ -14,6 +14,7 @@ let
     "arian.vanputten@gmail.com"
   ];
   principals.picnoir = [ "picnoir" ];
+  principals.m = [ "m" ];
 in
 {
   imports = [ ./ssh-authorized-principals.nix ];

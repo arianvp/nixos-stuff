@@ -93,7 +93,7 @@
     extraGroups = [ "nix-trusted-users" ];
   };
 
-  services.openssh.settings.Banner = pkgs.writeText "ssh-banner" ''
+  services.openssh.settings.Banner = "${pkgs.writeText "ssh-banner" ''
 
     ================================================================================
                             AUTHORIZED ACCESS ONLY
@@ -126,7 +126,7 @@
 
     ================================================================================
 
-  '';
+  ''}";
 
   environment.systemPackages = [
     pkgs.kitty.terminfo
