@@ -93,6 +93,41 @@
     extraGroups = [ "nix-trusted-users" ];
   };
 
+  services.openssh.settings.Banner = pkgs.writeText "ssh-banner" ''
+
+    ================================================================================
+                            AUTHORIZED ACCESS ONLY
+    ================================================================================
+
+    NOTICE: This system is located on a private residential network in Germany
+    and is subject to monitoring and logging in accordance with applicable
+    German and European Union law, including but not limited to the
+    Telekommunikation-Digitale-Dienste-Datenschutz-Gesetz (TDDDG) and the
+    General Data Protection Regulation (GDPR/DSGVO).
+
+    By connecting to this system, you acknowledge and agree to the following:
+
+      1. You will NOT use this system or network to engage in any unlawful
+         activity, including but not limited to copyright infringement, unauthorized
+         distribution of copyrighted material, or any other activity prohibited
+         under German law (including the Urheberrechtsgesetz, UrhG).
+
+      2. All network activity may be logged and monitored. These logs may be
+         provided to law enforcement or judicial authorities upon lawful request.
+
+      3. You assume FULL LEGAL LIABILITY for any and all activity conducted
+         through this connection. The network operator shall not be held
+         responsible for any violations of law committed by connected users.
+
+      4. Unauthorized access or misuse of this system may result in civil and
+         criminal prosecution under applicable German and EU law.
+
+    If you do not agree to these terms, disconnect immediately.
+
+    ================================================================================
+
+  '';
+
   environment.systemPackages = [
     pkgs.kitty.terminfo
   ];
