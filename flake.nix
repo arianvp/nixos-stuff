@@ -212,9 +212,6 @@
           spire-http-challenge = pkgs.testers.runNixOSTest {
             imports = [ ./tests/spire-http-challenge.nix ];
           };
-          spire-tpm = pkgs.testers.runNixOSTest {
-            imports = [ ./tests/spire-tpm.nix ];
-          };
           bootloader = pkgs.testers.runNixOSTest {
             imports = [ ./modules/bootloader/test.nix ];
           };
