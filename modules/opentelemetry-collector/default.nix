@@ -38,18 +38,6 @@
           detectors = [ "env" ];
           override = false;
         };
-        "transform/add_resource_attributes_as_metric_attributes" = {
-          error_mode = "ignore";
-          metric_statements = [
-            {
-              context = "datapoint";
-              statements = [
-                ''set(attributes["deployment.environment"], resource.attributes["deployment.environment"])''
-                ''set(attributes["service.version"], resource.attributes["service.version"])''
-              ];
-            }
-          ];
-        };
       };
 
       # Service configuration
@@ -73,7 +61,6 @@
             ];
             processors = [
               "resourcedetection"
-              "transform/add_resource_attributes_as_metric_attributes"
               "batch"
             ];
           };
