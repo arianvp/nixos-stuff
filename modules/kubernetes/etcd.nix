@@ -8,7 +8,7 @@
     serviceConfig = {
       Type = "notify";
       StateDirectory = "etcd";
-      ExecStart = "${pkgs.etcd}/bin/etcd --name %H --data-dir $STATE_DIRECTORY";
+      ExecStart = "${pkgs.etcd}/bin/etcd --name %H --data-dir $STATE_DIRECTORY --experimental-enable-distributed-tracing=true --experimental-distributed-tracing-sampling-rate=1000000";
     };
   };
 }
