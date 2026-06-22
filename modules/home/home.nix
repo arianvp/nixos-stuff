@@ -11,7 +11,8 @@
     ./jj
     ./nvim.nix
     ./claude-code.nix
-  ] ++ lib.optionals isLinux [
+  ]
+  ++ lib.optionals isLinux [
     ./linux.nix
   ];
 
@@ -33,10 +34,16 @@
   };
 
   config = {
+    programs.bash.enable = true;
     programs.direnv.enable = true;
+    programs.git.enable = true;
 
-    home.packages = [
-      pkgs.claude-code
+    home.packages = with pkgs; [
+      ripgrep
+      binutils
+      btop
+      ijq
+      jq
     ];
 
     home.stateVersion = "26.05";

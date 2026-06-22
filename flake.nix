@@ -70,7 +70,9 @@
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
           home-manager.backupFileExtension = "bak";
-          home-manager.extraSpecialArgs = { isLinux = false; };
+          home-manager.extraSpecialArgs = {
+            isLinux = false;
+          };
           home-manager.users.arian = ./modules/home/home.nix;
         };
       };
@@ -81,11 +83,13 @@
           { lib, ... }:
           {
             imports = [ home-manager.nixosModules.home-manager ];
-            nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [
-              "steam"
-              "steam-unwrapped"
-              "claude-code"
-            ];
+            nixpkgs.config.allowUnfreePredicate =
+              pkg:
+              builtins.elem (lib.getName pkg) [
+                "steam"
+                "steam-unwrapped"
+                "claude-code"
+              ];
             home-manager.useGlobalPkgs = true;
             home-manager.useUserPackages = true;
             home-manager.backupFileExtension = "hm-bak";
@@ -97,7 +101,6 @@
             home-manager.users.arian = ./modules/home/home.nix;
           };
         cachix = ./modules/cachix.nix;
-        direnv = ./modules/direnv.nix;
         diff = ./modules/diff.nix;
         dnssd = ./modules/dnssd.nix;
         monitoring = ./modules/monitoring.nix;

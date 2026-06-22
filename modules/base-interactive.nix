@@ -12,14 +12,12 @@
     ./ssh.nix
   ];
 
+  environment.systemPackages = [ pkgs.ghostty ];
+
   documentation.man = {
     enable = true;
     cache.enable = true;
   };
-
-  programs.direnv.enable = true;
-
-  environment.systemPackages = [ pkgs.ghostty.terminfo ];
 
   users.users.arian = {
     isNormalUser = true;
@@ -27,23 +25,5 @@
       "wheel"
       "nix-trusted-users"
     ];
-    packages = builtins.attrValues {
-      inherit (pkgs)
-        binutils
-        btop
-        dnsutils
-        ghostty
-        git
-        go
-        gopls
-        ijq
-        jq
-        nixd
-        nixfmt
-        tig
-        tmux
-        zed-editor
-        ;
-    };
   };
 }

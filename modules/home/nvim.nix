@@ -4,7 +4,10 @@
   # which conflicts with the live-symlink of the whole nvim/ directory below.
   # Install the package directly and wire up EDITOR + the vim alias by hand.
   home.packages = [ pkgs.neovim ];
-  home.sessionVariables.EDITOR = "nvim";
+  home.sessionVariables = {
+    EDITOR = "nvim";
+    VISUAL = "nvim";
+  };
   home.shellAliases.vim = "nvim";
 
   # Symlink the whole nvim/ directory live into ~/.config/nvim/. Edits and
