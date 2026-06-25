@@ -1,23 +1,36 @@
 { pkgs, ... }:
 {
-  nix.package = pkgs.lixPackageSets.lix_2_94.lix;
+  nix.package = pkgs.lixPackageSets.latest.lix;
 
-  nix.settings.substituters = [
-    # "https://nixos.snix.store?priority=39"  # lots of issues with lix
-    "https://cache.nixos.org?priority=40"
-  ];
+  nix.settings = {
+    experimental-features = [
+      "nix-command"
+      "flakes"
+      "cgroups"
+      "auto-allocate-uids"
+    ];
 
-  nix.settings.trusted-users = [
-    "@wheel"
-    "@nix-trusted-users"
-  ];
+    substituters = [
+      # "https://nixos.snix.store?priority=39"  # lots of issues with lix
+      "https://cache.nixos.org?priority=40"
+    ];
 
-  nix.settings.experimental-features = [
-    "nix-command"
-    "flakes"
-    "cgroups"
-    "fetch-closure"
-  ];
+    allowed-users = [
+      "@wheel"
+      "@nix-trusted-users"
+    ];
+
+    trusted-users = [
+      "@wheel"
+      "@nix-trusted-users"
+    ];
+
+    system-features = [ "uid-range" ];
+
+    auto-allocate-uids = true;
+    use-cgroups = true;
+
+  };
 
   nix.gc = {
     automatic = true;
@@ -25,8 +38,6 @@
   };
 
   nix.optimise.automatic = true;
-
-  # nix.settings.use-cgroups = true;
 
   users.groups.nix-trusted-users = { };
 }
