@@ -11,8 +11,8 @@
     ];
 
     substituters = [
-      # "https://nixos.snix.store?priority=39"  # lots of issues with lix
-      "https://cache.nixos.org?priority=40"
+      "https://nixos.snix.store?priority=39"  # lots of issues with lix
+      # "https://cache.nixos.org?priority=40"
     ];
 
     allowed-users = [
