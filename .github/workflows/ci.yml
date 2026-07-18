@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-      - uses: cachix/install-nix-action@8aa03977d8d733052d78f4e008a241fd1dbf36b3 # v31.10.6
+      - uses: cachix/install-nix-action@a49548c11d9846ad46ecc0115273879b045f001c # v31.10.7
       - run: nix run --inputs-from . nixpkgs#zizmor -- .
       - run: nix run --inputs-from . nixpkgs#actionlint
   nix-diff:
@@ -39,7 +39,7 @@ jobs:
           ref: ${{ steps.base.outputs.sha }}
           path: base
           persist-credentials: false
-      - uses: cachix/install-nix-action@8aa03977d8d733052d78f4e008a241fd1dbf36b3 # v31.10.6
+      - uses: cachix/install-nix-action@a49548c11d9846ad46ecc0115273879b045f001c # v31.10.7
       - name: nix build base
         run: nix --quiet --print-build-logs build ./base#nixosConfigurations.altra.config.system.build.toplevel --out-link ./base-result
       - name: nix build head
@@ -63,7 +63,7 @@ jobs:
           # so the snapshot describes the same commit Dependency Review compares against the base.
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
-      - uses: cachix/install-nix-action@8aa03977d8d733052d78f4e008a241fd1dbf36b3 # v31.10.6
+      - uses: cachix/install-nix-action@a49548c11d9846ad46ecc0115273879b045f001c # v31.10.7
       - name: build toplevel
         env:
           HOST: ${{ matrix.host }}
