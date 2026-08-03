@@ -1,8 +1,5 @@
-{ ... }:
+{ pkgs, ... }:
 {
-  # Nix is managed by the Lix installer (/etc/nix/nix.conf is owned by it).
-  # Don't let nix-darwin overwrite it.
-  nix.enable = false;
 
   nixpkgs.hostPlatform = "aarch64-darwin";
 
@@ -15,6 +12,14 @@
 
   users.users.arian.home = "/Users/arian";
 
+  nix.enable = true;
+  nix.package = pkgs.lixPackageSets.latest.lix;
+  nix.settings.trusted-users = [ "arian" ];
+  nix.settings.allowed-users = [ "arian" ];
+  nix.settings.experimental-features = [
+    "nix-command"
+    "flakes"
+  ];
   # Used for backwards compatibility, please read the changelog before changing.
   # $ darwin-rebuild changelog
   system.stateVersion = 6;
