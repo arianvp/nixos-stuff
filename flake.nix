@@ -2,10 +2,11 @@
   description = "Arian's computers";
 
   inputs = {
-    unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
+    unstable.url = "github:tfc/nixpkgs/darwin-linux-builder-vzvm-dropin";
     unstable-small.url = "github:NixOS/nixpkgs/nixos-unstable-small";
     stable.url = "github:NixOS/nixpkgs/nixos-26.05";
     nixos-hardware.url = "github:NixOS/nixos-hardware";
+
     lanzaboote = {
       url = "github:nix-community/lanzaboote";
       inputs.nixpkgs.follows = "unstable";

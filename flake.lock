@@ -240,16 +240,16 @@
     },
     "unstable": {
       "locked": {
-        "lastModified": 1785692966,
-        "narHash": "sha256-vUfIeBEfpbAfZ5zjgIkYk7eHBeVfCYVjLbWnMkseYnk=",
-        "owner": "NixOS",
+        "lastModified": 1785430420,
+        "narHash": "sha256-LU9UnJ4eb2EG3MYHyWGV6mujqSueNaH5Yjm6hxJaC3k=",
+        "owner": "tfc",
         "repo": "nixpkgs",
-        "rev": "643809054d65fdd466a63e3155b8c498cb483c04",
+        "rev": "325e6b23317592181bb966b7f082d3f6f797a7a4",
         "type": "github"
       },
       "original": {
-        "owner": "NixOS",
-        "ref": "nixos-unstable",
+        "owner": "tfc",
+        "ref": "darwin-linux-builder-vzvm-dropin",
         "repo": "nixpkgs",
         "type": "github"
       }
