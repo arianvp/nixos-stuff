@@ -1,10 +1,10 @@
 { pkgs, ... }:
 {
-  programs.noctalia-shell = {
+  programs.noctalia = {
     systemd.enable = true;
     settings = {
     };
-    # this may also be a string or a path to a JSON file.
+    # this may also be a raw TOML string or a path to a TOML file.
   };
 
   home.packages = [ pkgs.sshfs ];
