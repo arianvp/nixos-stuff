@@ -38,7 +38,7 @@
     ];
 
     config = { pkgs, ... }: {
-      # nix.package = pkgs.lixPackageSets.latest.lix;
+      nix.package = pkgs.lixPackageSets.latest.lix;
       virtualisation = {
         darwin-builder = {
           diskSize = 40 * 1024; # MiB
