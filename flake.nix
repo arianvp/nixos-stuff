@@ -2,8 +2,7 @@
   description = "Arian's computers";
 
   inputs = {
-    unstable.url = "github:tfc/nixpkgs/darwin-linux-builder-vzvm-dropin";
-    unstable-small.url = "github:NixOS/nixpkgs/nixos-unstable-small";
+    unstable.url = "github:NixOS/nixpkgs/nixos-unstable-small";
     stable.url = "github:NixOS/nixpkgs/nixos-26.05";
     nixos-hardware.url = "github:NixOS/nixos-hardware";
 
@@ -36,7 +35,6 @@
       lanzaboote,
       stable,
       unstable,
-      unstable-small,
       nixos-hardware,
       home-manager,
       nix-darwin,
@@ -247,20 +245,20 @@
               ./hosts/framework/configuration.nix
             ];
           };
-          utm = unstable-small.lib.nixosSystem {
+          utm = unstable.lib.nixosSystem {
             modules = modules ++ [
               { networking.hostName = "utm"; }
               ./hosts/utm/configuration.nix
             ];
           };
-          altra = unstable-small.lib.nixosSystem {
+          altra = unstable.lib.nixosSystem {
             modules = modules ++ [
               nixos-hardware.nixosModules.asrock-rack-altrad8ud-1l2t
               self.nixosModules.home-manager
               ./hosts/altra/configuration.nix
             ];
           };
-          arianvp-me = unstable-small.lib.nixosSystem {
+          arianvp-me = unstable.lib.nixosSystem {
             modules = modules ++ [
               ./hosts/arianvp.me/configuration.nix
             ];

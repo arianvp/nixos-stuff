@@ -58,11 +58,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1785531816,
-        "narHash": "sha256-vkMnV0JIyw+g/NmcfoajlGaAO+9a0ezia+FZohQJrik=",
+        "lastModified": 1785958398,
+        "narHash": "sha256-5r/JgsoNMTx+qIh83WkxpujEKBR7PF5ssnh5vYCuSAw=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "bf9ce9fec78f95f374e8dd3b503863a3ec128ebe",
+        "rev": "a7c70cc290290f373f50cd820403833d250459ac",
         "type": "github"
       },
       "original": {
@@ -153,11 +153,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1785707827,
-        "narHash": "sha256-H70rICsCS/cx4KR1Qryln9HJd0iVekP+8or3OCKvPT0=",
+        "lastModified": 1785998449,
+        "narHash": "sha256-hJjByYo/ZRCqPaXiZQDdyhOHJtAohGHkTBk07CULetI=",
         "owner": "noctalia-dev",
         "repo": "noctalia-shell",
-        "rev": "5aae077a3563da6fda3fc2a2b8ce9162e3a42019",
+        "rev": "364ffde1981526804e0e794a3129f6770ad91005",
         "type": "github"
       },
       "original": {
@@ -197,8 +197,7 @@
         "nixos-hardware": "nixos-hardware",
         "noctalia": "noctalia",
         "stable": "stable",
-        "unstable": "unstable",
-        "unstable-small": "unstable-small"
+        "unstable": "unstable"
       }
     },
     "rust-overlay": {
@@ -224,11 +223,11 @@
     },
     "stable": {
       "locked": {
-        "lastModified": 1785599192,
-        "narHash": "sha256-dg4RTtDxnXY13UkJNdhmgTUTl0n/IJBlCigfO7nutZw=",
+        "lastModified": 1785858998,
+        "narHash": "sha256-fKCq5jphd6l/Ms6gc3dptkw/TcKLYub9lQE5g6rbbkc=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "6d65bfc1bcef2ef39a239d38e577e92a89fb0f07",
+        "rev": "04607e1165ac22c5fde6dcc54c9e0b3c0487c555",
         "type": "github"
       },
       "original": {
@@ -240,27 +239,11 @@
     },
     "unstable": {
       "locked": {
-        "lastModified": 1785430420,
-        "narHash": "sha256-LU9UnJ4eb2EG3MYHyWGV6mujqSueNaH5Yjm6hxJaC3k=",
-        "owner": "tfc",
-        "repo": "nixpkgs",
-        "rev": "325e6b23317592181bb966b7f082d3f6f797a7a4",
-        "type": "github"
-      },
-      "original": {
-        "owner": "tfc",
-        "ref": "darwin-linux-builder-vzvm-dropin",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
-    "unstable-small": {
-      "locked": {
-        "lastModified": 1785743583,
-        "narHash": "sha256-BlRhES2xIe6CMwlHgls5ZMUQ0do8TzCLnHGwWUshPD8=",
+        "lastModified": 1785991627,
+        "narHash": "sha256-0iTy6cLm/PNpiDKsf5CDJIMxmXO+mI0KkNCroOo+sh4=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "2faa05b4f6904c4f57584476e4d04ff7b2fbbd3d",
+        "rev": "a074fa9a1cc14efea8cc71fb08a71aacdfb91757",
         "type": "github"
       },
       "original": {

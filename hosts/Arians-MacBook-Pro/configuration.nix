@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 {
 
   nixpkgs.hostPlatform = "aarch64-darwin";
@@ -20,6 +20,11 @@
     "nix-command"
     "flakes"
   ];
+
+ 
+  # the VM can not reach tailscale; so disable substitutes
+  nix.settings.builders-use-substitutes = lib.mkForce false;
+
   nix.linux-builder = {
     enable = true;
     package = pkgs.darwin.linux-builder-vz; # new
