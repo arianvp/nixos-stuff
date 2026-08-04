@@ -22,10 +22,10 @@
   ];
   nix.linux-builder = {
     enable = true;
-    # package = pkgs.darwin.linux-builder-vz; # new
+    package = pkgs.darwin.linux-builder-vz; # new
     systems = [
       "aarch64-linux"
-      # "x86_64-linux"
+      "x86_64-linux"
     ];
 
     ephemeral = true;
