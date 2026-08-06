@@ -15,3 +15,13 @@ abandon-unreachable-commits = false
 
 [revset-aliases]
 "merge_base(a,b)" = "heads(::a & ::b)"
+
+# jj matches the full hostname, which on macOS is the mDNS name; list the bare
+# name too in case the machine is ever off a network that appends `.local`.
+[[--scope]]
+--when.hostnames = [
+  "Arians-MacBook-Pro.local",
+  "Arians-MacBook-Pro",
+]
+[--scope.user]
+email = "arian@mercury.com"
