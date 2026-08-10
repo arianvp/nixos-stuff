@@ -59,6 +59,8 @@
 
       darwinModules = {
         ssh = ./modules/darwin/ssh.nix;
+        nix = ./modules/darwin/nix.nix;
+        common = ./modules/darwin/common.nix;
         home-manager = {
           imports = [ home-manager.darwinModules.home-manager ];
           nixpkgs.config.allowUnfreePredicate =
@@ -265,21 +267,26 @@
           };
         };
 
-      darwinConfigurations = {
-        "Arians-MacBook-Pro" = nix-darwin.lib.darwinSystem {
+      darwinConfigurations =
+        let
           modules = [
+            self.darwinModules.common
             self.darwinModules.ssh
+            self.darwinModules.nix
             self.darwinModules.home-manager
-            ./hosts/Arians-MacBook-Pro/configuration.nix
           ];
+        in
+        {
+          "Arians-MacBook-Pro" = nix-darwin.lib.darwinSystem {
+            modules = modules ++ [
+              ./hosts/Arians-MacBook-Pro/configuration.nix
+            ];
+          };
+          "Arians-Mac-mini" = nix-darwin.lib.darwinSystem {
+            modules = modules ++ [
+              ./hosts/Arians-Mac-mini/configuration.nix
+            ];
+          };
         };
-        "Arians-Mac-mini" = nix-darwin.lib.darwinSystem {
-          modules = [
-            self.darwinModules.ssh
-            self.darwinModules.home-manager
-            ./hosts/Arians-Mac-mini/configuration.nix
-          ];
-        };
-      };
     };
 }
