@@ -265,6 +265,11 @@
               ./hosts/arianvp.me/configuration.nix
             ];
           };
+          minecraft = unstable.lib.nixosSystem {
+            modules = modules ++ [
+              ./hosts/minecraft/configuration.nix
+            ];
+          };
         };
 
       darwinConfigurations =
