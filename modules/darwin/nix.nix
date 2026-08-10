@@ -30,9 +30,27 @@
     ];
 
     config =
-      { pkgs, ... }:
+      { pkgs, config, ... }:
       {
         nix.package = pkgs.lixPackageSets.latest.lix;
+
+        systemd.services.rosettad =
+          let
+            cfg = config.virtualisation.rosetta;
+          in
+          {
+            wantedBy = [ "multi-user.target" ];
+            unitConfig = {
+              ConditionPathExists = "${cfg.mountPoint}/rosettad";
+            };
+            serviceConfig = {
+              CacheDirectory = "rosettad";
+              RuntimeDirectory = "rosettad"; # Makes sure the directory exists before starting
+              ExecStart = "${cfg.mountPoint}/rosettad daemon $CACHE_DIRECTORY";
+              Restart = "always";
+            };
+          };
+
         virtualisation = {
           darwin-builder = {
             diskSize = 40 * 1024; # MiB
