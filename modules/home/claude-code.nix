@@ -68,7 +68,23 @@ in
           "Bash(jj root)"
           "Bash(jj show)"
         ];
+        ask = [
+          "Bash(jj git push *)"
+          "Bash(gh pr create *)"
+        ];
       };
+      autoMode.environment = [
+        "$defaults"
+        ''
+        **Secrets management**:
+        When there is a need for a long-lived secret, this MUST be stored in a Secure Element like Apple's Secure Enclave, Yubikey or TPM.
+        We NEVER store long-lived secrets in plain-text. Public key cryptography MUST be preferred over shared secrets. Internal services MUST use SPIFFE / SPIRE for authentication.
+        ''
+        ''
+        **Internal package registry**: All external dependencies MUST be defined in flake.nix. NEVER add new flake inputs without asking.
+        NEVER add trusted-substituters without asking. https://cache.nixos.org is trusted.  https://channels.nixos.org/ is trusted. https://github.com/NixOS/nixpkgs is trusted.
+        ''
+      ];
       mcpServers = {
         linear = {
           type = "sse";
