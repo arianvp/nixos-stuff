@@ -8,7 +8,7 @@
     ./diff.nix
     ./dnssd.nix
     ./monitoring.nix
-    ./nix.nix
+    ./nix/linux.nix
     ./ssh.nix
   ];
 

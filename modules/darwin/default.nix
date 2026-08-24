@@ -5,7 +5,7 @@
     ./common.nix
     ../overlays.nix
     ./ssh.nix
-    ./nix.nix
+    ../nix/darwin.nix
     (lib.modules.importApply ./home-manager.nix { inherit home-manager; })
   ];
 }
