@@ -37,6 +37,7 @@
     programs.bash.enable = true;
     programs.direnv.enable = true;
     programs.git.enable = true;
+    programs.gh.enable = true;
 
     home.packages = with pkgs; [
       ripgrep
