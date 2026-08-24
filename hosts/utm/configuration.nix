@@ -2,7 +2,6 @@
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 {
@@ -29,7 +28,7 @@
   virtualisation.rosetta.enable = true;
   # virtualisation.podman.enable = true;
   services.getty.autologinUser = "arian";
-  # networking.hostName = "nixos"; # Define your hostname.
+  networking.hostName = "utm";
   # Pick only one of the below networking options.
   # Set your time zone.
   # See https://github.com/NixOS/nixpkgs/issues/311125

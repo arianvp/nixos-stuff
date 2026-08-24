@@ -1,6 +1,17 @@
+{
+  nixos-hardware,
+  lanzaboote,
+  homeManagerModule,
+  noctaliaModule,
+}:
 { lib, pkgs, ... }:
 {
   imports = [
+    nixos-hardware.nixosModules.framework-11th-gen-intel
+    lanzaboote.nixosModules.lanzaboote
+    homeManagerModule
+    noctaliaModule
+
     ./hardware-configuration.nix
     ./pcrlock.nix
     ./audit.nix
@@ -24,7 +35,7 @@
   virtualisation.podman.dockerSocket.enable = true;
   virtualisation.podman.dockerCompat = true;
 
-services.fwupd.enable = true;
+  services.fwupd.enable = true;
 
   environment.shellAliases.sudo = "run0";
 

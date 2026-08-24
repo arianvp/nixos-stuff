@@ -1,10 +1,17 @@
 {
+  nixos-hardware,
+  homeManagerModule,
+}:
+{
   config,
   pkgs,
   ...
 }:
 {
   imports = [
+    nixos-hardware.nixosModules.asrock-rack-altrad8ud-1l2t
+    homeManagerModule
+
     ./hardware-configuration.nix
     ./network.nix
     ./spire.nix
