@@ -17,6 +17,11 @@
       YOU MUST ALWAYS USE JJ FOR VERSION CONTROL. NOT GIT.
     '';
 
+    mcpServers.linear-server = {
+      type = "http";
+      url = "https://mcp.linear.app/mcp";
+    };
+
     settings = {
       permissions = {
         allow = [
