@@ -1,12 +1,15 @@
 { pkgs, lib, ... }:
 {
-  nix.enable = true;
-  nix.package = pkgs.lixPackageSets.latest.lix;
-  nix.settings.trusted-users = [ "arian" ];
-  nix.settings.allowed-users = [ "arian" ];
-  nix.settings.experimental-features = [
-    "nix-command"
-    "flakes"
+  imports = [ ./common.nix ];
+
+  nix.settings.allowed-users = [ "@staff" ]; # any real user on macOS
+  nix.settings.trusted-users = [ "@admin" ];
+
+  nix.gc.interval = [
+    {
+      Hour = 13;
+      Minute = 0;
+    }
   ];
 
   # the VM can not reach tailscale; so disable substitutes
@@ -14,7 +17,7 @@
 
   nix.linux-builder = {
     enable = true;
-    package = pkgs.darwin.linux-builder-vz; # new
+    package = pkgs.darwin.linux-builder-vz;
     systems = [
       "aarch64-linux"
       "x86_64-linux"
@@ -22,8 +25,7 @@
 
     ephemeral = true;
     maxJobs = 4;
-    # "kvm" is added per-host by machines whose chip can do nested
-    # virtualisation; see hosts/Arians-Mac-mini.
+    # "kvm" comes from ./m4.nix on hosts whose chip can do nested virtualisation.
     supportedFeatures = [
       "benchmark"
       "big-parallel"
@@ -60,10 +62,6 @@
             memorySize = 8 * 1024; # MiB
           };
           cores = 8;
-
-          # vz.nestedVirtualization gives the guest a real /dev/kvm, for running
-          # NixOS VM tests on the builder. It needs macOS 15+ and an M3 or newer
-          # chip, so hosts opt in individually rather than setting it here.
         };
       };
   };
