@@ -22,8 +22,9 @@
 
     ephemeral = true;
     maxJobs = 4;
+    # "kvm" is added per-host by machines whose chip can do nested
+    # virtualisation; see hosts/Arians-Mac-mini.
     supportedFeatures = [
-      # "kvm" # requires nestedVirtualization below (OPTIONAL)
       "benchmark"
       "big-parallel"
       "nixos-test"
@@ -32,9 +33,10 @@
     config =
       { pkgs, config, ... }:
       {
-        nix.package = pkgs.lixPackageSets.latest.lix;
+        # nix.package = pkgs.lixPackageSets.latest.lix;
 
-        systemd.services.rosettad =
+        /*
+          systemd.services.rosettad =
           let
             cfg = config.virtualisation.rosetta;
           in
@@ -50,6 +52,7 @@
               Restart = "always";
             };
           };
+        */
 
         virtualisation = {
           darwin-builder = {
@@ -58,10 +61,9 @@
           };
           cores = 8;
 
-          # OPTIONAL:
-          # Real /dev/kvm in the guest, for running NixOS VM tests on the
-          # builder. Needs macOS 15+ and an M3 or newer chip.
-          # vz.nestedVirtualization = true; # new
+          # vz.nestedVirtualization gives the guest a real /dev/kvm, for running
+          # NixOS VM tests on the builder. It needs macOS 15+ and an M3 or newer
+          # chip, so hosts opt in individually rather than setting it here.
         };
       };
   };

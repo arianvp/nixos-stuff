@@ -39,7 +39,7 @@
     # ../../modules/opentelemetry-collector/exporter-dash0.nix
     # ../../modules/opentelemetry-collector/exporter-grafanacloud.nix
 
-    ../../modules/kubernetes/kubernetes.nix
+    ../../modules/kubernetes
 
     ../../websites/nixos.sh
   ];

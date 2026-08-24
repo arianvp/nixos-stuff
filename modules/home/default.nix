@@ -9,8 +9,8 @@
 
   imports = [
     ./jj
-    ./nvim.nix
-    ./claude-code.nix
+    ./nvim
+    ./claude-code
   ]
   ++ lib.optionals isLinux [
     ./linux.nix

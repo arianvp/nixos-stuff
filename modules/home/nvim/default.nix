@@ -10,8 +10,10 @@
   };
   home.shellAliases.vim = "nvim";
 
-  # Symlink the whole nvim/ directory live into ~/.config/nvim/. Edits and
-  # add/remove of files take effect immediately — no `home-manager switch`.
+  # Symlink the whole nvim/config/ directory live into ~/.config/nvim/. Edits
+  # and add/remove of files take effect immediately — no `home-manager switch`.
+  # The lua lives in its own subdirectory so this module's default.nix does not
+  # end up inside ~/.config/nvim.
   xdg.configFile."nvim".source =
-    config.lib.file.mkOutOfStoreSymlink "${config.repoRoot}/modules/home/nvim";
+    config.lib.file.mkOutOfStoreSymlink "${config.repoRoot}/modules/home/nvim/config";
 }

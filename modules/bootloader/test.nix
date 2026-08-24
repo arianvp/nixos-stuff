@@ -2,7 +2,7 @@
 {
   name = "bootloader";
   nodes.machine = {
-    imports = [ ./bootloader.nix ];
+    imports = [ ./. ];
     # virtualisation.useBootLoader = true;
     virtualisation.useEFIBoot = true;
     system.switch.enable = true;

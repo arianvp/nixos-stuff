@@ -51,8 +51,8 @@ let
 in
 # Merge manually defined tests with discovered module tests
 {
-  spire-join-token = pkgs'.testers.runNixOSTest {
-    imports = [ ./tests/spire-join-token.nix ];
+  spire-openbao = pkgs'.testers.runNixOSTest {
+    imports = [ ./tests/spire-openbao.nix ];
   };
   spire-http-challenge = pkgs'.testers.runNixOSTest {
     imports = [ ./tests/spire-http-challenge.nix ];

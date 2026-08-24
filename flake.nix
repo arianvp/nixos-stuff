@@ -80,7 +80,7 @@
       overlays.spire = import ./overlays/spire.nix;
 
       devShells = forSystems [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ] (import ./devshells.nix);
-      packages = forSystems [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ] (import ./packages.nix);
+      packages = forSystems [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ] (import ./packages);
       checks = forSystems [ "x86_64-linux" "aarch64-linux" ] (import ./checks.nix);
 
       nixosConfigurations = {

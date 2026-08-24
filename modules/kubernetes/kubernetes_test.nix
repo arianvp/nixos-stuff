@@ -4,7 +4,7 @@
 
   nodes.foo = {
     imports = [
-      ./kubernetes.nix
+      ./.
     ];
 
     # etcd is not configured via kubernetes.* namespace
