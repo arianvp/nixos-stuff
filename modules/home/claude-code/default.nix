@@ -19,6 +19,7 @@
     skills = {
       bump-systemd = ./skills/bump-systemd;
       jj-clone = ./skills/jj-clone;
+      offline-docs = ./skills/offline-docs;
     };
 
     rules.jj = ''
