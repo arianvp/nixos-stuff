@@ -14,6 +14,9 @@
   ]
   ++ lib.optionals isLinux [
     ./linux.nix
+  ]
+  ++ lib.optionals (!isLinux) [
+    ./darwin.nix
   ];
 
   # This option is purely a flake workaround. In a flake, relative-path syntax
@@ -35,9 +38,15 @@
 
   config = {
     programs.bash.enable = true;
-    programs.direnv.enable = true;
+    programs.zsh.enable = true;
+    programs.direnv = {
+      enable = true;
+      nix-direnv.enable = true;
+    };
     programs.git.enable = true;
     programs.gh.enable = true;
+
+    home.sessionPath = [ "$HOME/.local/bin" ];
 
     home.packages = with pkgs; [
       ripgrep
