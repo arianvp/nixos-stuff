@@ -1,5 +1,9 @@
 nixbot:
 { ... }:
+let
+  # `cloudflared tunnel create nixbot` prints this and names its credentials file after it.
+  tunnelId = "5d074d69-3044-4137-a9cd-bbf74a454d6b";
+in
 {
   imports = [
     nixbot.nixosModules.nixbot
@@ -10,6 +14,10 @@ nixbot:
     domain = "nixbot.nixos.sh";
     admins = [ "github:arianvp" ];
     buildSystems = [ "aarch64-linux" ];
+
+    # GitHub cannot yet deliver webhooks over IPv6 and this line has no inbound
+    # IPv4, so deliveries come in over the tunnel while the UI stays on `domain`.
+    webhookBaseUrl = "https://nixbot.passkey.exchange";
 
     github = {
       enable = true;
@@ -22,4 +30,21 @@ nixbot:
     };
     nginx.enableACME = true;
   };
+
+  services.cloudflared = {
+    enable = true;
+    tunnels.${tunnelId} = {
+      credentialsFile = "/etc/credstore/cloudflared-nixbot.json";
+      ingress."nixbot.passkey.exchange" = {
+        path = "^/webhooks/";
+        service = "unix:/run/nixbot/web.sock";
+      };
+      default = "http_status:404";
+    };
+  };
+
+  # cloudflared runs as a DynamicUser; the nixbot socket is 0660 nixbot:nixbot.
+  systemd.services."cloudflared-tunnel-${tunnelId}".serviceConfig.SupplementaryGroups = [
+    "nixbot"
+  ];
 }
