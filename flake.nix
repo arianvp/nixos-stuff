@@ -26,6 +26,10 @@
       url = "github:noctalia-dev/noctalia-shell";
       inputs.nixpkgs.follows = "unstable";
     };
+    nixbot = {
+      url = "github:Mic92/nixbot";
+      inputs.nixpkgs.follows = "unstable";
+    };
   };
 
   outputs =
@@ -34,6 +38,7 @@
       home-manager,
       lanzaboote,
       nix-darwin,
+      nixbot,
       nixos-hardware,
       noctalia,
       unstable,
@@ -97,7 +102,7 @@
         utm = nixosSystem ./hosts/utm/configuration.nix;
         altra = nixosSystem (
           importApply ./hosts/altra/configuration.nix {
-            inherit nixos-hardware homeManagerModule;
+            inherit nixos-hardware homeManagerModule nixbot;
           }
         );
         arianvp-me = nixosSystem ./hosts/arianvp.me/configuration.nix;

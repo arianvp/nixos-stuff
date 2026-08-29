@@ -1,6 +1,7 @@
 {
   nixos-hardware,
   homeManagerModule,
+  nixbot,
 }:
 {
   config,
@@ -17,6 +18,7 @@
     ./spire.nix
     ./prometheus.nix
     ./he-ddns.nix
+    (import ./nixbot.nix nixbot)
 
     # TODO: something better
     ../../modules/base-interactive.nix

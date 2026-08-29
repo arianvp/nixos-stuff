@@ -1,5 +1,4 @@
 {
-  services.nginx.enable = false;
   services.nginx.appendHttpConfig = ''
     # Add HSTS header with preloading to HTTPS requests.
     # Adding this header to HTTP requests is discouraged

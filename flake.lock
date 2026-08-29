@@ -115,6 +115,27 @@
         "type": "github"
       }
     },
+    "nixbot": {
+      "inputs": {
+        "nixpkgs": [
+          "unstable"
+        ],
+        "treefmt-nix": "treefmt-nix"
+      },
+      "locked": {
+        "lastModified": 1787917367,
+        "narHash": "sha256-FCFmTnV7UQog1JWm0TvySlBnHBnyt+g6BlhUUFdE8SE=",
+        "owner": "Mic92",
+        "repo": "nixbot",
+        "rev": "660d7182cbabd2ca751d59d242c816d14038b0d1",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Mic92",
+        "repo": "nixbot",
+        "type": "github"
+      }
+    },
     "nixos-hardware": {
       "inputs": {
         "nixpkgs": "nixpkgs"
@@ -194,6 +215,7 @@
         "home-manager": "home-manager",
         "lanzaboote": "lanzaboote",
         "nix-darwin": "nix-darwin",
+        "nixbot": "nixbot",
         "nixos-hardware": "nixos-hardware",
         "noctalia": "noctalia",
         "stable": "stable",
@@ -234,6 +256,27 @@
         "owner": "NixOS",
         "ref": "nixos-26.05",
         "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "treefmt-nix": {
+      "inputs": {
+        "nixpkgs": [
+          "nixbot",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1780220602,
+        "narHash": "sha256-eynAfOmbmxJnkp7YewvCEbShNnnYJ9gLLqkzsYtBPeM=",
+        "owner": "numtide",
+        "repo": "treefmt-nix",
+        "rev": "db947814a175b7ca6ded66e21383d938df01c227",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "treefmt-nix",
         "type": "github"
       }
     },
