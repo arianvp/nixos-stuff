@@ -1,5 +1,9 @@
 { lib, ... }:
 {
+  services.opentelemetry-collector.validateConfigOverrides = [
+    "extensions::file_storage/journald-raw::directory=."
+  ];
+
   services.opentelemetry-collector.settings = {
     extensions."file_storage/journald-raw" = {
       directory = "\${env:STATE_DIRECTORY}/journald-raw";

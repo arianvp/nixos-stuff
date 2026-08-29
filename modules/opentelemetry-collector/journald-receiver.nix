@@ -17,6 +17,13 @@ in
     };
   };
 
+  # `otelcol validate` runs at build time, where ${env:STATE_DIRECTORY} expands to
+  # the empty string and the stat check on it fails. Point the check at a directory
+  # that exists in the build sandbox instead.
+  config.services.opentelemetry-collector.validateConfigOverrides = [
+    "extensions::file_storage/journald::directory=."
+  ];
+
   config.services.opentelemetry-collector.settings = {
     extensions."file_storage/journald" = {
       directory = "\${env:STATE_DIRECTORY}";
