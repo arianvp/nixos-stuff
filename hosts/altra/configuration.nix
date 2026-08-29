@@ -15,8 +15,12 @@
 
     ./hardware-configuration.nix
     ./network.nix
-    ./spire.nix
-    ./prometheus.nix
+    # Temporarily disabled: spire-server binds :80/:443 and would conflict
+    # with nixbot's nginx. ./prometheus.nix depends on spire's SVID certs
+    # and controllerManager options, so it goes with it. Re-enable once
+    # spire/nixbot port sharing is sorted out.
+    # ./spire.nix
+    # ./prometheus.nix
     ./he-ddns.nix
     (import ./nixbot.nix nixbot)
 
