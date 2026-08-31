@@ -86,6 +86,7 @@
     chromium
     cntr
     yubioath-flutter
+    signal-desktop
     # Wait until it builds
     # zed-editor
     nix-output-monitor
