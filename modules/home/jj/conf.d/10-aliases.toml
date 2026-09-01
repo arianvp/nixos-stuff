@@ -3,5 +3,70 @@ mine = ["log", "-r", "ancestors(mine() & mutable(), 3)"]
 fetch = ["fetch", "--all-remotes", "--tracked"]
 fetch-pr = ["util", "exec", "--", "gh", "pr", "checkout", "--detach"]
 yeet = ["util", "exec", "--", "bash", "-c", "set -eu; jj bookmark advance && jj git push", "jj-yeet"]
+stack = [
+  "util",
+  "exec",
+  "--",
+  "bash",
+  "-c",
+  '''
+  set -euo pipefail
+  revset="${1:-trunk()..@}"
+
+  # Bookmarks are the PR boundaries: each bookmarked revision is the tip of one
+  # PR, and unbookmarked revisions below it ride along in that PR. Commits above
+  # the topmost bookmark belong to no PR, so refuse rather than drop them.
+  if [ -n "$(jj log -r "heads($revset) ~ bookmarks()" --no-graph -T '"x"')" ]; then
+    echo "jj stack: the top of '$revset' has no bookmark" >&2
+    exit 1
+  fi
+
+  branches=()
+  while IFS= read -r names; do
+    read -r name extra <<<"$names"
+    if [ -n "$extra" ]; then
+      echo "jj stack: '$name' shares a revision with '$extra'; can't tell which heads the PR" >&2
+      exit 1
+    fi
+    branches+=("$name")
+  # .name() rather than the bookmark itself: a bookmark whose local target has
+  # drifted from its remote renders as `name*`, and the marker would end up in
+  # the name we push and hand to gh.
+  done < <(jj log -r "$revset & bookmarks()" --no-graph --reversed \
+    -T 'local_bookmarks.map(|b| b.name()).join(" ") ++ "\n"')
+
+  jj git push "${branches[@]/#/--bookmark=exact:}"
+
+  # Commit messages are the source of truth for title and body, so a rerun
+  # reflects amended descriptions back onto PRs that already exist. Anything
+  # hand-edited into a body on GitHub is overwritten.
+  #
+  # Only a brand new PR gets an explicit --base. Once a PR belongs to a stack
+  # GitHub owns its base and rejects `gh pr edit --base` outright, so `gh stack
+  # link` below is what rebases the stack when the order changes.
+  prev='trunk()'
+  base=$(gh repo view --json defaultBranchRef -q .defaultBranchRef.name)
+  for b in "${branches[@]}"; do
+    title=$(jj log -r "$b" --no-graph -T 'description.first_line()')
+    body=$(
+      jj log -r "$prev..$b ~ $b" --no-graph --reversed -T 'description.trim_end() ++ "\n\n"'
+      jj log -r "$b" --no-graph -T 'description.remove_prefix(description.first_line()).trim()'
+    )
+
+    number=$(gh pr list --head "$b" --state open --json number -q '.[0].number')
+    if [ -n "$number" ]; then
+      gh pr edit "$number" --title "$title" --body "$body"
+    else
+      gh pr create --draft --head "$b" --base "$base" --title "$title" --body "$body"
+    fi
+
+    prev="$b"
+    base="$b"
+  done
+
+  gh stack link "${branches[@]}"
+  ''',
+  "jj-stack",
+]
 [revset-aliases]
 "mine()" = 'author("arian@arianvp.me") | author("arian.vanputten@gmail.com")'
