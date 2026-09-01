@@ -5,6 +5,7 @@
     ./watchman.nix
     ./nix.nix
     ./go.nix
+    ./claude-code.nix
   ];
 
   programs.jjui.enable = true;
@@ -16,10 +17,5 @@
   xdg.configFile."jj/conf.d".source =
     config.lib.file.mkOutOfStoreSymlink "${config.repoRoot}/modules/home/jj/conf.d";
 
-  # jj honors the standard git global gitignore. Ignore the scratch area used
-  # by claude-code (worktree-create hook + jj-clone skill) across all repos.
-  programs.git = {
-    enable = true;
-    ignores = [ ".work" ];
-  };
+  programs.git.ignores = [ ".work" ];
 }

@@ -11,6 +11,7 @@
     ./jj
     ./nvim
     ./claude-code
+    ./direnv.nix
   ]
   ++ lib.optionals isLinux [
     ./linux.nix
@@ -39,10 +40,6 @@
   config = {
     programs.bash.enable = true;
     programs.zsh.enable = true;
-    programs.direnv = {
-      enable = true;
-      nix-direnv.enable = true;
-    };
     programs.git.enable = true;
     programs.gh.enable = true;
 
