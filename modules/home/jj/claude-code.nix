@@ -1,5 +1,8 @@
 {
   programs.claude-code = {
+    settings.sandbox.fileSystem = {
+      allowRead = [ "~/.config/jj/" ];
+    };
     settings.permissions.ask = [
       "Bash(jj git push *)"
       "Bash(jj gerrit *)"
