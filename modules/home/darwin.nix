@@ -1,5 +1,5 @@
-{ ... }:
-{
+{ lib, pkgs, ... }:
+lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
   home.sessionVariables.SSH_SK_PROVIDER = "/usr/lib/ssh-keychain.dylib";
 
   home.sessionPath = [

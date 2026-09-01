@@ -9,9 +9,9 @@
   #
   home.packages = [
     pkgs.socat
-    pkgs.bubblewrap
     pkgs.ripgrep
-  ];
+  ]
+  ++ (lib.optional pkgs.stdenv.hostPlatform.isLinux pkgs.bubblewrap);
 
   programs.git.ignores = [ ".claude/settings.local.json" ];
   programs.claude-code = {
@@ -50,7 +50,12 @@
             "/nix/var/nix"
           ];
 
-          # TODO: On MacOS allow reading /nix/var/nix/daemon/socket as it doesn't allow local chroot stores
+          # NOTE: darwin does not suppor chroot stores; so we give it access to the nix daemon
+          # TODO: IDK why this is needed on MacOS but not on Linux. The MAcOS Sandboxing semantics are broken
+          allowRead = [
+            "~/Projects"
+          ]
+          ++ lib.optional pkgs.stdenv.hostPlatform.isDarwin "/nix/var/nix/daemon/socket";
 
           # needed for accessing the local chroot store and flake fetches
           allowWrite = [
@@ -66,6 +71,10 @@
             "cache.nixos.org"
             "nixos.snix.store"
           ];
+
+          # on Darwin we need to give a bit more unfortunately. As no chroot-store
+          allowUnixSockets = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin [ "/nix/var/nix/daemon/socket" ];
+
           # injects NIX_SSL_CERT_FILE too so it works! :party:
           tlsTerminate = { };
         };

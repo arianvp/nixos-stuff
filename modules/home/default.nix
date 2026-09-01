@@ -1,4 +1,3 @@
-{ isLinux }:
 {
   lib,
   pkgs,
@@ -12,11 +11,7 @@
     ./nvim
     ./claude-code
     ./direnv.nix
-  ]
-  ++ lib.optionals isLinux [
     ./linux.nix
-  ]
-  ++ lib.optionals (!isLinux) [
     ./darwin.nix
   ];
 

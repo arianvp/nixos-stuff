@@ -13,6 +13,6 @@
     useGlobalPkgs = true;
     useUserPackages = true;
     backupFileExtension = "bak";
-    users.arian = lib.modules.importApply ../home { isLinux = false; };
+    users.arian = ../home;
   };
 }

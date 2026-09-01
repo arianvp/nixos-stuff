@@ -15,6 +15,6 @@
     useGlobalPkgs = true;
     useUserPackages = true;
     backupFileExtension = "hm-bak";
-    users.arian = lib.modules.importApply ../home { isLinux = true; };
+    users.arian = ../home;
   };
 }
