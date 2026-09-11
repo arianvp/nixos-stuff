@@ -6,8 +6,10 @@
     settings.permissions.ask = [
       "Bash(jj git push *)"
       "Bash(jj gerrit *)"
-      "Bash(jj op *)"
-      "Bash(jj op *)"
+      "Bash(jj op abandon *)"
+      "Bash(jj op integrate *)"
+      "Bash(jj op restore *)"
+      "Bash(jj op revert *)"
       "Bash(jj bookmark forget)"
       "Bash(jj bookmark delete)"
       "Bash(jj workspace forget)"
