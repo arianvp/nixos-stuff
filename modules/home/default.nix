@@ -39,14 +39,13 @@
     programs.gh.enable = true;
     programs.gh.extensions = [ pkgs.gh-stack ];
 
-    home.sessionPath = [ "$HOME/.local/bin" ];
-
     home.packages = with pkgs; [
       ripgrep
       binutils
       btop
       ijq
       jq
+      dotslash
     ];
 
     home.stateVersion = "26.05";
