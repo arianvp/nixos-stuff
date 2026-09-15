@@ -36,6 +36,21 @@
     programs.bash.enable = true;
     programs.zsh.enable = true;
     programs.git.enable = true;
+
+    # Talk to GitHub over https so `gh`'s credential helper (enabled by
+    # default with programs.gh) provides auth, instead of needing an ssh key.
+    # The rewrites mean ssh remotes from upstream docs/tooling just work.
+    programs.git.settings.url = {
+      "https://github.com/".insteadOf = [
+        "git@github.com:"
+        "ssh://git@github.com/"
+      ];
+      "https://gist.github.com/".insteadOf = [
+        "git@gist.github.com:"
+        "ssh://git@gist.github.com/"
+      ];
+    };
+
     programs.gh.enable = true;
     programs.gh.extensions = [ pkgs.gh-stack ];
 
