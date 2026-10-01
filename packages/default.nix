@@ -8,6 +8,7 @@ let
   );
 in
 {
+  jj-stack = pkgs.callPackage ./jj-stack/package.nix { };
   inherit (pkgs')
     spire-controller-manager
     spire-tpm-plugin

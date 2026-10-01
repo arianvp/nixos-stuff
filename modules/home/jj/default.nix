@@ -6,6 +6,7 @@
     ./nix.nix
     ./go.nix
     ./claude-code.nix
+    ./stack.nix
   ];
 
   programs.jjui.enable = true;
