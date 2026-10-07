@@ -1,7 +1,27 @@
 {
   programs.claude-code = {
-    settings.sandbox.fileSystem = {
-      allowRead = [ "~/.config/jj/" ];
+    settings.sandbox.filesystem = {
+      allowRead = [
+        "~/.config/jj/"
+        "~/.config/git/"
+        # WARNING: this exposes the GitHub token to the sandbox if it lives on disk.
+        #
+        # git's credential helper for github.com is `gh auth git-credential`,
+        # which needs to read this directory. config.yml is managed by
+        # home-manager (programs.gh) and harmless, but hosts.yml is written by
+        # `gh auth login`. On macOS gh normally keeps the token in the Keychain
+        # and hosts.yml only holds the username. If keyring storage failed at
+        # login time, hosts.yml contains the token in plaintext and anything
+        # running in the sandbox can read it. Check with `gh auth status`: it
+        # should say "(keyring)", not "(<path>/hosts.yml)".
+        #
+        # Even with the Keychain, the Seatbelt sandbox may deny access to it,
+        # in which case auth still fails here. The proper fix is to have the
+        # sandbox proxy inject credentials (sandbox.credentials) so the token
+        # never needs to be readable from inside the sandbox; remove this entry
+        # once that works.
+        "~/.config/gh/"
+      ];
     };
     settings.permissions.ask = [
       "Bash(jj git push *)"
