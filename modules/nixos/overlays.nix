@@ -7,5 +7,6 @@
     ../../overlays/openssh-audit.nix
     ../../overlays/gnome-ssh-askpass4.nix
     ../../overlays/he-ddns.nix
+    ../../overlays/jj-stack.nix
   ];
 }
