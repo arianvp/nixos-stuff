@@ -4,6 +4,7 @@ let
     pkgs.lib.composeManyExtensions [
       (import ../overlays/spire.nix)
       (import ../overlays/he-ddns.nix)
+      (import ../overlays/jj-stack.nix)
     ]
   );
 in
@@ -13,5 +14,6 @@ in
     spire-tpm-plugin
     spire
     he-ddns
+    jj-stack
     ;
 }

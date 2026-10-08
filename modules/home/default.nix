@@ -52,7 +52,6 @@
     };
 
     programs.gh.enable = true;
-    programs.gh.extensions = [ pkgs.gh-stack ];
 
     home.packages = with pkgs; [
       ripgrep

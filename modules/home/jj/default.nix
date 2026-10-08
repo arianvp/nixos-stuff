@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, pkgs, ... }:
 {
 
   imports = [
@@ -10,6 +10,7 @@
 
   programs.jjui.enable = true;
   programs.jujutsu.enable = true;
+  home.packages = [ pkgs.jj-stack ];
 
   # Symlink the whole conf.d/ directory live into ~/.config/jj/conf.d/. Both
   # edits and add/remove of drop-in files take effect immediately — no
