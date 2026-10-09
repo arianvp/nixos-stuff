@@ -23,9 +23,14 @@ let
       ];
     }
   ];
+  worktrees = ".claude/worktrees";
 in
 {
-  programs.git.ignores = [ ".claude/worktrees/" ];
+  programs.git.ignores = [ "${worktrees}/" ];
+
+  programs.buck2.buckconfigs."00-ignore".project.ignore = [ worktrees ];
+  # Don't add worktrees to watchman's ignore_dirs: they have no .git, so watch-project
+  # from inside one resolves to the parent repo's watch, which would then hide them.
 
   programs.claude-code = {
     rules.jj-worktrees = ''
