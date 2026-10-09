@@ -1,5 +1,54 @@
 {
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+let
+  hook = name: text: [
+    {
+      hooks = [
+        {
+          type = "command";
+          command = lib.getExe (
+            pkgs.writeShellApplication {
+              inherit name text;
+              runtimeInputs = [
+                config.programs.jujutsu.package
+                pkgs.jq
+              ];
+            }
+          );
+        }
+      ];
+    }
+  ];
+in
+{
+  programs.git.ignores = [ ".claude/worktrees/" ];
+
   programs.claude-code = {
+    rules.jj-worktrees = ''
+      Worktrees are jj workspaces created by a WorktreeCreate hook. ExitWorktree cannot
+      verify their state and always refuses `action: "remove"`, so pass `discard_changes: true`.
+      This is safe: `jj workspace remove` snapshots the working copy before deleting it.
+    '';
+    # Claude's worktree hooks are shaped after git, which identifies worktrees by
+    # path: WorktreeCreate gets a name and must return a path, WorktreeRemove gets
+    # only that path. jj identifies workspaces by name instead: `workspace add`
+    # takes a path and names the workspace after its basename, `workspace remove`
+    # takes only names. So remove recovers the name from the path's basename.
+    settings.hooks = {
+      WorktreeCreate = hook "claude-worktree-create" ''
+        dest="$(jj workspace root)/.claude/worktrees/$(jq -r .name)"
+        mkdir -p "$dest"
+        jj workspace add "$dest" >&2
+        echo "$dest"
+      '';
+      WorktreeRemove = hook "claude-worktree-remove" ''
+        jj workspace remove "$(jq -r '.worktree_path | split("/") | last')" >&2
+      '';
+    };
     settings.sandbox.filesystem = {
       allowRead = [
         "~/.config/jj/"
