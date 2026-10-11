@@ -1,12 +1,6 @@
 pkgs:
 let
-  pkgs' = pkgs.extend (
-    pkgs.lib.composeManyExtensions [
-      (import ../overlays/spire.nix)
-      (import ../overlays/he-ddns.nix)
-      (import ../overlays/jj-stack.nix)
-    ]
-  );
+  pkgs' = pkgs.extend (pkgs.lib.composeManyExtensions (import ../overlays));
 in
 {
   inherit (pkgs')

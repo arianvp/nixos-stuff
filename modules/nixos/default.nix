@@ -3,7 +3,7 @@
 {
   imports = [
     cgroup-exporter.nixosModules.default
-    ./overlays.nix
+    ../overlays.nix
     ../dnssd.nix
   ];
 }
