@@ -6,4 +6,5 @@ map import [
   ./gnome-ssh-askpass4.nix
   ./he-ddns.nix
   ./jj-stack.nix
+  ./git-meta.nix
 ]
