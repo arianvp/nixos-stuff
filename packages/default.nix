@@ -9,5 +9,6 @@ in
     spire
     he-ddns
     jj-stack
+    git-meta
     ;
 }
