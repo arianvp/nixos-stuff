@@ -1,0 +1,9 @@
+map import [
+  ./fonts.nix
+  ./neovim.nix
+  ./spire.nix
+  ./openssh-audit.nix
+  ./gnome-ssh-askpass4.nix
+  ./he-ddns.nix
+  ./jj-stack.nix
+]
