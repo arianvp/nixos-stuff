@@ -6,6 +6,7 @@
     ./nix.nix
     ./go.nix
     ./claude-code.nix
+    ./git-meta.nix
   ];
 
   programs.jjui.enable = true;
