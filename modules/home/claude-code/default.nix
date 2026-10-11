@@ -14,6 +14,19 @@
   ++ (lib.optional pkgs.stdenv.hostPlatform.isLinux pkgs.bubblewrap);
 
   programs.git.ignores = [ ".claude/settings.local.json" ];
+
+  # Every interactive session gets its own worktree in its own tmux session,
+  # so parallel sessions never share a working copy or a terminal. Resuming
+  # re-enters the session's existing worktree. Use `command claude` for a
+  # one-off plain session, e.g. to accept the trust dialog in a new repo.
+  home.shellAliases.claude = "claude --worktree --tmux";
+  programs.tmux = {
+    enable = true;
+    mouse = true;
+    escapeTime = 0;
+    terminal = "tmux-256color";
+  };
+
   programs.claude-code = {
     enable = true;
     skills = {
