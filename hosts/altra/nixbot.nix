@@ -1,5 +1,5 @@
 nixbot:
-{ ... }:
+{ config, ... }:
 let
   # `cloudflared tunnel create nixbot` prints this and names its credentials file after it.
   tunnelId = "5d074d69-3044-4137-a9cd-bbf74a454d6b";
@@ -11,13 +11,13 @@ in
 
   services.nixbot = {
     enable = true;
-    domain = "nixbot.nixos.sh";
+    # This line has no inbound IPv4, so everything goes through the Cloudflare
+    # tunnel, which terminates TLS and makes nixbot reachable over IPv4.
+    domain = "nixbot.passkey.exchange";
+    useHTTPS = true;
+    nginx.enable = false;
     admins = [ "github:arianvp" ];
     buildSystems = [ "aarch64-linux" ];
-
-    # GitHub cannot yet deliver webhooks over IPv6 and this line has no inbound
-    # IPv4, so deliveries come in over the tunnel while the UI stays on `domain`.
-    webhookBaseUrl = "https://nixbot.passkey.exchange";
 
     github = {
       enable = true;
@@ -28,7 +28,6 @@ in
       oauthSecretFile = "/etc/credstore/nixbot-github-oauth";
       topic = "nixbot-altra";
     };
-    nginx.enableACME = true;
 
     # PRs build on this machine, so outsiders' PRs wait for a maintainer to approve them.
     # CONTRIBUTOR is dropped: a single merged commit shouldn't grant free rein.
@@ -46,16 +45,8 @@ in
     enable = true;
     tunnels.${tunnelId} = {
       credentialsFile = "/etc/credstore/cloudflared-nixbot.json";
-      ingress."nixbot.passkey.exchange" = {
-        path = "^/webhooks/";
-        service = "unix:/run/nixbot/web.sock";
-      };
+      ingress."nixbot.passkey.exchange" = "http://localhost:${toString config.services.nixbot.port}";
       default = "http_status:404";
     };
   };
-
-  # cloudflared runs as a DynamicUser; the nixbot socket is 0660 nixbot:nixbot.
-  systemd.services."cloudflared-tunnel-${tunnelId}".serviceConfig.SupplementaryGroups = [
-    "nixbot"
-  ];
 }
