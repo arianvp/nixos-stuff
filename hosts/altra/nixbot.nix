@@ -1,5 +1,5 @@
 nixbot:
-{ config, ... }:
+{ config, options, ... }:
 let
   # `cloudflared tunnel create nixbot` prints this and names its credentials file after it.
   tunnelId = "5d074d69-3044-4137-a9cd-bbf74a454d6b";
@@ -17,6 +17,10 @@ in
     useHTTPS = true;
     nginx.enable = false;
     admins = [ "github:arianvp" ];
+    # Lets opkssh bind ID tokens to its SSH key, see ./patches/nixbot-id-token-nonce.patch.
+    packages.nixbot = options.services.nixbot.packages.nixbot.default.overridePythonAttrs (old: {
+      patches = old.patches or [ ] ++ [ ./patches/nixbot-id-token-nonce.patch ];
+    });
     buildSystems = [ "aarch64-linux" ];
 
     github = {
