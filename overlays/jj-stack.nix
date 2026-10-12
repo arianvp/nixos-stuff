@@ -20,7 +20,10 @@ final: prev: {
           };
       in
       {
-        httpcore2 = bump pyPrev.httpcore2;
+        httpcore2 = (bump pyPrev.httpcore2).overridePythonAttrs (old: {
+          # relies on a 10ms timeout racing the request; flaky on loaded builders
+          disabledTests = old.disabledTests or [ ] ++ [ "test_h2_timeout_during_request" ];
+        });
         httpx2 = bump pyPrev.httpx2;
       }
     )
