@@ -29,6 +29,17 @@ in
       topic = "nixbot-altra";
     };
     nginx.enableACME = true;
+
+    # PRs build on this machine, so outsiders' PRs wait for a maintainer to approve them.
+    # CONTRIBUTOR is dropped: a single merged commit shouldn't grant free rein.
+    prApproval = {
+      enable = true;
+      trustedAssociations = [
+        "OWNER"
+        "MEMBER"
+        "COLLABORATOR"
+      ];
+    };
   };
 
   services.cloudflared = {
