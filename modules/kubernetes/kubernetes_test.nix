@@ -12,10 +12,10 @@
   };
 
   testScript = ''
-    foo.wait_for_unit("etcd.service")
-    foo.wait_for_unit("kube-apiserver.service")
+    foo.wait_for_unit("etcd.service", timeout=60)
+    foo.wait_for_unit("kube-apiserver.service", timeout=60)
     # foo.wait_for_unit("kube-scheduler.service")
     # foo.wait_for_unit("kube-controller-manager.service")
-    foo.wait_for_unit("kubelet.service")
+    foo.wait_for_unit("kubelet.service", timeout=60)
   '';
 }

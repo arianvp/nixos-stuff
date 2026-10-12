@@ -1,5 +1,6 @@
 {
   name = "crio";
+  globalTimeout = 300;
 
   nodes.registry = {
     imports = [ ./registry-push.nix ];
@@ -84,13 +85,13 @@
   # FIXME: Skipping pull by digest test as for some reason pulling by digest isn't working?
   testScript = ''
     # Wait for registry to be up and all images to be pushed
-    registry.wait_for_unit("docker-registry.service")
-    registry.wait_for_unit("multi-user.target")
+    registry.wait_for_unit("docker-registry.service", timeout=60)
+    registry.wait_for_unit("multi-user.target", timeout=60)
 
     # Wait for machine to be ready
-    machine.wait_for_unit("crio.service")
+    machine.wait_for_unit("crio.service", timeout=60)
 
     # Run tests
-    machine.succeed("critest --ginkgo.skip='runtime should support port mapping with host port and container port' --ginkgo.skip='public image with digest' --ginkgo.flake-attempts 1")
+    machine.succeed("critest --ginkgo.skip='runtime should support port mapping with host port and container port' --ginkgo.skip='public image with digest' --ginkgo.flake-attempts 1", timeout=240)
   '';
 }

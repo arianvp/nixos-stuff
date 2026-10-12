@@ -3,6 +3,22 @@ let
   pkgs' = pkgs.extend (import ./overlays/spire.nix);
   inherit (pkgs) lib;
 
+  runTest =
+    path:
+    pkgs'.testers.runNixOSTest {
+      imports = [
+        (
+          { config, ... }:
+          {
+            globalTimeout = lib.mkDefault 120;
+            meta.timeout = lib.mkDefault (config.globalTimeout + 60);
+            logLevel = lib.mkDefault "warning";
+          }
+        )
+        path
+      ];
+    };
+
   # Recursively find all _test.nix files in a directory
   # Returns list of { name, path } attrs
   findTestsIn =
@@ -43,22 +59,14 @@ let
   discoveredChecks = builtins.listToAttrs (
     map (test: {
       inherit (test) name;
-      value = pkgs'.testers.runNixOSTest {
-        imports = [ test.path ];
-      };
+      value = runTest test.path;
     }) moduleTests
   );
 in
 # Merge manually defined tests with discovered module tests
 {
-  spire-openbao = pkgs'.testers.runNixOSTest {
-    imports = [ ./tests/spire-openbao.nix ];
-  };
-  spire-http-challenge = pkgs'.testers.runNixOSTest {
-    imports = [ ./tests/spire-http-challenge.nix ];
-  };
-  bootloader = pkgs'.testers.runNixOSTest {
-    imports = [ ./modules/bootloader/test.nix ];
-  };
+  spire-openbao = runTest ./tests/spire-openbao.nix;
+  spire-http-challenge = runTest ./tests/spire-http-challenge.nix;
+  bootloader = runTest ./modules/bootloader/test.nix;
 }
 // discoveredChecks

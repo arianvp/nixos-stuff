@@ -68,7 +68,7 @@ in
 
   testScript = ''
     with subtest("IGNORE ME: boot server"):
-      server.wait_for_unit("spire-server.service")
+      server.wait_for_unit("spire-server.service", timeout=60)
       server.wait_until_succeeds("spire-server healthcheck -socketPath ${adminSocket}", timeout=30)
 
     with subtest("create entries"):
@@ -77,18 +77,18 @@ in
       server.succeed("spire-server entry create -node -spiffeID spiffe://${trustDomain}/node/agent -selector http_challenge:hostname:${nodes.agent-with-alias.networking.hostName} -socketPath ${adminSocket}")
 
     with subtest("IGNORE ME: boot agent-without-alias"):
-      agent_without_alias.wait_for_unit("multi-user.target")
+      agent_without_alias.wait_for_unit("multi-user.target", timeout=60)
 
     with subtest("agent-without-alias"):
       agent_without_alias.succeed("spire-agent api fetch x509 -socketPath $SPIFFE_ENDPOINT_SOCKET -write .")
 
 
     with subtest("IGNORE ME: boot agent-with-alias"):
-      agent_with_alias.wait_for_unit("multi-user.target")
+      agent_with_alias.wait_for_unit("multi-user.target", timeout=60)
 
     with subtest("agent-with-alias"):
       agent_with_alias.fail("spire-agent api fetch x509 -socketPath $SPIFFE_ENDPOINT_SOCKET -write .")
-      agent_with_alias.wait_for_console_text("Creating X509-SVID")
+      agent_with_alias.wait_for_console_text("Creating X509-SVID", timeout=30)
       agent_with_alias.succeed("spire-agent api fetch x509 -socketPath $SPIFFE_ENDPOINT_SOCKET -write .")
   '';
 }

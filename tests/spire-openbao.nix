@@ -48,6 +48,7 @@ let
 in
 {
   name = "spire-openbao";
+  globalTimeout = 150;
 
   defaults.networking.domain = trustDomain;
 
@@ -170,23 +171,23 @@ in
 
 
       with subtest("SPIRE controller manager comes up against the server"):
-          server.wait_for_unit("spire-server.service")
+          server.wait_for_unit("spire-server.service", timeout=60)
           server.wait_until_succeeds("spire-server healthcheck -socketPath ${adminSocket}", timeout=30)
-          server.wait_for_unit("spire-controller-manager.service")
+          server.wait_for_unit("spire-controller-manager.service", timeout=60)
 
       with subtest("Bootstrap SPIRE agent on agent node"):
           provision(agent, "spiffe://example.com/server/agent")
-          agent.wait_for_unit("spire-agent.service")
-          agent.wait_until_succeeds("spire-agent healthcheck -socketPath $SPIFFE_ENDPOINT_SOCKET", timeout=90)
+          agent.wait_for_unit("spire-agent.service", timeout=60)
+          agent.wait_until_succeeds("spire-agent healthcheck -socketPath $SPIFFE_ENDPOINT_SOCKET", timeout=30)
 
       with subtest("Bootstrap SPIRE agent on openbao node"):
           provision(openbao, "spiffe://example.com/server/openbao")
-          openbao.wait_for_unit("spire-agent.service")
-          openbao.wait_until_succeeds("spire-agent healthcheck -socketPath $SPIFFE_ENDPOINT_SOCKET", timeout=90)
+          openbao.wait_for_unit("spire-agent.service", timeout=60)
+          openbao.wait_until_succeeds("spire-agent healthcheck -socketPath $SPIFFE_ENDPOINT_SOCKET", timeout=30)
 
       with subtest("Initialize and unseal OpenBao"):
           openbao.systemctl("start openbao.service")
-          openbao.wait_for_unit("openbao.service")
+          openbao.wait_for_unit("openbao.service", timeout=60)
 
           # Initialize OpenBao
           init_output = json.loads(openbao.succeed("bao operator init"))
