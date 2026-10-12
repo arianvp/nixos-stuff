@@ -50,6 +50,8 @@ in
       When creating a new change, only stack it on top of another change if it logically
       depends on it. Otherwise base it on trunk (`jj new 'trunk()'`) so each change can
       be reviewed and landed independently.
+      Changes that only get CI passing when combined do depend on each other: stack
+      them, since none of their PRs could go green on its own.
       To test several independent changes together, create a merge change on top of
       them with `jj new <c1> <c2> <c3>` instead of stacking them on each other.
     '';
