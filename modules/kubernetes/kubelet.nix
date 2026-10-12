@@ -84,7 +84,7 @@ in
 
         ExecStart =
           let
-            args = lib.cli.toGNUCommandLineShell { } {
+            args = lib.cli.toCommandLineShellGNU { } {
               config = kubeletConfigFile;
               kubeconfig = cfg.kubeconfig;
             };
