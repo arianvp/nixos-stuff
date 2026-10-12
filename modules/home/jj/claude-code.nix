@@ -40,6 +40,13 @@ in
       verify their state and always refuses `action: "remove"`, so pass `discard_changes: true`.
       This is safe: `jj workspace remove` snapshots the working copy before deleting it.
     '';
+    rules.jj-stacking = ''
+      When creating a new change, only stack it on top of another change if it logically
+      depends on it. Otherwise base it on trunk (`jj new 'trunk()'`) so each change can
+      be reviewed and landed independently.
+      To test several independent changes together, create a merge change on top of
+      them with `jj new <c1> <c2> <c3>` instead of stacking them on each other.
+    '';
     # Claude's worktree hooks are shaped after git, which identifies worktrees by
     # path: WorktreeCreate gets a name and must return a path, WorktreeRemove gets
     # only that path. jj identifies workspaces by name instead: `workspace add`
