@@ -35,6 +35,12 @@ in
   # from inside one resolves to the parent repo's watch, which would then hide them.
 
   programs.claude-code = {
+    rules.jj-submit = ''
+      Submit changes for review with `jj stack submit [<head>]` rather than pushing
+      bookmarks and opening pull requests by hand. It creates one PR per change in the
+      stack and keeps them up to date on later submits. Preview with `--dry-run` first.
+      Never submit a merge change made only for testing; submit each of its parents instead.
+    '';
     rules.jj-worktrees = ''
       Worktrees are jj workspaces created by a WorktreeCreate hook. ExitWorktree cannot
       verify their state and always refuses `action: "remove"`, so pass `discard_changes: true`.
@@ -91,6 +97,7 @@ in
     settings.permissions.ask = [
       "Bash(jj git push *)"
       "Bash(jj gerrit *)"
+      "Bash(jj stack submit *)"
       "Bash(jj op abandon *)"
       "Bash(jj op integrate *)"
       "Bash(jj op restore *)"
