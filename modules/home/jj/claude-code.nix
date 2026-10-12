@@ -15,6 +15,7 @@ let
               inherit name text;
               runtimeInputs = [
                 config.programs.jujutsu.package
+                pkgs.coreutils
                 pkgs.jq
               ];
             }
@@ -55,6 +56,12 @@ in
       To test several independent changes together, create a merge change on top of
       them with `jj new <c1> <c2> <c3>` instead of stacking them on each other.
     '';
+    rules.jj-rebase-mine = ''
+      `jj rebase-mine` rebases all of the user's local mutable stacks onto `trunk()`.
+      After running `jj git fetch`, `jj fetch`, `jj fetchm` or `jj stack merge`, offer to
+      run it. `jj stack merge` only rebases the stack it merged; other stacks still need it.
+      Don't run it unprompted; it rewrites every local stack.
+    '';
     # Claude's worktree hooks are shaped after git, which identifies worktrees by
     # path: WorktreeCreate gets a name and must return a path, WorktreeRemove gets
     # only that path. jj identifies workspaces by name instead: `workspace add`
@@ -62,13 +69,34 @@ in
     # takes only names. So remove recovers the name from the path's basename.
     settings.hooks = {
       WorktreeCreate = hook "claude-worktree-create" ''
-        # Anchor at the default workspace so worktrees created from a worktree don't nest.
-        root="$(jj workspace root --name default 2>/dev/null || jj workspace root)"
+        # Anchor at the main checkout so worktrees created from a worktree don't nest.
+        # In a secondary workspace .jj/repo is a file pointing at the main .jj/repo.
+        # `jj workspace root --name default` fails if that workspace has no recorded path.
+        root="$(jj workspace root)"
+        if [ -f "$root/.jj/repo" ]; then
+          root="$(cd "$root/.jj" && realpath "$(cat repo)/../..")"
+        fi
         dest="$root/${worktrees}/$(jq -r .name)"
         mkdir -p "$dest"
-        jj workspace add "$dest" >&2
+        # Best effort: when offline, fall back to the last fetched trunk.
+        timeout 30 jj -R "$root" git fetch >&2 || true
+        jj -R "$root" workspace add -r 'trunk()' "$dest" >&2
         echo "$dest"
       '';
+      # Only refreshes remote bookmarks so trunk() is current; never moves @.
+      # stdout of SessionStart hooks is injected into the context, so only the
+      # rebase hint goes there.
+      SessionStart = map (h: h // { matcher = "startup|resume"; }) (
+        hook "claude-session-fetch" ''
+          trunk() { jj --ignore-working-copy log --no-graph -r 'trunk()' -T commit_id; }
+          before="$(trunk 2>/dev/null)" || exit 0
+          timeout 30 jj git fetch >&2 || true
+          if [ "$(trunk)" != "$before" ] &&
+            [ -n "$(jj --ignore-working-copy log --no-graph -r 'mutable() & mine() ~ trunk()::' -T 'change_id ++ "\n"')" ]; then
+            echo "Fetching at session start moved trunk() and some of the user's local changes are no longer based on it. Suggest running \`jj rebase-mine\`."
+          fi
+        ''
+      );
       WorktreeRemove = hook "claude-worktree-remove" ''
         jj workspace remove "$(jq -r '.worktree_path | split("/") | last')" >&2
       '';
@@ -100,6 +128,7 @@ in
       "Bash(jj git push *)"
       "Bash(jj gerrit *)"
       "Bash(jj stack submit *)"
+      "Bash(jj rebase-mine*)"
       "Bash(jj op abandon *)"
       "Bash(jj op integrate *)"
       "Bash(jj op restore *)"
