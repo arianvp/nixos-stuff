@@ -1,0 +1,106 @@
+diff --git a/nixbot/tests/test_web.py b/nixbot/tests/test_web.py
+index 28268ad..4e29a91 100644
+--- a/nixbot/tests/test_web.py
++++ b/nixbot/tests/test_web.py
+@@ -2062,6 +2062,22 @@ def test_workload_identity_api(client: WebHarness, tmp_path: Path) -> None:
+         assert claims["sub"] == "repo:github:acme/widgets:ref:refs/heads/main"
+         assert claims["aud"] == "https://cache.example.com"
+         assert claims["iss"] == "http://ci.example"
++        assert "nonce" not in claims
++
++        # A nonce binds the token to a key, but never widens the audiences.
++        nonce = "A" * 43
++        resp = await client.http.post(url, json=body | {"nonce": nonce}, headers=auth)
++        assert resp.status_code == 200
++        claims = jwt.decode(resp.json()["token"], key_set, algorithms=["RS256"]).claims
++        assert claims["nonce"] == nonce
++        assert (
++            await client.http.post(url, json=wrong | {"nonce": nonce}, headers=auth)
++        ).status_code == 403
++        for bad_nonce in ["short", "A" * 44, "A" * 42 + "="]:
++            resp = await client.http.post(
++                url, json=body | {"nonce": bad_nonce}, headers=auth
++            )
++            assert resp.status_code == 422, bad_nonce
+ 
+     client.loop.run_until_complete(run())
+ 
+diff --git a/nixbot/tests/test_workload_identity.py b/nixbot/tests/test_workload_identity.py
+index 82ec8aa..db600cf 100644
+--- a/nixbot/tests/test_workload_identity.py
++++ b/nixbot/tests/test_workload_identity.py
+@@ -128,6 +128,14 @@ def test_push_claims(tmp_path: Path) -> None:
+     assert issued.expires_at.tzinfo is not None
+ 
+ 
++def test_nonce_claim(tmp_path: Path) -> None:
++    issuer = make_issuer(tmp_path)
++    nonce = "n" * 43
++    issued = issuer.mint(push_identity(), "https://cache.example.com", nonce=nonce)
++    assert decode(issuer, issued.token)["nonce"] == nonce
++    assert "nonce" in issuer.discovery_document()["claims_supported"]
++
++
+ def test_tag_claims(tmp_path: Path) -> None:
+     """A tag push's effects carry the tag ref, like GitHub Actions, so a
+     relying party can trust releases the way it trusts branch pushes."""
+diff --git a/nixbot/web/workload_routes.py b/nixbot/web/workload_routes.py
+index ee2b5c8..0613c74 100644
+--- a/nixbot/web/workload_routes.py
++++ b/nixbot/web/workload_routes.py
+@@ -7,7 +7,7 @@ import logging
+ from typing import TYPE_CHECKING
+ 
+ from fastapi import APIRouter, HTTPException, Request
+-from pydantic import BaseModel
++from pydantic import BaseModel, Field
+ 
+ if TYPE_CHECKING:
+     from nixbot.effects_state import TaskClaim, TaskTokens
+@@ -22,6 +22,9 @@ MAX_ID_TOKENS_PER_RUN = 100
+ 
+ class IdTokenRequest(BaseModel):
+     audience: str
++    # Binds the token to a key the effect holds, e.g. an OpenPubkey
++    # commitment (base64url SHA3-256 of the client instance claims).
++    nonce: str | None = Field(default=None, pattern=r"^[A-Za-z0-9_-]{43}$")
+ 
+ 
+ def create_workload_identity_router(
+@@ -61,7 +64,7 @@ def create_workload_identity_router(
+         if claim.id_tokens_issued >= MAX_ID_TOKENS_PER_RUN:
+             raise HTTPException(status_code=429, detail="id token limit reached")
+         claim.id_tokens_issued += 1
+-        issued = issuer.mint(identity, body.audience)
++        issued = issuer.mint(identity, body.audience, nonce=body.nonce)
+         logger.info(
+             "issued id token",
+             extra={
+diff --git a/nixbot/workload_identity.py b/nixbot/workload_identity.py
+index 41b5f55..1cc810d 100644
+--- a/nixbot/workload_identity.py
++++ b/nixbot/workload_identity.py
+@@ -199,10 +199,13 @@ class IdentityIssuer:
+                 "schedule",
+                 "effect",
+                 "build_id",
++                "nonce",
+             ],
+         }
+ 
+-    def mint(self, identity: EffectIdentity, audience: str) -> IssuedToken:
++    def mint(
++        self, identity: EffectIdentity, audience: str, nonce: str | None = None
++    ) -> IssuedToken:
+         now = int(time.time())
+         expires_at = datetime.fromtimestamp(now + self.token_ttl, tz=UTC)
+         claims = {
+@@ -214,6 +217,8 @@ class IdentityIssuer:
+             "jti": secrets.token_urlsafe(16),
+             **identity.claims(),
+         }
++        if nonce is not None:
++            claims["nonce"] = nonce
+         header = {"alg": "RS256", "kid": self._signing_key.kid, "typ": "JWT"}
+         token = jwt.encode(header, claims, self._signing_key)
+         return IssuedToken(token=token, expires_at=expires_at)
