@@ -41,6 +41,9 @@ in
       bookmarks and opening pull requests by hand. It creates one PR per change in the
       stack and keeps them up to date on later submits. Preview with `--dry-run` first.
       Never submit a merge change made only for testing; submit each of its parents instead.
+      Before working on a change that has a PR, and after a PR was merged outside
+      `jj stack merge` (e.g. in the GitHub UI), run `jj stack sync <head>`.
+      `jj stack merge` already syncs itself when it waits for the merge.
     '';
     rules.jj-worktrees = ''
       Worktrees are jj workspaces created by a WorktreeCreate hook. ExitWorktree cannot
