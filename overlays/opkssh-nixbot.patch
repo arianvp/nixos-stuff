@@ -1,0 +1,548 @@
+diff --git a/commands/config/providerconfig.go b/commands/config/providerconfig.go
+index 6656bfa..1c38480 100644
+--- a/commands/config/providerconfig.go
++++ b/commands/config/providerconfig.go
+@@ -22,6 +22,7 @@ import (
+ 	"strings"
+ 
+ 	"github.com/openpubkey/openpubkey/providers"
++	"github.com/openpubkey/opkssh/internal/nixbot"
+ 	"gopkg.in/yaml.v3"
+ )
+ 
+@@ -121,6 +122,17 @@ func GitHubProviderConfig() ProviderConfig {
+ 	}
+ }
+ 
++// NixbotProviderConfig returns the provider config for logging in from a
++// nixbot effect. The client ID is the audience the effect declared in
++// idTokenAudiences.
++func NixbotProviderConfig(issuer string, audience string) ProviderConfig {
++	return ProviderConfig{
++		AliasList: []string{nixbot.Alias},
++		Issuer:    issuer,
++		ClientID:  audience,
++	}
++}
++
+ // NewProviderConfigFromString is a function to create the provider config from a string of the format
+ // {alias},{provider_url},{client_id},{client_secret},{scopes}
+ func NewProviderConfigFromString(configStr string, hasAlias bool) (ProviderConfig, error) {
+@@ -245,6 +257,12 @@ func (p *ProviderConfig) ToProvider(openBrowser bool) (providers.OpenIdProvider,
+ 		opts.RemoteRedirectURI = p.RemoteRedirectURI
+ 		opts.OpenBrowser = openBrowser
+ 		provider = providers.NewHelloOpWithOptions(opts)
++	} else if strings.HasPrefix(p.ClientID, nixbot.AudiencePrefix) {
++		nixbotOp, err := nixbot.NewOpFromEnvironment(p.Issuer)
++		if err != nil {
++			return nil, fmt.Errorf("error creating nixbot op: %w", err)
++		}
++		provider = nixbotOp
+ 	} else if strings.HasPrefix(p.Issuer, "https://token.actions.githubusercontent.com") {
+ 		githubOp, err := providers.NewGithubOpFromEnvironment()
+ 		if err != nil {
+diff --git a/commands/login.go b/commands/login.go
+index f147941..70cc54b 100644
+--- a/commands/login.go
++++ b/commands/login.go
+@@ -43,6 +43,7 @@ import (
+ 	"github.com/openpubkey/openpubkey/providers"
+ 	"github.com/openpubkey/openpubkey/util"
+ 	"github.com/openpubkey/opkssh/commands/config"
++	"github.com/openpubkey/opkssh/internal/nixbot"
+ 	"github.com/openpubkey/opkssh/sshcert"
+ 	"github.com/spf13/afero"
+ 	"github.com/thediveo/enumflag/v2"
+@@ -201,6 +202,13 @@ func (l *LoginCmd) Run(ctx context.Context) error {
+ 	if isGitHubEnvironment() {
+ 		l.Config.Providers = append(l.Config.Providers, config.GitHubProviderConfig())
+ 	}
++	if nixbot.IsEnvironment() {
++		issuer, err := nixbot.IssuerFromEnvironment()
++		if err != nil {
++			return err
++		}
++		l.Config.Providers = append(l.Config.Providers, config.NixbotProviderConfig(issuer, os.Getenv(nixbot.AudienceEnvVar)))
++	}
+ 
+ 	var provider providers.OpenIdProvider
+ 	if l.overrideProvider != nil {
+diff --git a/internal/nixbot/op.go b/internal/nixbot/op.go
+new file mode 100644
+index 0000000..426c113
+--- /dev/null
++++ b/internal/nixbot/op.go
+@@ -0,0 +1,223 @@
++// Copyright 2026 OpenPubkey
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//     http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++//
++// SPDX-License-Identifier: Apache-2.0
++
++// Package nixbot implements an OpenID Provider for nixbot effects
++// (https://github.com/Mic92/nixbot). nixbot mints ID tokens for running
++// effects and puts a caller-supplied nonce into them, so the cicHash is
++// committed to in the nonce claim while the audience stays the fixed,
++// effect-declared value. The ID token is GQ signed so the OP's RSA
++// signature never leaves the effect.
++package nixbot
++
++import (
++	"bytes"
++	"context"
++	"encoding/base64"
++	"encoding/json"
++	"fmt"
++	"net/http"
++	"os"
++	"strings"
++
++	"github.com/awnumar/memguard"
++	"github.com/openpubkey/openpubkey/discover"
++	simpleoidc "github.com/openpubkey/openpubkey/oidc"
++	"github.com/openpubkey/openpubkey/pktoken/clientinstance"
++	"github.com/openpubkey/openpubkey/providers"
++)
++
++const (
++	// Alias is the provider alias used by `opkssh login nixbot`.
++	Alias = "nixbot"
++
++	// AudiencePrefix marks an audience (the client ID column of the
++	// providers file) as belonging to a nixbot effect.
++	AudiencePrefix = "OPKSSH-NIXBOT:"
++
++	TokenRequestURLEnvVar   = "NIXBOT_ID_TOKEN_REQUEST_URL"
++	TokenRequestTokenEnvVar = "NIXBOT_ID_TOKEN_REQUEST_TOKEN"
++	AudienceEnvVar          = "OPKSSH_NIXBOT_AUDIENCE"
++
++	tokenRequestPath = "/api/v1/id-token"
++)
++
++// Claims nixbot puts into every effect ID token. Requiring them keeps a
++// token from some other OP at the same issuer URL from being accepted.
++var requiredClaims = []string{"forge", "repository", "effect"}
++
++type Op struct {
++	issuer                string
++	audience              string
++	tokenRequestURL       string
++	tokenRequestAuthToken string
++	publicKeyFinder       discover.PublicKeyFinder
++}
++
++var _ providers.OpenIdProvider = (*Op)(nil)
++
++// NewOp returns an Op that can only verify ID tokens.
++func NewOp(issuer string, audience string) *Op {
++	return &Op{
++		issuer:          strings.TrimSuffix(issuer, "/"),
++		audience:        audience,
++		publicKeyFinder: *discover.DefaultPubkeyFinder(),
++	}
++}
++
++// IsEnvironment reports whether we run inside a nixbot effect that may
++// request ID tokens.
++func IsEnvironment() bool {
++	return os.Getenv(TokenRequestURLEnvVar) != "" && os.Getenv(TokenRequestTokenEnvVar) != ""
++}
++
++// IssuerFromEnvironment derives the issuer from the token request URL,
++// which nixbot serves at <issuer>/api/v1/id-token.
++func IssuerFromEnvironment() (string, error) {
++	tokenURL := os.Getenv(TokenRequestURLEnvVar)
++	issuer, found := strings.CutSuffix(tokenURL, tokenRequestPath)
++	if !found || issuer == "" {
++		return "", fmt.Errorf("%s (%q) does not end in %s", TokenRequestURLEnvVar, tokenURL, tokenRequestPath)
++	}
++	return issuer, nil
++}
++
++// NewOpFromEnvironment returns an Op that requests ID tokens from the
++// nixbot effect it runs in.
++func NewOpFromEnvironment(issuer string) (*Op, error) {
++	tokenURL := os.Getenv(TokenRequestURLEnvVar)
++	token := os.Getenv(TokenRequestTokenEnvVar)
++	if tokenURL == "" || token == "" {
++		return nil, fmt.Errorf("not running in a nixbot effect with idTokenAudiences (%s and %s are not set)", TokenRequestURLEnvVar, TokenRequestTokenEnvVar)
++	}
++	audience := os.Getenv(AudienceEnvVar)
++	if !strings.HasPrefix(audience, AudiencePrefix) {
++		return nil, fmt.Errorf("%s must be set to an audience starting with %s, got %q", AudienceEnvVar, AudiencePrefix, audience)
++	}
++	envIssuer, err := IssuerFromEnvironment()
++	if err != nil {
++		return nil, err
++	}
++	if strings.TrimSuffix(issuer, "/") != envIssuer {
++		return nil, fmt.Errorf("nixbot issuer mismatch: configured issuer is %s but this effect gets tokens from %s", issuer, envIssuer)
++	}
++	op := NewOp(issuer, audience)
++	op.tokenRequestURL = tokenURL
++	op.tokenRequestAuthToken = token
++	return op, nil
++}
++
++func (o *Op) Issuer() string {
++	return o.issuer
++}
++
++func (o *Op) PublicKeyByKeyId(ctx context.Context, keyID string) (*discover.PublicKeyRecord, error) {
++	return o.publicKeyFinder.ByKeyID(ctx, o.issuer, keyID)
++}
++
++func (o *Op) PublicKeyByToken(ctx context.Context, token []byte) (*discover.PublicKeyRecord, error) {
++	return o.publicKeyFinder.ByToken(ctx, o.issuer, token)
++}
++
++func (o *Op) RequestTokens(ctx context.Context, cic *clientinstance.Claims) (*simpleoidc.Tokens, error) {
++	cicHash, err := cic.Hash()
++	if err != nil {
++		return nil, fmt.Errorf("error calculating client instance claim commitment: %w", err)
++	}
++	// The ID Token is kept in a LockedBuffer since its RSA signature is
++	// the secret of the GQ signature.
++	idTokenLB, err := o.requestToken(ctx, string(cicHash))
++	if err != nil {
++		return nil, fmt.Errorf("error requesting ID Token: %w", err)
++	}
++	defer idTokenLB.Destroy()
++	gqToken, err := providers.CreateGQToken(ctx, idTokenLB.Bytes(), o)
++	if err != nil {
++		return nil, err
++	}
++	return &simpleoidc.Tokens{IDToken: gqToken}, nil
++}
++
++func (o *Op) requestToken(ctx context.Context, nonce string) (*memguard.LockedBuffer, error) {
++	body, err := json.Marshal(map[string]string{"audience": o.audience, "nonce": nonce})
++	if err != nil {
++		return nil, err
++	}
++	request, err := http.NewRequestWithContext(ctx, http.MethodPost, o.tokenRequestURL, bytes.NewReader(body))
++	if err != nil {
++		return nil, err
++	}
++	request.Header.Set("Authorization", "Bearer "+o.tokenRequestAuthToken)
++	request.Header.Set("Content-Type", "application/json")
++	response, err := http.DefaultClient.Do(request)
++	if err != nil {
++		return nil, err
++	}
++	defer response.Body.Close()
++	if response.StatusCode != http.StatusOK {
++		return nil, fmt.Errorf("nixbot id-token endpoint returned %s", response.Status)
++	}
++	rawBody, err := memguard.NewBufferFromEntireReader(response.Body)
++	if err != nil {
++		return nil, err
++	}
++	defer rawBody.Destroy()
++	var issued struct {
++		Token json.RawMessage `json:"token"`
++	}
++	if err := json.Unmarshal(rawBody.Bytes(), &issued); err != nil {
++		return nil, err
++	}
++	defer memguard.WipeBytes(issued.Token)
++	if len(issued.Token) < 2 {
++		return nil, fmt.Errorf("no ID Token in response from nixbot")
++	}
++	// Strip the JSON string quotes without copying the token into a string.
++	return memguard.NewBufferFromBytes(issued.Token[1 : len(issued.Token)-1]), nil
++}
++
++func (o *Op) VerifyIDToken(ctx context.Context, idt []byte, cic *clientinstance.Claims) error {
++	if err := verifyNixbotClaims(idt); err != nil {
++		return err
++	}
++	vp := providers.NewProviderVerifier(o.issuer, providers.ProviderVerifierOpts{
++		CommitType:        providers.CommitTypesEnum.NONCE_CLAIM,
++		ClientID:          o.audience,
++		DiscoverPublicKey: &o.publicKeyFinder,
++		GQOnly:            true,
++	})
++	return vp.VerifyIDToken(ctx, idt, cic)
++}
++
++func verifyNixbotClaims(idt []byte) error {
++	parts := bytes.Split(idt, []byte("."))
++	if len(parts) < 2 {
++		return fmt.Errorf("invalid ID token: expected at least two parts")
++	}
++	payload, err := base64.RawURLEncoding.DecodeString(string(parts[1]))
++	if err != nil {
++		return fmt.Errorf("error decoding ID token payload: %w", err)
++	}
++	var claims map[string]any
++	if err := json.Unmarshal(payload, &claims); err != nil {
++		return fmt.Errorf("error unmarshalling ID token payload: %w", err)
++	}
++	for _, name := range requiredClaims {
++		if value, ok := claims[name].(string); !ok || value == "" {
++			return fmt.Errorf("nixbot ID token missing required claim %q", name)
++		}
++	}
++	return nil
++}
+diff --git a/internal/nixbot/op_test.go b/internal/nixbot/op_test.go
+new file mode 100644
+index 0000000..870406f
+--- /dev/null
++++ b/internal/nixbot/op_test.go
+@@ -0,0 +1,223 @@
++// Copyright 2026 OpenPubkey
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//     http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++//
++// SPDX-License-Identifier: Apache-2.0
++
++package nixbot
++
++import (
++	"context"
++	"crypto"
++	"crypto/rand"
++	"crypto/rsa"
++	"crypto/sha256"
++	"encoding/base64"
++	"encoding/json"
++	"math/big"
++	"net/http"
++	"net/http/httptest"
++	"regexp"
++	"testing"
++	"time"
++
++	"github.com/openpubkey/openpubkey/client"
++	"github.com/openpubkey/openpubkey/pktoken"
++	"github.com/openpubkey/openpubkey/verifier"
++	"github.com/stretchr/testify/require"
++)
++
++const (
++	testAudience  = AudiencePrefix + "altra"
++	testTaskToken = "task-token"
++	testKeyID     = "test-kid"
++)
++
++var noncePattern = regexp.MustCompile(`^[A-Za-z0-9_-]{43}$`)
++
++// fakeNixbot mimics nixbot's workload identity endpoints.
++type fakeNixbot struct {
++	server    *httptest.Server
++	key       *rsa.PrivateKey
++	audiences []string
++	// mutate lets a test tamper with the claims nixbot would issue.
++	mutate func(claims map[string]any)
++}
++
++func newFakeNixbot(t *testing.T) *fakeNixbot {
++	key, err := rsa.GenerateKey(rand.Reader, 2048)
++	require.NoError(t, err)
++
++	f := &fakeNixbot{key: key, audiences: []string{testAudience}}
++	mux := http.NewServeMux()
++	mux.HandleFunc("/.well-known/openid-configuration", func(w http.ResponseWriter, r *http.Request) {
++		_ = json.NewEncoder(w).Encode(map[string]any{
++			"issuer":   f.server.URL,
++			"jwks_uri": f.server.URL + "/.well-known/jwks.json",
++		})
++	})
++	mux.HandleFunc("/.well-known/jwks.json", func(w http.ResponseWriter, r *http.Request) {
++		_ = json.NewEncoder(w).Encode(map[string]any{"keys": []map[string]string{{
++			"kty": "RSA",
++			"alg": "RS256",
++			"use": "sig",
++			"kid": testKeyID,
++			"n":   b64(f.key.N.Bytes()),
++			"e":   b64(big.NewInt(int64(f.key.E)).Bytes()),
++		}}})
++	})
++	mux.HandleFunc("POST /api/v1/id-token", func(w http.ResponseWriter, r *http.Request) {
++		if r.Header.Get("Authorization") != "Bearer "+testTaskToken {
++			http.Error(w, "invalid task token", http.StatusUnauthorized)
++			return
++		}
++		var body struct {
++			Audience string `json:"audience"`
++			Nonce    string `json:"nonce"`
++		}
++		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
++		allowed := false
++		for _, aud := range f.audiences {
++			allowed = allowed || aud == body.Audience
++		}
++		if !allowed || !noncePattern.MatchString(body.Nonce) {
++			http.Error(w, "forbidden", http.StatusForbidden)
++			return
++		}
++		now := time.Now()
++		claims := map[string]any{
++			"iss":        f.server.URL,
++			"aud":        body.Audience,
++			"sub":        "repo:github:arianvp/nixos-stuff:ref:refs/heads/master",
++			"iat":        now.Unix(),
++			"exp":        now.Add(5 * time.Minute).Unix(),
++			"nonce":      body.Nonce,
++			"forge":      "github",
++			"repository": "arianvp/nixos-stuff",
++			"effect":     "default.deploy-altra",
++		}
++		if f.mutate != nil {
++			f.mutate(claims)
++		}
++		_ = json.NewEncoder(w).Encode(map[string]string{"token": f.sign(t, claims)})
++	})
++	f.server = httptest.NewServer(mux)
++	t.Cleanup(f.server.Close)
++	return f
++}
++
++func b64(data []byte) string {
++	return base64.RawURLEncoding.EncodeToString(data)
++}
++
++func (f *fakeNixbot) sign(t *testing.T, claims map[string]any) string {
++	header, err := json.Marshal(map[string]string{"alg": "RS256", "kid": testKeyID, "typ": "JWT"})
++	require.NoError(t, err)
++	payload, err := json.Marshal(claims)
++	require.NoError(t, err)
++	signingInput := b64(header) + "." + b64(payload)
++	digest := sha256.Sum256([]byte(signingInput))
++	sig, err := rsa.SignPKCS1v15(rand.Reader, f.key, crypto.SHA256, digest[:])
++	require.NoError(t, err)
++	return signingInput + "." + b64(sig)
++}
++
++func (f *fakeNixbot) setEnv(t *testing.T) {
++	t.Setenv(TokenRequestURLEnvVar, f.server.URL+tokenRequestPath)
++	t.Setenv(TokenRequestTokenEnvVar, testTaskToken)
++	t.Setenv(AudienceEnvVar, testAudience)
++}
++
++func TestIssuerFromEnvironment(t *testing.T) {
++	t.Setenv(TokenRequestURLEnvVar, "https://nixbot.example.com/api/v1/id-token")
++	issuer, err := IssuerFromEnvironment()
++	require.NoError(t, err)
++	require.Equal(t, "https://nixbot.example.com", issuer)
++
++	t.Setenv(TokenRequestURLEnvVar, "https://nixbot.example.com/other")
++	_, err = IssuerFromEnvironment()
++	require.Error(t, err)
++}
++
++func TestNewOpFromEnvironment(t *testing.T) {
++	f := newFakeNixbot(t)
++
++	_, err := NewOpFromEnvironment(f.server.URL)
++	require.ErrorContains(t, err, "not running in a nixbot effect")
++
++	f.setEnv(t)
++	_, err = NewOpFromEnvironment("https://other.example.com")
++	require.ErrorContains(t, err, "issuer mismatch")
++
++	t.Setenv(AudienceEnvVar, "opkssh")
++	_, err = NewOpFromEnvironment(f.server.URL)
++	require.ErrorContains(t, err, AudiencePrefix)
++}
++
++func login(t *testing.T, f *fakeNixbot) ([]byte, error) {
++	f.setEnv(t)
++	op, err := NewOpFromEnvironment(f.server.URL)
++	require.NoError(t, err)
++	opkClient, err := client.New(op)
++	require.NoError(t, err)
++	pkt, err := opkClient.Auth(context.Background())
++	if err != nil {
++		return nil, err
++	}
++	return pkt.Compact()
++}
++
++func verify(t *testing.T, issuer string, audience string, compactPkt []byte) error {
++	v, err := verifier.New(NewOp(issuer, audience))
++	require.NoError(t, err)
++	pkt, err := pktoken.NewFromCompact(compactPkt)
++	require.NoError(t, err)
++	return v.VerifyPKToken(context.Background(), pkt)
++}
++
++func TestLoginAndVerify(t *testing.T) {
++	f := newFakeNixbot(t)
++	compactPkt, err := login(t, f)
++	require.NoError(t, err)
++
++	pkt, err := pktoken.NewFromCompact(compactPkt)
++	require.NoError(t, err)
++	// Only the GQ signed token may leave the effect.
++	alg, ok := pkt.ProviderAlgorithm()
++	require.True(t, ok)
++	require.Equal(t, "GQ256", string(alg))
++
++	require.NoError(t, verify(t, f.server.URL, testAudience, compactPkt))
++	require.ErrorContains(t, verify(t, f.server.URL, AudiencePrefix+"other", compactPkt), "audience")
++}
++
++func TestLoginRejectsTokensWithoutCommitment(t *testing.T) {
++	f := newFakeNixbot(t)
++	f.mutate = func(claims map[string]any) { claims["nonce"] = "A" + claims["nonce"].(string)[1:] }
++	_, err := login(t, f)
++	require.ErrorContains(t, err, "commitment")
++}
++
++func TestLoginRejectsTokensWithoutNixbotClaims(t *testing.T) {
++	f := newFakeNixbot(t)
++	f.mutate = func(claims map[string]any) { delete(claims, "effect") }
++	_, err := login(t, f)
++	require.ErrorContains(t, err, `missing required claim "effect"`)
++}
++
++func TestLoginRejectsUndeclaredAudience(t *testing.T) {
++	f := newFakeNixbot(t)
++	f.audiences = []string{AudiencePrefix + "other"}
++	_, err := login(t, f)
++	require.ErrorContains(t, err, "403")
++}
+diff --git a/policy/providerloader.go b/policy/providerloader.go
+index 52ff87a..c285f73 100644
+--- a/policy/providerloader.go
++++ b/policy/providerloader.go
+@@ -22,6 +22,7 @@ import (
+ 
+ 	"github.com/openpubkey/openpubkey/providers"
+ 	"github.com/openpubkey/openpubkey/verifier"
++	"github.com/openpubkey/opkssh/internal/nixbot"
+ 	"github.com/openpubkey/opkssh/policy/files"
+ 	"github.com/spf13/afero"
+ )
+@@ -95,6 +96,8 @@ func (p *ProviderPolicy) CreateVerifier() (*verifier.Verifier, error) {
+ 			opts.Issuer = row.Issuer
+ 			opts.ClientID = row.ClientID
+ 			provider = providers.NewGitlabOpWithOptions(opts)
++		} else if strings.HasPrefix(row.ClientID, nixbot.AudiencePrefix) {
++			provider = nixbot.NewOp(row.Issuer, row.ClientID)
+ 		} else if row.Issuer == "https://token.actions.githubusercontent.com" {
+ 			provider = providers.NewGithubOp(row.Issuer, "")
+ 		} else {
