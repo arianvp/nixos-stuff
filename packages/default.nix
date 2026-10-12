@@ -5,6 +5,7 @@ in
 {
   inherit (pkgs')
     spire-controller-manager
+    spire-credentialcomposer-x509
     spire-tpm-plugin
     spire
     he-ddns
