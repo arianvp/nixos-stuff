@@ -34,6 +34,7 @@
 
   outputs =
     {
+      self,
       cgroup-exporter,
       home-manager,
       lanzaboote,
@@ -86,7 +87,14 @@
 
       devShells = forSystems [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ] (import ./devshells.nix);
       packages = forSystems [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ] (import ./packages);
-      checks = forSystems [ "x86_64-linux" "aarch64-linux" ] (import ./checks.nix);
+      checks =
+        unstable.lib.recursiveUpdate (forSystems [ "x86_64-linux" "aarch64-linux" ] (import ./checks.nix))
+          {
+            # Built on every PR so ./herculesCI.nix only has to evaluate the PR's toplevel.
+            aarch64-linux.altra-toplevel = self.nixosConfigurations.altra.config.system.build.toplevel;
+          };
+
+      herculesCI = import ./herculesCI.nix { inherit self unstable nixbot; };
 
       nixosConfigurations = {
         framework = nixosSystem (
