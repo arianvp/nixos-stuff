@@ -83,6 +83,18 @@ in
         mkdir -p "$dest"
         # Best effort: when offline, fall back to the last fetched trunk.
         timeout 30 jj -R "$root" git fetch >&2 || true
+        # Claude counts a worktree's commits from the main checkout's git HEAD and
+        # keeps worktrees with commits when the session ends. Move the main checkout
+        # to trunk() so a fresh worktree doesn't start out "ahead", but only when it
+        # is idle: no edits, no description, and not on top of the user's own changes.
+        q() { jj -R "$root" log --no-graph -r "$1" -T change_id; }
+        if [ -n "$(q '@ ~ trunk()+')" ]; then
+          if [ -n "$(q '@ & empty() & description(exact:"") & children(::trunk())')" ]; then
+            jj -R "$root" new 'trunk()' >&2
+          else
+            echo "Main checkout is not on trunk() and not idle; left it alone. This worktree will likely be kept when the session ends." >&2
+          fi
+        fi
         jj -R "$root" workspace add -r 'trunk()' "$dest" >&2
         echo "$dest"
       '';
@@ -101,7 +113,9 @@ in
         ''
       );
       WorktreeRemove = hook "claude-worktree-remove" ''
-        jj workspace remove "$(jq -r '.worktree_path | split("/") | last')" >&2
+        path="$(jq -r .worktree_path)"
+        # WorktreeCreate puts worktrees at <main checkout>/${worktrees}/<name>.
+        jj -R "$(dirname "$(dirname "$path")")" workspace remove "$(basename "$path")" >&2
       '';
     };
     settings.sandbox.filesystem = {
