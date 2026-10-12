@@ -143,6 +143,7 @@
 
   environment.systemPackages = [
     pkgs.kitty.terminfo
+    pkgs.hello
   ];
 
   # TODO: Do we need this?
