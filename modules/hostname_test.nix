@@ -14,7 +14,7 @@
     machine = machines[0]
 
     with subtest("Dynamic hostname placeholders are resolved"):
-        machine.wait_for_unit("multi-user.target")
+        machine.wait_for_unit("multi-user.target", timeout=60)
 
         # Get the actual hostname
         hostname = machine.succeed("hostname").strip()

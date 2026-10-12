@@ -15,7 +15,7 @@
 
   # TODO: Actually have the bootloader used in tests
   testScript = ''
-    machine.succeed("${lib.getExe nodes.machine.system.build.installBootLoader}")
+    machine.succeed("${lib.getExe nodes.machine.system.build.installBootLoader}", timeout=60)
     machine.succeed("updatectl list")
   '';
 }
