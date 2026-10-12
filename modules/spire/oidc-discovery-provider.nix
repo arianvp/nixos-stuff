@@ -68,8 +68,8 @@ in
         serviceConfig = {
           # TODO: separate output
           ExecStart =
-            "${lib.getExe' cfg.package "oidc-discovery-provider"}"
-            + lib.cli.toGNUCommandLineShell { } {
+            "${lib.getExe' cfg.package "oidc-discovery-provider"} "
+            + lib.cli.toCommandLineShellGNU { } {
               inherit (cfg) expandEnv;
               config = cfg.configFile;
             };

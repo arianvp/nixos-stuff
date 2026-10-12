@@ -56,7 +56,7 @@ in
         
         ExecStart = 
           let
-            args = lib.cli.toGNUCommandLineShell {} cfg.args;
+            args = lib.cli.toCommandLineShellGNU {} cfg.args;
           in
           "${lib.getExe' cfg.package "kube-controller-manager"} ${args}";
         

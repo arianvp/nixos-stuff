@@ -76,7 +76,7 @@ in
         
         ExecStart = 
           let
-            args = lib.cli.toGNUCommandLineShell {} ({
+            args = lib.cli.toCommandLineShellGNU {} ({
               config = schedulerConfigFile;
             } // cfg.extraArgs);
           in
