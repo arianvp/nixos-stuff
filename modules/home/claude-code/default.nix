@@ -27,6 +27,23 @@
     terminal = "tmux-256color";
   };
 
+  # The directory must already be trusted and Remote Control accepted once
+  # interactively; without a terminal `claude remote-control` cannot prompt.
+  systemd.user.services.claude-remote-control = lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
+    Unit = {
+      Description = "Claude Code Remote Control server";
+      After = [ "network-online.target" ];
+      Wants = [ "network-online.target" ];
+    };
+    Service = {
+      WorkingDirectory = "${config.home.homeDirectory}/Projects/nixos-stuff";
+      ExecStart = "${config.home.profileDirectory}/bin/claude remote-control --spawn worktree";
+      Restart = "on-failure";
+      RestartSec = 10;
+    };
+    Install.WantedBy = [ "default.target" ];
+  };
+
   programs.claude-code = {
     enable = true;
     skills = {
