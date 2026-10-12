@@ -23,7 +23,9 @@ let
       ];
     }
   ];
-  worktrees = ".claude/worktrees";
+  # Not under .claude/: Claude's sandbox mounts the project's .claude/ read-only,
+  # which would make every worktree beneath it read-only too.
+  worktrees = ".worktrees";
 in
 {
   programs.git.ignores = [ "${worktrees}/" ];
@@ -45,7 +47,9 @@ in
     # takes only names. So remove recovers the name from the path's basename.
     settings.hooks = {
       WorktreeCreate = hook "claude-worktree-create" ''
-        dest="$(jj workspace root)/.claude/worktrees/$(jq -r .name)"
+        # Anchor at the default workspace so worktrees created from a worktree don't nest.
+        root="$(jj workspace root --name default 2>/dev/null || jj workspace root)"
+        dest="$root/${worktrees}/$(jq -r .name)"
         mkdir -p "$dest"
         jj workspace add "$dest" >&2
         echo "$dest"
