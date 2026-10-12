@@ -56,6 +56,30 @@
       NEVER leave traces in comments about how things were before in the past.  Prose about how code changed over time belongs in commit messages ; not code.
     '';
 
+    rules.nixos-tests = ''
+      # Running and writing NixOS tests
+
+      NixOS VM tests fail by hanging, not by erroring. The defaults (`globalTimeout` and
+      `meta.timeout` of 3600s, `wait_for_*` timeouts of 900s) mean a broken test can
+      silently eat an hour. Keep track of wall-clock time and fail fast:
+
+      - Before running a test, decide how long it should take (most boot + a few checks
+        in under 2 minutes). Note the time with `date` and check elapsed time when it returns.
+      - Always wrap the build in `timeout`, e.g. `timeout 600 nix build -L .#checks.<system>.foo`,
+        and set the Bash tool timeout to match. Prefer running it in the background and
+        writing output to a log file, then `tail`/`grep` the file instead of dumping it all.
+      - While developing a test, set `globalTimeout = 300;` (or lower) in the test.
+      - Pass explicit short timeouts to waits: `machine.wait_for_unit("foo.service", timeout=60)`,
+        `wait_until_succeeds(..., timeout=30)`, `wait_for_open_port(80, timeout=30)`.
+        Never rely on the 900s default.
+      - If nothing new has appeared in the log for a couple of minutes, assume it is hung:
+        kill it, read the log, and fix the cause instead of waiting longer.
+      - Control driver verbosity with the test option `logLevel` (`"debug"`, `"info"`,
+        `"warning"`, `"error"`; default `"info"`). Use `"warning"` to cut noise, `"debug"`
+        when you need driver internals.
+      - After a failure, use `nix log <drv>` to get the full log rather than rebuilding.
+    '';
+
     mcpServers.linear-server = {
       type = "http";
       url = "https://mcp.linear.app/mcp";
