@@ -7,5 +7,6 @@ stack = ["util", "exec", "--", "jj-stack"]
 meta = ["util", "exec", "--", "jj-meta"]
 pushm = ["util", "exec", "--", "bash", "-c", 'set -eu; jj git push "$@" && jj-meta push', "jj-pushm"]
 fetchm = ["util", "exec", "--", "bash", "-c", 'set -eu; jj git fetch "$@" && jj-meta pull', "jj-fetchm"]
+rebase-mine = ["rebase", "-b", "mutable() & mine()", "-d", "trunk()"]
 [revset-aliases]
 "mine()" = 'author("arian@arianvp.me") | author("arian.vanputten@gmail.com")'
