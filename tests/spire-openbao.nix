@@ -6,24 +6,24 @@
 { pkgs, lib, ... }:
 let
   trustDomain = "example.com";
-in
-{
-  name = "spire-openbao";
 
-  defaults =
+  spireAgent =
     { config, ... }:
     {
-      networking.domain = trustDomain;
-
       # The upstream module does not export this the way our old local module
       # did, so set it here for the test script's sake.
       environment.variables.SPIFFE_ENDPOINT_SOCKET =
         config.services.spire.agent.settings.agent.socket_path;
 
-      systemd.services.spire-agent.serviceConfig = {
-        LoadCredential = [ "spire-server-bundle" ];
-        EnvironmentFile = "/run/credstore/spire-join-token";
+      # Written into each machine's state_dir by the test script before it boots
+      virtualisation.credentials = {
+        "spire.trust_bundle".source = "./trust_bundle";
+        "spire.join_token".source = "./join_token";
       };
+      systemd.services.spire-agent.serviceConfig.ImportCredential = [
+        "spire.trust_bundle"
+        "spire.join_token"
+      ];
 
       services.spire.agent = {
         enable = true;
@@ -31,9 +31,9 @@ in
           agent = {
             trust_domain = trustDomain;
             server_address = "server.${trustDomain}";
-            trust_bundle_path = "$CREDENTIALS_DIRECTORY/spire-server-bundle";
+            trust_bundle_path = "$CREDENTIALS_DIRECTORY/spire.trust_bundle";
             trust_bundle_format = "pem";
-            join_token = "$SPIRE_JOIN_TOKEN";
+            join_token_file = "$CREDENTIALS_DIRECTORY/spire.join_token";
           };
           plugins = {
             KeyManager.memory.plugin_data = { };
@@ -45,16 +45,28 @@ in
         };
       };
     };
+in
+{
+  name = "spire-openbao";
+
+  defaults.networking.domain = trustDomain;
 
   nodes = {
     openbao =
       { config, ... }:
       {
+        imports = [ spireAgent ];
 
         networking.firewall.allowedTCPPorts = [ 8200 ];
 
+        # ExecStartPre needs an SVID, which only exists once the agent has
+        # attested; the test script starts openbao after that.
+        systemd.services.openbao.wantedBy = lib.mkForce [ ];
+
         # TODO: The trust bundle expires and should be refreshed periodically
         # and openbao need to be reloaded
+        systemd.services.openbao.environment.SPIFFE_ENDPOINT_SOCKET =
+          config.services.spire.agent.settings.agent.socket_path;
         systemd.services.openbao.serviceConfig.ExecStartPre =
           "${lib.getExe' pkgs.spire "spire-agent"} api fetch x509 -socketPath $SPIFFE_ENDPOINT_SOCKET -write $RUNTIME_DIRECTORY";
 
@@ -131,6 +143,7 @@ in
     };
 
     agent = {
+      imports = [ spireAgent ];
       environment.systemPackages = [ pkgs.openbao ];
       environment.variables = {
         VAULT_ADDR = "https://openbao.${trustDomain}:8200";
@@ -148,23 +161,18 @@ in
       import json
 
       def provision(agent, spiffe_id):
+        bundle = server.succeed("spire-server bundle show -socketPath ${adminSocket}")
+        with open(agent.state_dir / "trust_bundle", "w") as f:
+            f.write(bundle)
         token = server.succeed(f"spire-server token generate -socketPath ${adminSocket} -spiffeID {spiffe_id}").split()[1]
-        with open("spire-join-token", "w") as f:
-            f.write(f"SPIRE_JOIN_TOKEN={token}")
-        agent.copy_from_host("spire-join-token", "/run/credstore/spire-join-token")
-        agent.copy_from_host("bundle.pem", "/run/credstore/spire-server-bundle")
+        with open(agent.state_dir / "join_token", "w") as f:
+            f.write(token)
 
 
       with subtest("SPIRE controller manager comes up against the server"):
           server.wait_for_unit("spire-server.service")
           server.wait_until_succeeds("spire-server healthcheck -socketPath ${adminSocket}", timeout=30)
           server.wait_for_unit("spire-controller-manager.service")
-
-      with subtest("Generate and distribute SPIRE credentials"):
-          # Get the trust bundle
-          bundle = server.succeed("spire-server bundle show -socketPath ${adminSocket}")
-          with open("bundle.pem", "w") as f:
-              f.write(bundle)
 
       with subtest("Bootstrap SPIRE agent on agent node"):
           provision(agent, "spiffe://example.com/server/agent")
@@ -177,6 +185,7 @@ in
           openbao.wait_until_succeeds("spire-agent healthcheck -socketPath $SPIFFE_ENDPOINT_SOCKET", timeout=90)
 
       with subtest("Initialize and unseal OpenBao"):
+          openbao.systemctl("start openbao.service")
           openbao.wait_for_unit("openbao.service")
 
           # Initialize OpenBao
@@ -206,9 +215,9 @@ in
           # TODO: There's a problem here. The spire-server's bundle rotates!
           # We have to write to write this setting every time that happens
           # Configure certificate roles for different SPIFFE IDs
-          openbao.succeed("bao write auth/cert/certs/openbao certificate=@/run/credstore/spire-server-bundle allowed_uri_sans=spiffe://example.com/service/openbao token_policies=access-foo")
-          openbao.succeed("bao write auth/cert/certs/agent certificate=@/run/credstore/spire-server-bundle allowed_uri_sans=spiffe://example.com/service/agent token_policies=access-foo")
-          openbao.succeed("bao write auth/cert/certs/admin certificate=@/run/credstore/spire-server-bundle allowed_uri_sans=spiffe://example.com/user/admin token_policies=access-foo")
+          openbao.succeed("bao write auth/cert/certs/openbao certificate=@/run/credentials/@system/spire.trust_bundle allowed_uri_sans=spiffe://example.com/service/openbao token_policies=access-foo")
+          openbao.succeed("bao write auth/cert/certs/agent certificate=@/run/credentials/@system/spire.trust_bundle allowed_uri_sans=spiffe://example.com/service/agent token_policies=access-foo")
+          openbao.succeed("bao write auth/cert/certs/admin certificate=@/run/credentials/@system/spire.trust_bundle allowed_uri_sans=spiffe://example.com/user/admin token_policies=access-foo")
 
       with subtest("Test certificate authentication from openbao node"):
           # Test direct cert auth on openbao node
