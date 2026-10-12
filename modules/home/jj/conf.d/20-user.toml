@@ -8,9 +8,6 @@ backend = "ssh"
 # TODO: point to whatever yubikey is inserted. I wonder if we can do this with udev
 key = "~/.ssh/id_ed25519_sk"
 
-[git]
-abandon-unreachable-commits = false
-
 [remotes.upstream]
 
 # jj matches the full hostname, which on macOS is the mDNS name; list the bare
