@@ -1,4 +1,9 @@
-{ config, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   caFile = pkgs.concatText "ca.pub" [
     ../keys/yk-black/id_ed25519_sk_rk_ca_arian.pub
@@ -30,7 +35,7 @@ in
     };
   };
   services.opkssh = {
-    enable = false;
+    enable = lib.mkDefault false;
     authorizations = [
       # Allow deploys from Github Actions
       {

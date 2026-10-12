@@ -23,6 +23,7 @@
     # ./prometheus.nix
     ./he-ddns.nix
     (import ./nixbot.nix nixbot)
+    ./opkssh.nix
 
     # TODO: something better
     ../../modules/base-interactive.nix
