@@ -26,7 +26,7 @@ let
   ];
   # Not under .claude/: Claude's sandbox mounts the project's .claude/ read-only,
   # which would make every worktree beneath it read-only too.
-  worktrees = ".worktrees";
+  worktrees = ".work";
 in
 {
   programs.git.ignores = [ "${worktrees}/" ];
