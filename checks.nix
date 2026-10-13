@@ -37,9 +37,9 @@ let
         else if type == "regular" && lib.hasSuffix "_test.nix" name then
           let
             testPath = baseDir + newRelPath;
-            # Import the test file to read its name attribute
+            # Use the test's name attribute; tests that are functions are named after their file
             testConfig = import testPath;
-            testName = testConfig.name or (lib.removeSuffix "_test.nix" (lib.removePrefix "/" newRelPath));
+            testName = testConfig.name or (lib.removeSuffix "_test.nix" name);
           in
           [
             {
