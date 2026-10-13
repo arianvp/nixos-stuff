@@ -28,4 +28,5 @@ final: prev: {
   spire-controller-manager = final.callPackage ../packages/spire-controller-manager/package.nix { };
   spire-credentialcomposer-x509 = final.callPackage ../packages/spire-credentialcomposer-x509/package.nix { };
   kube-jwt-signer-openbao = final.callPackage ../packages/kube-jwt-signer-openbao/package.nix { };
+  kube-kms-openbao = final.callPackage ../packages/kube-kms-openbao/package.nix { };
 }
