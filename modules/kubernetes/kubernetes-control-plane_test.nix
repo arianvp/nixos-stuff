@@ -2,6 +2,7 @@
 let
   t = import ./test-lib.nix { inherit lib; };
   signingKey = "service-accounts";
+  encryptionKey = "kubernetes";
 
   controlPlane =
     { config, ... }:
@@ -28,6 +29,11 @@ let
       kubernetes.kube-jwt-signer = {
         openbao = t.openbaoURL "control1";
         key = signingKey;
+      };
+      kubernetes.encryption = {
+        enable = true;
+        openbao = t.openbaoURL "control1";
+        key = encryptionKey;
       };
       kubernetes.kube-controller-manager.enable = true;
       kubernetes.kube-scheduler.enable = true;
@@ -147,6 +153,19 @@ in
         )
         return json.loads(out)["auth"]["client_token"]
 
+    etcdctl = (
+        "etcdctl --endpoints https://control1.${t.domain}:2379 --cacert /run/kube-apiserver-svid/bundle.pem"
+        " --cert /run/kube-apiserver-svid/svid.pem --key /run/kube-apiserver-svid/svid.key"
+    )
+
+    def etcd_secret(name):
+        return f"{etcdctl} get /registry/secrets/default/{name} --print-value-only"
+
+    def read_secret(machine, name):
+        return machine.succeed(
+            f"kubectl --server=https://{machine.name}.${t.domain}:6443 get secret {name} -o jsonpath='{{.data.password}}' | base64 -d"
+        )
+
     start_all()
 
     # The signers do not come up, and so the API servers do not, until OpenBao
@@ -192,6 +211,32 @@ in
             " | grep -i 'IP Address:FD00:10:96:0:0:0:0:1'"
         )
 
+    with subtest("Secrets are encrypted in etcd with OpenBao"):
+        control1.wait_until_succeeds("kubectl create secret generic encrypted --from-literal=password=topsecret", timeout=60)
+        control1.succeed(f"{etcd_secret('encrypted')} | grep -a -q '^k8s:enc:kms:v2:openbao:'")
+        control1.succeed(f"{etcd_secret('encrypted')} | grep -a -q '${encryptionKey}:1'")
+        control1.fail(f"{etcd_secret('encrypted')} | grep -a -q topsecret")
+        assert read_secret(control2, "encrypted") == "topsecret"
+
+    with subtest("OpenBao unseals itself"):
+        control1.systemctl("restart openbao.service")
+        control1.wait_until_succeeds(f"{bao(None, 'sys/seal-status')} | jq -e '.sealed == false'", timeout=60)
+        # Without its cached data encryption keys, the API server has to decrypt with OpenBao
+        control2.systemctl("restart kube-apiserver.service")
+        control2.wait_until_succeeds("kubectl --server=https://control2.${t.domain}:6443 get --raw /readyz", timeout=60)
+        assert read_secret(control2, "encrypted") == "topsecret"
+
+    with subtest("The API servers follow rotations of the transit key"):
+        token = admin_token()
+        control1.succeed(bao(token, "transit/keys/${encryptionKey}/rotate", method="POST"))
+        control1.wait_until_succeeds(
+            "kubectl delete secret rotated --ignore-not-found"
+            " && kubectl create secret generic rotated --from-literal=password=rotated"
+            f" && {etcd_secret('rotated')} | grep -a -q '${encryptionKey}:2'",
+            timeout=120,
+        )
+        assert read_secret(control2, "encrypted") == "topsecret"
+        assert read_secret(control2, "rotated") == "rotated"
     with subtest("Clients fail over to another API server"):
         control1.systemctl("stop kube-apiserver.service")
         control1.succeed("kubectl get --raw /readyz")
@@ -220,6 +265,10 @@ in
                 timeout=60,
             )
         check_tokens()
+        # The KMS plugin logs in to OpenBao again, with an SVID from the new CA
+        control2.systemctl("restart kube-kms-openbao.service kube-apiserver.service")
+        control2.wait_until_succeeds("kubectl --server=https://control2.${t.domain}:6443 get --raw /readyz", timeout=60)
+        assert read_secret(control2, "encrypted") == "topsecret"
 
     with subtest("Tokens stay valid when OpenBao rotates the signing key"):
         control1.wait_until_succeeds("kubectl get --raw /readyz", timeout=60)
