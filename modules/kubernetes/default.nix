@@ -34,6 +34,7 @@ in
     ./images.nix
     ./kubeconfig.nix
     ./addons.nix
+    ./encryption.nix
     ./spire.nix
   ];
 
