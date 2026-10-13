@@ -22,22 +22,35 @@
     terminal = "tmux-256color";
   };
 
-  # The directory must already be trusted and Remote Control accepted once
-  # interactively; without a terminal `claude remote-control` cannot prompt.
-  systemd.user.services.claude-remote-control = lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
+  # Instance name is a directory under ~/Projects. It must already be trusted
+  # and Remote Control accepted once interactively; without a terminal
+  # `claude remote-control` cannot prompt.
+  systemd.user.services."claude-remote-control@" = lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
     Unit = {
-      Description = "Claude Code Remote Control server";
+      Description = "Claude Code Remote Control server for %i";
       After = [ "network-online.target" ];
       Wants = [ "network-online.target" ];
     };
     Service = {
-      WorkingDirectory = "${config.home.homeDirectory}/Projects/nixos-stuff";
+      WorkingDirectory = "%h/Projects/%i";
       ExecStart = "${config.home.profileDirectory}/bin/claude remote-control --spawn worktree";
       Restart = "on-failure";
       RestartSec = 10;
     };
-    Install.WantedBy = [ "default.target" ];
   };
+
+  # Enabling instances by hand: Install.WantedBy on a template would link the
+  # bare `@.service`, and systemd.user.targets.default would write a full
+  # default.target that shadows systemd's own (home-manager has no drop-in
+  # strategy). These links are what `systemctl --user enable` would create.
+  xdg.configFile = lib.mkIf pkgs.stdenv.hostPlatform.isLinux (
+    lib.genAttrs' [ "nixos-stuff" "x" ] (
+      repo:
+      lib.nameValuePair "systemd/user/default.target.wants/claude-remote-control@${repo}.service" {
+        source = config.xdg.configFile."systemd/user/claude-remote-control@.service".source;
+      }
+    )
+  );
 
   programs.claude-code = {
     enable = true;
