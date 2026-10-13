@@ -7,6 +7,7 @@ in
     spire-controller-manager
     spire-credentialcomposer-x509
     kube-jwt-signer
+    kube-kms-openbao
     spire-tpm-plugin
     spire
     he-ddns
