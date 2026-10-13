@@ -79,7 +79,14 @@ in
         if [ -f "$root/.jj/repo" ]; then
           root="$(cd "$root/.jj" && realpath "$(cat repo)/../..")"
         fi
-        dest="$root/${worktrees}/$(jq -r .name)"
+        name="$(jq -r .name)"
+        dest="$root/${worktrees}/$name"
+        # Remote Control recreates the worktree of each session it resumes after a
+        # restart; hand back the workspace that is still there.
+        if [ -d "$dest" ] && [ "$(jj -R "$root" workspace root --name "$name" 2>/dev/null)" = "$dest" ]; then
+          echo "$dest"
+          exit 0
+        fi
         mkdir -p "$dest"
         # Best effort: when offline, fall back to the last fetched trunk.
         timeout 30 jj -R "$root" git fetch >&2 || true
