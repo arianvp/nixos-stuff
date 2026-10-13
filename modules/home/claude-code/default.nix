@@ -100,7 +100,9 @@
 
     settings = {
       sandbox = {
-        enabled = true;
+        # Disabled until bwrap stops failing with EROFS when masking .claude/settings.json
+        # in worktrees under the allowRead ~/Projects re-bind.
+        enabled = false;
         failIfUnavailable = true;
         # this also blocks ! commands (undocumented)
         allowUnsandboxedCommands = false;
