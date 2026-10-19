@@ -88,6 +88,9 @@ in
           exit 0
         fi
         mkdir -p "$dest"
+        # Commands run from another workspace leave the main checkout stale when they
+        # rewrite its @, and every jj command below would then refuse to run.
+        jj -R "$root" workspace update-stale >&2
         # Best effort: when offline, fall back to the last fetched trunk.
         timeout 30 jj -R "$root" git fetch >&2 || true
         # Claude counts a worktree's commits from the main checkout's git HEAD and
