@@ -185,7 +185,17 @@ in
     systemd.services.spire-controller-manager = {
       wantedBy = [ "multi-user.target" ];
       description = "SPIRE Controller Manager";
-      serviceConfig.ExecStart = "${lib.getExe cfg.package} -config ${cfg.configFile}";
+      after = [ "spire-server.service" ];
+      restartTriggers = lib.attrValues (
+        lib.mapAttrs (
+          name: _: config.environment.etc."spire/server/manifests/${name}.yaml".source
+        ) cfg.staticEntries
+      );
+      serviceConfig = {
+        ExecStart = "${lib.getExe cfg.package} -config ${cfg.configFile}";
+        Restart = "on-failure";
+        RestartSec = "5s";
+      };
     };
   };
 }
