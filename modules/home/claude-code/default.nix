@@ -44,7 +44,7 @@
   # default.target that shadows systemd's own (home-manager has no drop-in
   # strategy). These links are what `systemctl --user enable` would create.
   xdg.configFile = lib.mkIf pkgs.stdenv.hostPlatform.isLinux (
-    lib.genAttrs' [ "nixos-stuff" "x" ] (
+    lib.genAttrs' [ "nixos-stuff" "x" "buck2" ] (
       repo:
       lib.nameValuePair "systemd/user/default.target.wants/claude-remote-control@${repo}.service" {
         source = config.xdg.configFile."systemd/user/claude-remote-control@.service".source;
