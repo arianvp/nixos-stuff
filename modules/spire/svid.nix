@@ -47,6 +47,15 @@ let
           '';
         };
 
+        reloadOnRenewal = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [ ];
+          example = [ "openbao.service" ];
+          description = ''
+            Units to reload when the SVID is renewed, for software that reads
+            its certificate only on startup or reload.
+          '';
+        };
         restartMaxDelaySec = lib.mkOption {
           type = lib.types.ints.unsigned;
           default = 0;
@@ -152,6 +161,13 @@ in
             };
           };
         }
+        // lib.optionalAttrs (svid.reloadOnRenewal != [ ]) {
+          "${unitName}-renewal" = {
+            description = "Reload consumers of the SVID of ${name}";
+            serviceConfig.Type = "oneshot";
+            script = "systemctl try-reload-or-restart ${lib.escapeShellArgs svid.reloadOnRenewal}";
+          };
+        }
         // lib.optionalAttrs (svid.restartOnBundleChange != [ ]) {
           # spiffe-helper rewrites the bundle whenever it renews the SVID, and
           # removing an expired CA needs no restart, so look for new CAs
@@ -183,12 +199,25 @@ in
       ) cfg
     );
 
-    systemd.paths = lib.mapAttrs' (
-      name: svid:
-      lib.nameValuePair "${lib.removeSuffix ".service" svid.unit}-bundle" {
-        wantedBy = [ "multi-user.target" ];
-        pathConfig.PathChanged = svid.paths.bundle;
-      }
-    ) (lib.filterAttrs (_: svid: svid.restartOnBundleChange != [ ]) cfg);
+    systemd.paths = lib.mkMerge (
+      lib.mapAttrsToList (
+        name: svid:
+        let
+          unitName = lib.removeSuffix ".service" svid.unit;
+        in
+        lib.optionalAttrs (svid.restartOnBundleChange != [ ]) {
+          "${unitName}-bundle" = {
+            wantedBy = [ "multi-user.target" ];
+            pathConfig.PathChanged = svid.paths.bundle;
+          };
+        }
+        // lib.optionalAttrs (svid.reloadOnRenewal != [ ]) {
+          "${unitName}-renewal" = {
+            wantedBy = [ "multi-user.target" ];
+            pathConfig.PathChanged = svid.paths.cert;
+          };
+        }
+      ) cfg
+    );
   };
 }
