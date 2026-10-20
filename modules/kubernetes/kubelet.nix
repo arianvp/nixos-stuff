@@ -8,9 +8,9 @@
 let
   cfg = config.kubernetes.kubelet;
   k8sFormats = import ./formats { inherit lib pkgs; };
+  k8sLib = import ./lib.nix { inherit lib; };
 
   kubeletConfigFile = k8sFormats.kubeletConfiguration.generate "kubelet-config.yaml" cfg.settings;
-
 in
 {
   options.kubernetes.kubelet = {
@@ -31,28 +31,13 @@ in
       '';
       example = lib.literalExpression ''
         {
-          apiVersion = "kubelet.config.k8s.io/v1beta1";
-          kind = "KubeletConfiguration";
-
-          enableServer = true;
-          address = "::";
-          port = 10250;
-
           authentication = {
             anonymous.enabled = false;
-            webhook = {
-              enabled = true;
-              cacheTTL = "2m0s";
-            };
+            webhook.enabled = true;
             x509.clientCAFile = "/etc/kubernetes/pki/ca.crt";
           };
-
-          authorization = {
-            mode = "Webhook";
-          };
-
+          authorization.mode = "Webhook";
           clusterDomain = "cluster.internal";
-          cgroupDriver = "systemd";
           containerRuntimeEndpoint = "unix:///run/crio/crio.sock";
         }
       '';
@@ -63,9 +48,21 @@ in
       default = null;
       description = ''
         Path to kubeconfig file for kubelet to authenticate to API server.
-        If null, runes kubelet in stand-alone mode.
+        If null, runs kubelet in stand-alone mode.
       '';
       example = "/etc/kubernetes/kubelet.conf";
+    };
+
+    args = lib.mkOption {
+      type = k8sLib.argsType;
+      default = { };
+      description = ''
+        Command-line arguments to pass to kubelet, for the settings that are not
+        part of the configuration file (e.g. node-ip).
+      '';
+      example = {
+        node-ip = "2001:db8::1";
+      };
     };
   };
 
@@ -74,22 +71,24 @@ in
     # We only support cgroups v2 so this is the only driver we support
     kubernetes.kubelet.settings.cgroupDriver = "systemd";
 
+    kubernetes.kubelet.args = {
+      config = kubeletConfigFile;
+      kubeconfig = cfg.kubeconfig;
+    };
+
     systemd.services.kubelet = {
+      description = "Kubernetes node agent";
       wantedBy = [ "multi-user.target" ];
+      after = [ "network-online.target" ];
+      wants = [ "network-online.target" ];
+      path = [ pkgs.util-linux ];
 
       serviceConfig = {
         Type = "notify";
         WatchdogSec = "30s";
         StateDirectory = "kubelet";
 
-        ExecStart =
-          let
-            args = lib.cli.toCommandLineShellGNU { } {
-              config = kubeletConfigFile;
-              kubeconfig = cfg.kubeconfig;
-            };
-          in
-          "${lib.getExe' cfg.package "kubelet"} ${args}";
+        ExecStart = "${lib.getExe' cfg.package "kubelet"} ${k8sLib.toArgs cfg.args}";
 
         Restart = "on-failure";
         RestartSec = "5s";
