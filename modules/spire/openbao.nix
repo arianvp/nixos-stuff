@@ -3,8 +3,9 @@
 # * It serves TLS with an X509-SVID, which it reloads when renewed.
 # * It unseals itself with a static key, from a (possibly encrypted) systemd
 #   credential.
-# * It initializes itself on first start: it enables cert auth and lets its own
-#   SVID manage policies and cert auth roles. The root token is revoked.
+# * It initializes itself on first start: it enables cert auth and lets the
+#   SVIDs of its nodes manage policies and cert auth roles. The root token is
+#   revoked. In a raft cluster, one node bootstraps and the others join it.
 # * openbao-config.service applies policies and cert auth roles on every
 #   start, configuration change and whenever a CA is added to the trust
 #   bundle, so that cert auth trusts the current CAs of the trust domain.
@@ -21,45 +22,45 @@ let
   format = pkgs.formats.json { };
   address = "https://${cfg.dnsName}:${toString cfg.port}";
 
-  # OpenBao reads HCL1, whose JSON form turns every key of an object in a list
-  # into a block of its own, and Nix sorts the keys of objects. Lists of
-  # single-key objects keep the requests apart and in order.
-  initialize = [
-    {
-      spire.request = [
-        {
-          openbao-config-policy = {
-            operation = "update";
-            path = "sys/policies/acl/openbao-config";
-            data.policy = configPolicy;
-          };
-        }
-        {
-          cert-auth = {
-            operation = "update";
-            path = "sys/auth/cert";
-            data.type = "cert";
-          };
-        }
-        {
-          openbao-config-role = {
-            operation = "update";
-            path = "auth/cert/certs/openbao-config";
-            data = roleData cfg.certRoles.openbao-config // {
-              certificate = {
-                eval_type = "string";
-                eval_source = "file";
-                path = svid.paths.bundle;
+  # Requests run in order, but Nix sorts the keys of objects, so they go in
+  # lists
+  initialize =
+    lib.optionals cfg.bootstrap [
+      {
+        spire.request = [
+          {
+            openbao-config-policy = {
+              operation = "update";
+              path = "sys/policies/acl/openbao-config";
+              data.policy = configPolicy;
+            };
+          }
+          {
+            cert-auth = {
+              operation = "update";
+              path = "sys/auth/cert";
+              data.type = "cert";
+            };
+          }
+          {
+            openbao-config-role = {
+              operation = "update";
+              path = "auth/cert/certs/openbao-config";
+              data = roleData cfg.certRoles.openbao-config // {
+                certificate = {
+                  eval_type = "string";
+                  eval_source = "file";
+                  path = svid.paths.bundle;
+                };
               };
             };
-          };
-        }
-      ];
-    }
-  ]
-  ++ lib.optional (cfg.initialize != [ ]) {
-    extra.request = lib.imap1 (i: request: { "request-${toString i}" = request; }) cfg.initialize;
-  };
+          }
+        ];
+      }
+    ]
+    ++ lib.optional (cfg.bootstrap && cfg.initialize != [ ]) {
+      extra.request = lib.imap1 (i: request: { "request-${toString i}" = request; }) cfg.initialize;
+    };
 
   configPolicy = ''
     path "sys/policies/acl/*" {
@@ -122,6 +123,32 @@ in
       default = config.networking.fqdnOrHostName;
       defaultText = lib.literalExpression "config.networking.fqdnOrHostName";
       description = "DNS name of OpenBao, which its X509-SVID must carry.";
+    };
+
+    managers = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ cfg.spiffeID ];
+      defaultText = lib.literalExpression "[ config.spire.openbao.spiffeID ]";
+      description = ''
+        SPIFFE IDs that manage policies and cert auth roles: those of all
+        nodes of the cluster.
+      '';
+    };
+
+    bootstrap = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = ''
+        Whether this node initializes the cluster. Exactly one node of a cluster
+        does; the others join it with {option}`retryJoin`.
+      '';
+    };
+
+    retryJoin = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = "API addresses of the nodes to join the raft cluster of.";
+      example = [ "https://openbao1.example.com:8200" ];
     };
 
     port = lib.mkOption {
@@ -205,8 +232,9 @@ in
       );
       default = [ ];
       description = ''
-        Requests made once, when OpenBao initializes, e.g. to enable secrets
-        engines. See <https://openbao.org/docs/configuration/self-init/>.
+        Requests made once, when the {option}`bootstrap` node initializes the
+        cluster, e.g. to enable secrets engines. See
+        <https://openbao.org/docs/configuration/self-init/>.
       '';
       example = lib.literalExpression ''
         [
@@ -222,7 +250,7 @@ in
 
   config = lib.mkIf cfg.enable {
     spire.openbao.certRoles.openbao-config = {
-      allowedURISANs = [ cfg.spiffeID ];
+      allowedURISANs = cfg.managers;
       policies = [ "openbao-config" ];
       tokenTTL = "5m";
     };
@@ -247,8 +275,17 @@ in
           tls_cert_file = svid.paths.cert;
           tls_key_file = svid.paths.key;
         };
-        inherit initialize;
-        storage.raft.path = "/var/lib/openbao";
+        initialize = lib.mkIf cfg.bootstrap initialize;
+        storage.raft = {
+          path = "/var/lib/openbao";
+        }
+        # OpenBao rejects an empty retry_join, so only join when asked to
+        // lib.optionalAttrs (cfg.retryJoin != [ ]) {
+          retry_join = map (address: {
+            leader_api_addr = address;
+            leader_ca_cert_file = svid.paths.bundle;
+          }) cfg.retryJoin;
+        };
         seal.static = {
           current_key_id = cfg.sealKey.id;
           current_key = "file:///run/credentials/openbao.service/seal-key";
