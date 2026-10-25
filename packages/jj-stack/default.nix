@@ -24,7 +24,12 @@ python3Packages.buildPythonApplication (finalAttrs: {
     rich
   ];
 
-  makeWrapperArgs = [ "--suffix PATH : ${lib.makeBinPath [ jujutsu ]}" ];
+  makeWrapperArgs = [
+    "--suffix"
+    "PATH"
+    ":"
+    (lib.makeBinPath [ jujutsu ])
+  ];
 
   pythonImportsCheck = [ "jj_stack" ];
 
