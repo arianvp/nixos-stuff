@@ -2,7 +2,6 @@
   nixos-hardware,
   lanzaboote,
   homeManagerModule,
-  noctaliaModule,
 }:
 { lib, pkgs, ... }:
 {
@@ -10,7 +9,6 @@
     nixos-hardware.nixosModules.framework-11th-gen-intel
     lanzaboote.nixosModules.lanzaboote
     homeManagerModule
-    noctaliaModule
 
     ./hardware-configuration.nix
     ./pcrlock.nix

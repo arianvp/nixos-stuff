@@ -22,10 +22,6 @@
       url = "github:nix-darwin/nix-darwin/master";
       inputs.nixpkgs.follows = "unstable";
     };
-    noctalia = {
-      url = "github:noctalia-dev/noctalia-shell";
-      inputs.nixpkgs.follows = "unstable";
-    };
     nixbot = {
       url = "github:Mic92/nixbot";
       inputs.nixpkgs.follows = "unstable";
@@ -41,7 +37,6 @@
       nix-darwin,
       nixbot,
       nixos-hardware,
-      noctalia,
       unstable,
       ...
     }:
@@ -56,9 +51,6 @@
       homeManagerModule = importApply ./modules/nixos/home-manager.nix {
         inherit home-manager;
       };
-
-      # Desktop shell; only hosts that have a screen want this.
-      noctaliaModule = importApply ./modules/nixos/noctalia.nix { inherit noctalia; };
 
       # Every host gets ./modules/nixos resp. ./modules/darwin; anything else it
       # needs it imports itself from its own configuration.nix. Modules that need
@@ -103,7 +95,6 @@
               nixos-hardware
               lanzaboote
               homeManagerModule
-              noctaliaModule
               ;
           }
         );
