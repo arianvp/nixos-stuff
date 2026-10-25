@@ -4,7 +4,7 @@
     (pkgs.writeShellScriptBin "systemd-pcrlock" ''exec ${pkgs.systemd}/lib/systemd/systemd-pcrlock "$@"'')
   ];
   boot.lanzaboote = {
-    configurationLimit = 8;
+    configurationLimit = 4;
     measuredBoot = {
       enable = true;
       pcrs = [
