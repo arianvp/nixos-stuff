@@ -65,7 +65,6 @@
   boot.loader.systemd-boot.enable = true;
   boot.loader.timeout = 20;
   boot.loader.efi.canTouchEfiVariables = true;
-  boot.initrd.systemd.enable = true;
 
   system.switch.inhibitors.kernel = "${config.boot.kernelPackages.kernel}";
 
