@@ -23,7 +23,6 @@
   boot.loader.timeout = 20;
   boot.loader.efi.canTouchEfiVariables = true;
   # boot.initrd.compressor = "cat";
-  boot.initrd.systemd.enable = true;
   # system.etc.overlay.enable = true;
   virtualisation.rosetta.enable = true;
   # virtualisation.podman.enable = true;

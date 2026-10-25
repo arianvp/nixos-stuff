@@ -50,7 +50,6 @@
   services.tailscale.enable = true;
   programs.mtr.enable = true;
 
-  boot.initrd.systemd.enable = true;
   # console.earlySetup = lib.mkForce false;
   # boot.consoleLogLevel = 3;
   boot.kernelParams = [

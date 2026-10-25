@@ -1,8 +1,7 @@
 diff --git a/commands/config/providerconfig.go b/commands/config/providerconfig.go
-index 6656bfa..1c38480 100644
 --- a/commands/config/providerconfig.go
 +++ b/commands/config/providerconfig.go
-@@ -22,6 +22,7 @@ import (
+@@ -23,6 +23,7 @@
  	"strings"
  
  	"github.com/openpubkey/openpubkey/providers"
@@ -10,8 +9,8 @@ index 6656bfa..1c38480 100644
  	"gopkg.in/yaml.v3"
  )
  
-@@ -121,6 +122,17 @@ func GitHubProviderConfig() ProviderConfig {
- 	}
+@@ -185,6 +186,17 @@
+ 	return slices.Contains(p.AliasList, GITLAB_CI_ALIAS)
  }
  
 +// NixbotProviderConfig returns the provider config for logging in from a
@@ -28,7 +27,7 @@ index 6656bfa..1c38480 100644
  // NewProviderConfigFromString is a function to create the provider config from a string of the format
  // {alias},{provider_url},{client_id},{client_secret},{scopes}
  func NewProviderConfigFromString(configStr string, hasAlias bool) (ProviderConfig, error) {
-@@ -245,6 +257,12 @@ func (p *ProviderConfig) ToProvider(openBrowser bool) (providers.OpenIdProvider,
+@@ -314,6 +326,12 @@
  		opts.RemoteRedirectURI = p.RemoteRedirectURI
  		opts.OpenBrowser = openBrowser
  		provider = providers.NewHelloOpWithOptions(opts)
@@ -38,14 +37,13 @@ index 6656bfa..1c38480 100644
 +			return nil, fmt.Errorf("error creating nixbot op: %w", err)
 +		}
 +		provider = nixbotOp
- 	} else if strings.HasPrefix(p.Issuer, "https://token.actions.githubusercontent.com") {
+ 	} else if p.Issuer == "https://token.actions.githubusercontent.com" {
  		githubOp, err := providers.NewGithubOpFromEnvironment()
  		if err != nil {
 diff --git a/commands/login.go b/commands/login.go
-index f147941..70cc54b 100644
 --- a/commands/login.go
 +++ b/commands/login.go
-@@ -43,6 +43,7 @@ import (
+@@ -47,6 +47,7 @@
  	"github.com/openpubkey/openpubkey/providers"
  	"github.com/openpubkey/openpubkey/util"
  	"github.com/openpubkey/opkssh/commands/config"
@@ -53,10 +51,10 @@ index f147941..70cc54b 100644
  	"github.com/openpubkey/opkssh/sshcert"
  	"github.com/spf13/afero"
  	"github.com/thediveo/enumflag/v2"
-@@ -201,6 +202,13 @@ func (l *LoginCmd) Run(ctx context.Context) error {
- 	if isGitHubEnvironment() {
- 		l.Config.Providers = append(l.Config.Providers, config.GitHubProviderConfig())
+@@ -228,6 +229,14 @@
+ 		l.Config.Providers = append(l.Config.Providers, config.GitlabCiProviderConfig(gitlabCiIssuer()))
  	}
+ 
 +	if nixbot.IsEnvironment() {
 +		issuer, err := nixbot.IssuerFromEnvironment()
 +		if err != nil {
@@ -64,12 +62,12 @@ index f147941..70cc54b 100644
 +		}
 +		l.Config.Providers = append(l.Config.Providers, config.NixbotProviderConfig(issuer, os.Getenv(nixbot.AudienceEnvVar)))
 +	}
- 
++
  	var provider providers.OpenIdProvider
  	if l.overrideProvider != nil {
+ 		provider = *l.overrideProvider
 diff --git a/internal/nixbot/op.go b/internal/nixbot/op.go
 new file mode 100644
-index 0000000..426c113
 --- /dev/null
 +++ b/internal/nixbot/op.go
 @@ -0,0 +1,223 @@
@@ -199,11 +197,11 @@ index 0000000..426c113
 +}
 +
 +func (o *Op) PublicKeyByKeyId(ctx context.Context, keyID string) (*discover.PublicKeyRecord, error) {
-+	return o.publicKeyFinder.ByKeyID(ctx, o.issuer, keyID)
++	return o.publicKeyFinder.ByKeyID(ctx, o.issuer, keyID, true)
 +}
 +
 +func (o *Op) PublicKeyByToken(ctx context.Context, token []byte) (*discover.PublicKeyRecord, error) {
-+	return o.publicKeyFinder.ByToken(ctx, o.issuer, token)
++	return o.publicKeyFinder.ByToken(ctx, o.issuer, token, true)
 +}
 +
 +func (o *Op) RequestTokens(ctx context.Context, cic *clientinstance.Claims) (*simpleoidc.Tokens, error) {
@@ -298,7 +296,6 @@ index 0000000..426c113
 +}
 diff --git a/internal/nixbot/op_test.go b/internal/nixbot/op_test.go
 new file mode 100644
-index 0000000..870406f
 --- /dev/null
 +++ b/internal/nixbot/op_test.go
 @@ -0,0 +1,223 @@
@@ -526,23 +523,22 @@ index 0000000..870406f
 +	require.ErrorContains(t, err, "403")
 +}
 diff --git a/policy/providerloader.go b/policy/providerloader.go
-index 52ff87a..c285f73 100644
 --- a/policy/providerloader.go
 +++ b/policy/providerloader.go
-@@ -22,6 +22,7 @@ import (
- 
+@@ -26,6 +26,7 @@
+ 	"github.com/openpubkey/openpubkey/pktoken/clientinstance"
  	"github.com/openpubkey/openpubkey/providers"
  	"github.com/openpubkey/openpubkey/verifier"
 +	"github.com/openpubkey/opkssh/internal/nixbot"
  	"github.com/openpubkey/opkssh/policy/files"
  	"github.com/spf13/afero"
  )
-@@ -95,6 +96,8 @@ func (p *ProviderPolicy) CreateVerifier() (*verifier.Verifier, error) {
- 			opts.Issuer = row.Issuer
- 			opts.ClientID = row.ClientID
- 			provider = providers.NewGitlabOpWithOptions(opts)
-+		} else if strings.HasPrefix(row.ClientID, nixbot.AudiencePrefix) {
-+			provider = nixbot.NewOp(row.Issuer, row.ClientID)
- 		} else if row.Issuer == "https://token.actions.githubusercontent.com" {
- 			provider = providers.NewGithubOp(row.Issuer, "")
- 		} else {
+@@ -96,6 +97,8 @@
+ 		return providers.NewGithubOp(row.Issuer, "")
+ 	} else if providers.IsForgejoIssuer(row.Issuer) {
+ 		return providers.NewForgejoOp(row.Issuer, "", "")
++	} else if strings.HasPrefix(row.ClientID, nixbot.AudiencePrefix) {
++		return nixbot.NewOp(row.Issuer, row.ClientID)
+ 	} else if strings.HasPrefix(row.ClientID, "OPENPUBKEY-PKTOKEN:GITLAB-CI:") {
+ 		// Do the gitlab checks last so that github or forgejo issuers
+ 		// checks happen first. This is to avoid a case where someone has
