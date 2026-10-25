@@ -167,26 +167,6 @@
         "url": "https://channels.nixos.org/nixos-unstable/nixexprs.tar.xz"
       }
     },
-    "noctalia": {
-      "inputs": {
-        "nixpkgs": [
-          "unstable"
-        ]
-      },
-      "locked": {
-        "lastModified": 1791541573,
-        "narHash": "sha256-mtndoRYrdI7vhnsow92ij70CbDYkkt7Owf9V/YZlqVE=",
-        "owner": "noctalia-dev",
-        "repo": "noctalia-shell",
-        "rev": "a0ef2d027b2cf3a750e41749a10706969cdde663",
-        "type": "github"
-      },
-      "original": {
-        "owner": "noctalia-dev",
-        "repo": "noctalia-shell",
-        "type": "github"
-      }
-    },
     "pre-commit": {
       "inputs": {
         "flake-compat": "flake-compat",
@@ -217,7 +197,6 @@
         "nix-darwin": "nix-darwin",
         "nixbot": "nixbot",
         "nixos-hardware": "nixos-hardware",
-        "noctalia": "noctalia",
         "stable": "stable",
         "unstable": "unstable"
       }
