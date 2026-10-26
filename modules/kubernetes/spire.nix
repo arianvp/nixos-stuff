@@ -374,7 +374,9 @@ in
       (lib.mkIf k8s.kube-controller-manager.enable (
         lib.mkMerge [
           (svidFor "kube-controller-manager")
-          (entry "kube-controller-manager" "k8s/system/kube-controller-manager" { })
+          # An admin, as every controller authenticates as the controller
+          # manager itself rather than as a service account of its own
+          (entry "kube-controller-manager" "k8s/admin/kube-controller-manager" { })
           {
             kubernetes.kubeconfigs.kube-controller-manager = svidKubeconfig svids.kube-controller-manager;
             kubernetes.kube-controller-manager.args =
@@ -387,7 +389,6 @@ in
                 authorization-kubeconfig = kubeconfig;
                 cluster-name = k8s.clusterName;
                 root-ca-file = svids.kube-controller-manager.paths.bundle;
-                use-service-account-credentials = true;
               };
           }
         ]
