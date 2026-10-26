@@ -1,8 +1,10 @@
 # What is left of the old spire-join-token test after join_token attestation
 # itself moved upstream (nixos/tests/spire.nix). The join token here is only a
-# means of bootstrapping the agents; what this test actually covers is the two
+# means of bootstrapping the agents; what this test actually covers is the
 # pieces that are not upstream: spire-controller-manager static entries, and
-# OpenBao authenticating workloads by their SPIFFE URI SAN.
+# OpenBao bootstrapped from SPIRE (modules/spire/openbao.nix), which
+# initializes and unseals itself and authenticates workloads by their SPIFFE
+# URI SAN, also after the SPIRE CA rotates.
 { pkgs, lib, ... }:
 let
   trustDomain = "example.com";
@@ -39,67 +41,72 @@ let
             KeyManager.memory.plugin_data = { };
             NodeAttestor.join_token.plugin_data = { };
             WorkloadAttestor.systemd.plugin_data = { };
-            WorkloadAttestor.unix.plugin_data = {
-            };
+            WorkloadAttestor.unix.plugin_data = { };
           };
         };
+      };
+
+      environment.systemPackages = [
+        pkgs.openbao
+        pkgs.jq
+      ];
+      environment.variables = {
+        VAULT_ADDR = "https://openbao.${trustDomain}:8200";
+        VAULT_FORMAT = "json";
       };
     };
 in
 {
   name = "spire-openbao";
-  globalTimeout = 150;
+  globalTimeout = 420;
 
   defaults.networking.domain = trustDomain;
 
   nodes = {
-    openbao =
-      { config, ... }:
-      {
-        imports = [ spireAgent ];
+    openbao = {
+      imports = [
+        spireAgent
+        ../modules/spire/openbao.nix
+      ];
 
-        networking.firewall.allowedTCPPorts = [ 8200 ];
-
-        # ExecStartPre needs an SVID, which only exists once the agent has
-        # attested; the test script starts openbao after that.
-        systemd.services.openbao.wantedBy = lib.mkForce [ ];
-
-        # TODO: The trust bundle expires and should be refreshed periodically
-        # and openbao need to be reloaded
-        systemd.services.openbao.environment.SPIFFE_ENDPOINT_SOCKET =
-          config.services.spire.agent.settings.agent.socket_path;
-        systemd.services.openbao.serviceConfig.ExecStartPre =
-          "${lib.getExe' pkgs.spire "spire-agent"} api fetch x509 -socketPath $SPIFFE_ENDPOINT_SOCKET -write $RUNTIME_DIRECTORY";
-
-        services.openbao = {
-          enable = true;
-          settings = {
-            ui = true;
-            listener = {
-              default = {
-                type = "tcp";
-                tls_cert_file = "/run/openbao/svid.0.pem";
-                tls_key_file = "/run/openbao/svid.0.key";
-                address = "[::]:8200";
-                cluster_address = "[::]:8201";
-              };
-            };
-            api_addr = "https://openbao.${trustDomain}:8200";
-            cluster_addr = "https://openbao.${trustDomain}:8201";
-            storage.raft.path = "/var/lib/openbao";
+      spire.openbao = {
+        enable = true;
+        spiffeID = "spiffe://${trustDomain}/service/openbao";
+        dnsName = "openbao.${trustDomain}";
+        # A real key would be encrypted with systemd-creds
+        sealKey.file = pkgs.writeText "openbao-seal-key" "0f1e2d3c4b5a69788796a5b4c3d2e1f00112233445566778899aabbccddeeff0";
+        policies.access-foo = ''
+          path "kv/foo" {
+            capabilities = ["read"]
+          }
+        '';
+        certRoles = {
+          agent = {
+            allowedURISANs = [ "spiffe://${trustDomain}/service/agent" ];
+            policies = [ "access-foo" ];
+          };
+          admin = {
+            allowedURISANs = [ "spiffe://${trustDomain}/user/admin" ];
+            policies = [ "access-foo" ];
           };
         };
-
-        environment.variables = {
-          VAULT_ADDR = config.services.openbao.settings.api_addr;
-          VAULT_FORMAT = "json";
-          VAULT_CACERT = "/run/openbao/bundle.0.pem";
-          VAULT_CLIENT_CERT = "/run/openbao/svid.0.pem";
-          VAULT_CLIENT_KEY = "/run/openbao/svid.0.key";
-        };
+        initialize = [
+          {
+            operation = "update";
+            path = "sys/mounts/kv";
+            data.type = "kv";
+          }
+          {
+            operation = "update";
+            path = "kv/foo";
+            data.secret = "ubersecret";
+          }
+        ];
       };
+    };
 
     server = {
+      environment.systemPackages = [ pkgs.openssl ];
       imports = [
         ../modules/spire/controller-manager.nix
       ];
@@ -107,7 +114,7 @@ in
         enable = true;
         staticEntries = {
           openbao.spec = {
-            selectors = [ "systemd:id:openbao.service" ];
+            selectors = [ "systemd:id:openbao-svid.service" ];
             parentID = "spiffe://${trustDomain}/server/openbao";
             spiffeID = "spiffe://${trustDomain}/service/openbao";
             dnsNames = [ "openbao.${trustDomain}" ];
@@ -118,11 +125,11 @@ in
             spiffeID = "spiffe://${trustDomain}/service/agent";
             dnsNames = [ "agent.${trustDomain}" ];
           };
+          # Not uid 0, which OpenBao's spiffe-helper runs as on that node
           admin.spec = {
-            selectors = [ "unix:uid:0" ];
+            selectors = [ "systemd:id:backdoor.service" ];
             parentID = "spiffe://${trustDomain}/server/openbao";
             spiffeID = "spiffe://${trustDomain}/user/admin";
-            dnsNames = [ "admin.openboa.${trustDomain}" ]; # https://github.com/hashicorp/vault/issues/6820
           };
         };
       };
@@ -130,7 +137,13 @@ in
         enable = true;
         openFirewall = true;
         settings = {
-          server.trust_domain = trustDomain;
+          server = {
+            trust_domain = trustDomain;
+            # SPIRE prepares the next CA after half of this and switches to it
+            # after five sixths, all within the test
+            ca_ttl = "3m";
+            default_x509_svid_ttl = "1m";
+          };
           plugins = {
             KeyManager.memory.plugin_data = { };
             DataStore.sql.plugin_data = {
@@ -138,19 +151,25 @@ in
               connection_string = "$STATE_DIRECTORY/datastore.sqlite3";
             };
             NodeAttestor.join_token.plugin_data = { };
+            # OpenBao names identity aliases after the subject CN, which SPIRE
+            # only sets from DNS names
+            CredentialComposer.x509 = {
+              plugin_cmd = lib.getExe pkgs.spire-credentialcomposer-x509;
+              plugin_data_file = "${(pkgs.formats.json { }).generate "composer.json" {
+                subjects = [
+                  {
+                    spiffe_id = "(spiffe://.+)";
+                    common_name = "$1";
+                  }
+                ];
+              }}";
+            };
           };
         };
       };
     };
 
-    agent = {
-      imports = [ spireAgent ];
-      environment.systemPackages = [ pkgs.openbao ];
-      environment.variables = {
-        VAULT_ADDR = "https://openbao.${trustDomain}:8200";
-        VAULT_FORMAT = "json";
-      };
-    };
+    agent = spireAgent;
   };
 
   testScript =
@@ -169,70 +188,55 @@ in
         with open(agent.state_dir / "join_token", "w") as f:
             f.write(token)
 
+      def read_secret(machine, role):
+        """Logs in with the machine's SVID and reads the secret"""
+        machine.succeed("mkdir -p svid && spire-agent api fetch x509 -socketPath $SPIFFE_ENDPOINT_SOCKET -write svid > /dev/null")
+        return json.loads(machine.succeed(
+            "export VAULT_CACERT=svid/bundle.0.pem"
+            f" && bao login -method=cert -client-cert=svid/svid.0.pem -client-key=svid/svid.0.key name={role} > /dev/null"
+            " && bao kv get -mount=kv -field=secret foo"
+        ))
 
       with subtest("SPIRE controller manager comes up against the server"):
           server.wait_for_unit("spire-server.service", timeout=60)
           server.wait_until_succeeds("spire-server healthcheck -socketPath ${adminSocket}", timeout=30)
           server.wait_for_unit("spire-controller-manager.service", timeout=60)
+          server.succeed("spire-server bundle show -socketPath ${adminSocket} > old-ca.pem")
 
-      with subtest("Bootstrap SPIRE agent on agent node"):
+      with subtest("Bootstrap SPIRE agents"):
           provision(agent, "spiffe://example.com/server/agent")
-          agent.wait_for_unit("spire-agent.service", timeout=60)
-          agent.wait_until_succeeds("spire-agent healthcheck -socketPath $SPIFFE_ENDPOINT_SOCKET", timeout=30)
-
-      with subtest("Bootstrap SPIRE agent on openbao node"):
           provision(openbao, "spiffe://example.com/server/openbao")
-          openbao.wait_for_unit("spire-agent.service", timeout=60)
-          openbao.wait_until_succeeds("spire-agent healthcheck -socketPath $SPIFFE_ENDPOINT_SOCKET", timeout=30)
+          for m in [agent, openbao]:
+              m.wait_for_unit("spire-agent.service", timeout=60)
+              m.wait_until_succeeds("spire-agent healthcheck -socketPath $SPIFFE_ENDPOINT_SOCKET", timeout=30)
 
-      with subtest("Initialize and unseal OpenBao"):
-          openbao.systemctl("start openbao.service")
-          openbao.wait_for_unit("openbao.service", timeout=60)
+      with subtest("OpenBao initializes and unseals itself"):
+          openbao.wait_for_unit("openbao.service", timeout=120)
+          openbao.wait_for_unit("openbao-config.service", timeout=60)
+          status = json.loads(openbao.succeed("VAULT_CACERT=/run/openbao-svid/bundle.pem bao status"))
+          assert status["initialized"] and not status["sealed"], status
 
-          # Initialize OpenBao
-          init_output = json.loads(openbao.succeed("bao operator init"))
+      with subtest("Workloads authenticate with their X509-SVID"):
+          assert read_secret(agent, "agent") == "ubersecret"
+          assert read_secret(openbao, "admin") == "ubersecret"
 
-          # Unseal with required threshold of keys
-          for key in init_output["unseal_keys_b64"][:init_output["unseal_threshold"]]:
-              openbao.succeed(f"bao operator unseal {key}")
+      with subtest("Roles only admit their SPIFFE IDs"):
+          agent.fail(
+              "VAULT_CACERT=svid/bundle.0.pem bao login -method=cert"
+              " -client-cert=svid/svid.0.pem -client-key=svid/svid.0.key name=admin"
+          )
 
-          # Login with root token
-          openbao.succeed(f"bao login {init_output['root_token']}")
-          print(f"OpenBao root token: {init_output['root_token']}")
+      with subtest("OpenBao unseals itself after a restart"):
+          openbao.systemctl("restart openbao.service")
+          openbao.wait_until_succeeds(
+              "VAULT_CACERT=/run/openbao-svid/bundle.pem bao status | jq -e '.sealed == false'", timeout=60
+          )
+          assert read_secret(agent, "agent") == "ubersecret"
 
-      with subtest("Configure OpenBao secrets and policies"):
-          # Enable KV secrets engine and create test secret
-          openbao.succeed("bao secrets enable -version=2 kv")
-          openbao.succeed("bao kv put -mount=kv foo secret=ubersecret")
-
-          # Create policy for accessing the secret
-          openbao.succeed("echo 'path \"kv/data/foo\" { capabilities = [\"read\"]}' | bao policy write access-foo -")
-
-      with subtest("Configure certificate authentication"):
-          # Enable and configure cert auth method
-          openbao.succeed("bao auth enable cert")
-
-
-          # TODO: There's a problem here. The spire-server's bundle rotates!
-          # We have to write to write this setting every time that happens
-          # Configure certificate roles for different SPIFFE IDs
-          openbao.succeed("bao write auth/cert/certs/openbao certificate=@/run/credentials/@system/spire.trust_bundle allowed_uri_sans=spiffe://example.com/service/openbao token_policies=access-foo")
-          openbao.succeed("bao write auth/cert/certs/agent certificate=@/run/credentials/@system/spire.trust_bundle allowed_uri_sans=spiffe://example.com/service/agent token_policies=access-foo")
-          openbao.succeed("bao write auth/cert/certs/admin certificate=@/run/credentials/@system/spire.trust_bundle allowed_uri_sans=spiffe://example.com/user/admin token_policies=access-foo")
-
-      with subtest("Test certificate authentication from openbao node"):
-          # Test direct cert auth on openbao node
-          openbao.succeed("bao login -method=cert")
-          openbao.succeed("bao kv get -mount=kv foo")
-
-      with subtest("Test certificate authentication from agent node"):
-          # Fetch SVID certificates on agent
-          agent.succeed("spire-agent api fetch x509 -socketPath $SPIFFE_ENDPOINT_SOCKET -write .")
-
-          # Test cert auth using fetched certificates
-          agent.succeed("bao login -method=cert -ca-cert=bundle.0.pem -client-cert=svid.0.pem -client-key=svid.0.key")
-          agent.succeed("VAULT_CACERT=bundle.0.pem bao kv get -mount=kv foo")
-
+      with subtest("Cert auth trusts the new CA after SPIRE rotates it"):
+          # Nothing may rely on the old CA once it has expired
+          server.wait_until_fails("openssl x509 -in old-ca.pem -noout -checkend 0", timeout=300)
+          assert read_secret(agent, "agent") == "ubersecret"
+          assert read_secret(openbao, "admin") == "ubersecret"
     '';
-
 }
