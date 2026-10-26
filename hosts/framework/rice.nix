@@ -15,6 +15,13 @@
   # Tradeoff: the running shell stays on the old version until logout.
   systemd.user.services.noctalia.restartIfChanged = false;
 
+  # Everything that is not handed off over D-Bus gets forked from the desktop
+  # entry and inherits noctalia's cgroup; route those through systemd-run.
+  home-manager.users.arian.xdg.configFile."noctalia/nix.toml".text = ''
+    [shell]
+    launch_apps_as_systemd_services = true
+  '';
+
   # noctalia only talks to an app over D-Bus once something else already owns
   # the name, so ghostty's shipped unit never gets activated and the primary
   # ends up a child of the launcher. Start the unit with the session so it owns
