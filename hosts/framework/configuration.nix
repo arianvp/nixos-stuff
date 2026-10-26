@@ -3,7 +3,12 @@
   lanzaboote,
   homeManagerModule,
 }:
-{ lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 {
   imports = [
     nixos-hardware.nixosModules.framework-11th-gen-intel
@@ -61,6 +66,11 @@
   boot.lanzaboote.enable = true;
   boot.lanzaboote.pkiBundle = "/var/lib/sbctl";
   boot.loader.efi.canTouchEfiVariables = true;
+
+  system.switch.inhibitors = {
+    kernel = "${config.boot.kernelPackages.kernel}";
+    systemd = "${config.systemd.package}";
+  };
 
   boot.extraModprobeConfig = ''
     options iwlwifi disable_11ax=Y
