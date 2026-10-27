@@ -20,5 +20,4 @@
     config.lib.file.mkOutOfStoreSymlink "${config.repoRoot}/modules/home/jj/conf.d";
 
   programs.git.ignores = [ ".work" ];
-  programs.buck2.buckconfigs."00-ignore".project.ignore = [ ".jj" ".git" ];
 }

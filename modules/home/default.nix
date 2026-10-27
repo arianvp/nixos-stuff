@@ -11,7 +11,6 @@
     ./nvim
     ./claude-code
     ./direnv.nix
-    ./buck2.nix
     ./linux.nix
     ./darwin.nix
   ];
