@@ -99,6 +99,8 @@
     };
 
     settings = {
+      model = "claude-opus-5-5";
+
       sandbox = {
         # Disabled until bwrap stops failing with EROFS when masking .claude/settings.json
         # in worktrees under the allowRead ~/Projects re-bind.
