@@ -1,0 +1,9 @@
+# Commits that must never reach a remote: scratch work, and local integration
+# state such as the megamerges used to deploy several changes at once.
+[revset-aliases]
+"wip()" = 'description(glob:"wip:*")'
+"private()" = 'description(glob:"private:*")'
+"blacklist()" = "wip() | private()"
+
+[git]
+private-commits = "blacklist()"
