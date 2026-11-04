@@ -1,0 +1,32 @@
+# A megamerge is an empty octopus merge over several independent changes, kept
+# so they can be built and deployed together before any of them lands. It is
+# local integration state and is never pushed to a remote.
+[revset-aliases]
+"megamerges()" = 'merges() & private()'
+# Those reachable from the merge itself, from one of its arms, or from a commit
+# above it, which is what tells several megamerges apart.
+"megamerges_connected_to(to)" = 'megamerges() & (::to | to::)'
+
+[aliases]
+megamerge-new = ["new", "--message", "private: megamerge"]
+# Run from the megamerge: adds another arm. Adding an edge means restating the
+# parents that are already there, so both aliases below are written against @
+# rather than taking the merge as an argument -- an alias can append arguments
+# but cannot substitute them into a revset.
+megamerge-add = [
+  "rebase",
+  "--revision",
+  "@",
+  "--destination",
+  "parents(@)",
+  "--destination",
+]
+# Run from an arm: drops it from the megamerge. Neither alias moves the arm
+# onto trunk(), so an arm that is itself a stack keeps its base.
+megamerge-remove = [
+  "rebase",
+  "--revision",
+  "megamerges_connected_to(@)",
+  "--destination",
+  "parents(megamerges_connected_to(@)) ~ @",
+]
