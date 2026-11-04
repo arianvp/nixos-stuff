@@ -1,5 +1,12 @@
 { lib, pkgs, ... }:
 lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
+  # sshfs is here for ad-hoc mounts; there is deliberately no permanent mount
+  # unit for altra. A user manager cannot set up autofs (that needs
+  # CAP_SYS_ADMIN), so such a unit can only ever be an eager mount, and a
+  # dropped connection then leaves sshfs mounted and serving EIO. Anything
+  # enumerating mounts stalls on that: gvfs-udisks2-volume-monitor sniffs the
+  # mount for autorun.inf and friends, each probe blocking up to ~2s, which
+  # delays every nautilus launch by several seconds.
   home.packages = [ pkgs.sshfs ];
 
   # eDP-1 is 1504 logical px wide, so a half-screen niri column is 728 px.
@@ -7,25 +14,5 @@ lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
   programs.ghostty = {
     enable = true;
     settings.font-size = 11;
-  };
-
-  systemd.user = {
-    # TODO: Seems automounts don't work unpriveleged
-    # Apr 27 11:43:27 framework systemd[2194]: Failed to mount systemd-2194 (type autofs) on /home/arian/altra (0 "fd=98,pgrp=2194,minproto=5,maxproto=5,direct"): Operation not permitted
-    # Apr 27 11:43:27 framework systemd[2194]: home-arian-altra.automount: Failed with result 'resources'.
-    # Apr 27 11:43:27 framework systemd[2194]: Failed to set up automount home-arian-altra.automount.
-    automounts.home-arian-altra = {
-      Automount.Where = "/home/arian/altra";
-      Install.WantedBy = [ "default.target" ];
-    };
-    mounts.home-arian-altra = {
-      Install.WantedBy = [ "default.target" ];
-      Mount = {
-        Where = "/home/arian/altra";
-        What = "arian@altra.ygg.nixos.sh:/home/arian";
-        Type = "fuse.sshfs";
-        Options = "_netdev,user,delay_connect,reconnect,ServerAliveInterval=15,dir_cache=yes,idmap=user,follow_symlinks,transform_symlinks,compression=yes";
-      };
-    };
   };
 }
