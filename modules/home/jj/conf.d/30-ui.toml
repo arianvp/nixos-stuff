@@ -4,3 +4,8 @@ diff-editor = ":builtin"
 
 [snapshot]
 auto-track = "none()"
+
+[revsets]
+# Pin the megamerge to the leftmost column so the integration graph keeps its
+# shape as @ moves between its parents; without one, keep jj's default of @.
+log-graph-prioritize = "coalesce(description(glob:'private: megamerge*'), present(@))"
