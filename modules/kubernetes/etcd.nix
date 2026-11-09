@@ -8,6 +8,58 @@
 let
   cfg = config.kubernetes.etcd;
   format = pkgs.formats.yaml { };
+
+  # An empty member that its peers know as started refuses to start with only
+  # "has already been bootstrapped", which etcd decides the same way: the
+  # peers have its client URLs. Say what to do instead.
+  checkBootstrapped = pkgs.writeShellApplication {
+    name = "etcd-check-bootstrapped";
+    runtimeInputs = [
+      pkgs.curl
+      pkgs.jq
+      pkgs.yq-go
+    ];
+    text = ''
+      config=$1
+      get() {
+        yq ".[\"$1\"] // \"\"" "$config"
+      }
+      getTLS() {
+        yq ".[\"peer-transport-security\"][\"$1\"] // \"\"" "$config"
+      }
+
+      dataDir=$(get data-dir)
+      # Like etcd, go by the WAL: a failed start leaves the rest of member/ behind
+      if [ -d "$dataDir/member/wal" ] || [ "$(get initial-cluster-state)" = existing ]; then
+        exit 0
+      fi
+
+      name=$(get name)
+      tls=()
+      for opt in cacert:trusted-ca-file cert:cert-file key:key-file; do
+        file=$(getTLS "''${opt#*:}")
+        if [ -n "$file" ]; then
+          tls+=("--''${opt%%:*}" "$file")
+        fi
+      done
+
+      IFS=, read -ra peers <<< "$(get initial-cluster)"
+      for peer in "''${peers[@]}"; do
+        peerName=''${peer%%=*}
+        url=''${peer#*=}
+        if [ "$peerName" = "$name" ]; then
+          continue
+        fi
+        # etcd's peer listener fails HTTP/2 requests from curl
+        if curl --silent --fail --http1.1 --max-time 3 "''${tls[@]}" "$url/members" \
+          | jq -e --arg name "$name" 'any(.[]; .name == $name and (.clientURLs | length) > 0)' > /dev/null
+        then
+          echo "$dataDir has no etcd data, but member $peerName knows $name as a started member of its cluster, so etcd would refuse to start with \"has already been bootstrapped\". Replace this member as described in modules/kubernetes/runbooks/etcd.md, section 4 \"Replace a member that lost its disk\"." >&2
+          exit 1
+        fi
+      done
+    '';
+  };
 in
 {
   options.kubernetes.etcd = {
@@ -30,6 +82,22 @@ in
             default = "/var/lib/etcd";
             readOnly = true;
             description = "Path to the data directory.";
+          };
+          initial-cluster-state = lib.mkOption {
+            type = lib.types.enum [
+              "new"
+              "existing"
+            ];
+            default = "new";
+            description = ''
+              `new` to found a cluster with the members of `initial-cluster`,
+              `existing` to join a running cluster after
+              `etcdctl member add`. etcd reads it only when the data
+              directory is empty, so changing it on a running member does
+              nothing. A member with an empty data directory and `new` does
+              not start if its peers already know it as started; see
+              `modules/kubernetes/runbooks/etcd.md`.
+            '';
           };
           listen-metrics-urls = lib.mkOption {
             type = lib.types.str;
@@ -80,8 +148,13 @@ in
       after = [ "network-online.target" ];
       wants = [ "network-online.target" ];
       restartTriggers = [ cfg.configFile ];
+      # A member that keeps failing lands in "failed" after about a minute
+      # instead of restarting forever unnoticed
+      startLimitBurst = 10;
+      startLimitIntervalSec = 120;
       serviceConfig = {
         Type = "notify";
+        ExecStartPre = "${lib.getExe checkBootstrapped} ${cfg.configFile}";
         ExecStart = "${lib.getExe' cfg.package "etcd"} --config-file ${cfg.configFile}";
         StateDirectory = "etcd";
         StateDirectoryMode = "0700";

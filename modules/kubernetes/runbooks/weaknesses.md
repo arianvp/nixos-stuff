@@ -134,8 +134,9 @@ restored keys), longer SVID TTLs, and alerts on SVID age.
   consumers use `Requires=`. If SPIRE is more than ~2 min late at boot, etcd,
   kube-apiserver, kube-addons and others fail with "Dependency failed" and are
   never retried. The worst-order cold start converged with only ~90 s to spare.
-- A wiped etcd member crash-loops every 5 s forever (`member … has already been
-  bootstrapped`); it fails safely, but nothing ever surfaces it.
+- Fixed: a wiped etcd member checks its peers before starting, logs that it
+  needs the replacement procedure (runbook §4), and ends up `failed` instead of
+  crash-looping. *Test:* `ops-etcd` "replace a member that lost its disk".
 
 *Fix:* `startLimitIntervalSec = 0` on agents; `Wants=` plus a retry loop, or
 `Restart=` on consumers, instead of a one-shot `Requires=` chain; a start limit

@@ -208,14 +208,15 @@ in
         assert after["id"] == before["id"], (before, after)
         assert after["x509svid_serial_number"] != before["x509svid_serial_number"], (before, after)
         # With the shipped config (initial-cluster-state "new") the empty member
-        # asks its peers whether it was bootstrapped before and refuses to start.
-        # That is safe, but systemd restarts it every 5s forever, and nothing
-        # tells the operator what to do.
-        etcd3.wait_until_succeeds(
-            "journalctl -u etcd.service --no-pager -o cat | grep -q 'has already been bootstrapped'", timeout=60
-        )
-        etcd3.wait_until_succeeds("[ $(systemctl show -P NRestarts etcd.service) -ge 2 ]", timeout=30)
-        etcd3.systemctl("stop etcd.service")
+        # is known to its peers as started, so it refuses to start, points at
+        # this procedure, and gives up after about a minute
+        started = time.monotonic()
+        etcd3.wait_until_succeeds("systemctl is-failed etcd.service", timeout=150)
+        print(f"etcd3 failed after {time.monotonic() - started:.1f}s")
+        assert etcd3.succeed("systemctl show -P Result etcd.service").strip() == "start-limit-hit"
+        out = etcd3.succeed("journalctl -u etcd.service --no-pager -o cat")
+        assert "Replace this member as described in modules/kubernetes/runbooks/etcd.md" in out, out
+        etcd3.succeed("systemctl reset-failed etcd.service")
         out = ctl("member list", ep(etcd1))
         assert "etcd3" in out, out
 

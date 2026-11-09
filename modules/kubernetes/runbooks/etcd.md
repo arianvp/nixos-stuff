@@ -5,12 +5,15 @@ SPIRE issues their certificates (`modules/kubernetes/spire.nix`). Facts that
 matter for every procedure:
 
 - Data dir: `/var/lib/etcd` on each member. Unit: `etcd.service`, runs as root,
-  `Restart=on-failure` every 5s with no limit.
+  `Restart=on-failure` every 5s. After 10 starts in 2 minutes it stays
+  `failed` (`Result=start-limit-hit`); find out why in `journalctl -u etcd`,
+  fix it, then `systemctl reset-failed etcd.service` before starting it again.
 - Config: `/etc/systemd/system/etcd.service` → `--config-file /nix/store/...-etcd.yaml`.
   Flags and `ETCD_*` variables are **ignored**. Change settings through
   `kubernetes.etcd.settings`, never by hand.
-- `initial-cluster` is static and `initial-cluster-state` is unset (`new`).
-  Both only matter when the data dir is empty.
+- `initial-cluster` is static and `initial-cluster-state` defaults to `new`
+  (`kubernetes.etcd.settings.initial-cluster-state`). Both only matter when
+  the data dir is empty.
 - Peers must present DNS SAN `etcd-peer`. Clients must present DNS SAN
   `kube-apiserver` (the API servers) or `etcd-admin` (operators, backups,
   monitoring; `kubernetes.spire.etcdAdmins`). etcd auth is off, so **whoever
@@ -142,18 +145,21 @@ Tested by: `ops-etcd` subtest 'quorum loss and recovery'.
 ## 4. Replace a member that lost its disk
 
 **When**: `/var/lib/etcd` on one member is gone or corrupt (disk replaced,
-`panic`s about the WAL or db), the node was reinstalled, or the journal shows
-`member <id> has already been bootstrapped` in a restart loop.
+`panic`s about the WAL or db), the node was reinstalled, or `etcd.service` is
+`failed` and its journal says `/var/lib/etcd has no etcd data, but member
+etcdM knows etcdN as a started member of its cluster ...`.
 **Preconditions**: the other two members are healthy (section 1). You will
 run on 2 voting members until step 6: losing another one in between loses quorum.
 
 Starting the member with the shipped config on an empty disk does **not**
-work: it refuses with `has already been bootstrapped` and systemd restarts it
-every 5s forever. That loop is harmless but tells you nothing more.
+work: a pre-start check asks the peers, finds that they know the member as
+started, logs the message above and fails; etcd itself would refuse with
+`has already been bootstrapped`. After about a minute of retries the unit
+stays `failed`.
 
 1. Stop it and clear what is left:
    ```sh
-   ssh etcdN.example.com 'systemctl stop etcd.service; rm -rf /var/lib/etcd'
+   ssh etcdN.example.com 'systemctl stop etcd.service; systemctl reset-failed etcd.service; rm -rf /var/lib/etcd'
    ```
 2. Remove the old member (the ID is the first column):
    ```sh
@@ -187,7 +193,8 @@ machine, update its node alias first (section 2 note).
 healthy 2-member cluster. After step 5, treat it like any member.
 Tested by: `ops-etcd` subtest 'replace a member that lost its disk' (etcd3 loses
 `/var/lib/etcd` and `/var/lib/spire/agent` and reboots; its agent comes back
-under the same agent ID with a new SVID, then steps 1 to 7).
+under the same agent ID with a new SVID, etcd ends up `failed` with the
+message above, then steps 1 to 7).
 
 ## 5. Snapshot backup and full restore
 
