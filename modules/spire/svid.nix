@@ -129,7 +129,16 @@ in
 
   config = {
     systemd.services = lib.mkMerge (
-      lib.mapAttrsToList (
+      [
+        (lib.mkIf (cfg != { }) {
+          # Every SVID depends on the agent, so it never gives up
+          spire-agent = {
+            startLimitIntervalSec = 0;
+            serviceConfig.RestartSec = "5s";
+          };
+        })
+      ]
+      ++ lib.mapAttrsToList (
         name: svid:
         let
           unitName = lib.removeSuffix ".service" svid.unit;
@@ -152,7 +161,10 @@ in
                 done
                 [ -e ${knownBundle} ] || cp ${svid.paths.bundle} ${knownBundle}
               '';
-              TimeoutStartSec = "2min";
+              # A failed start job fails every unit that requires this one, and
+              # nothing starts them again, so wait for the SVID however long
+              # the agent takes to get it
+              TimeoutStartSec = "infinity";
               Restart = "always";
               RestartSec = "5s";
               Group = svid.group;

@@ -28,9 +28,9 @@ Facts that matter for every procedure:
 - **Agents** (`services.spire.agent`): unit `spire-agent.service`, user
   `spire-agent`, state in `/var/lib/spire/agent` (cached trust bundle, agent
   SVID, and with `KeyManager "disk"` the agent key). Workload API socket:
-  `/run/spire/agent/public/api.sock`. `Restart=on-failure` with systemd's
-  default start limit: **5 failed starts in 10 s and the agent stays down for
-  good** until someone runs `systemctl reset-failed`.
+  `/run/spire/agent/public/api.sock`. On nodes with SVID consumers it has
+  `Restart=on-failure` every 5 s and no start limit, so it keeps trying until
+  it can attest.
 - **Agents attest with their TPM** (`tpm` NodeAttestor from spire-tpm-plugin),
   in production and in the tests. The agent ID is
   `spiffe://<trust domain>/spire/agent/tpm/<sha256 of the EK public key>`: it
@@ -61,7 +61,9 @@ Facts that matter for every procedure:
   writes `/run/<name>-svid/{svid.pem,svid.key,bundle.pem}`. The directories are
   kept when the helper stops (`RuntimeDirectoryPreserve`), so consumers go on
   using the last SVID until it expires. The helper restarts every 5 s without
-  limit.
+  limit, and its unit stays `activating`, with no start timeout, until the
+  files exist. Consumers `Requires=` it, so they wait for their SVID however
+  long the agent takes, and start by themselves once it arrives.
 - **Bundle watcher**: `<name>-svid-bundle.path` triggers
   `<name>-svid-bundle.service`, which restarts the consumer
   (`etcd`, `kube-apiserver`, `kube-controller-manager`, `kube-scheduler`,
@@ -103,10 +105,11 @@ for renewal.
 restart"). Above that the cluster is down until the server is back, but
 then it recovers **by itself**: in `ops-spire` every agent attested again
 0–11 s after the server started, and the whole cluster served again after
-30–40 s, with no restarts except the controller manager and scheduler. The
-agents in the test did not hit their start limit, since one that is waiting
-for the server keeps running. Still, check every node for `start-limit-hit`
-after a long outage (section 5).
+30–40 s, with no restarts except the controller manager and scheduler. Agents
+have no start limit, so however often they exit during an outage they keep
+trying. A node that boots during the outage waits with its consumers' start
+jobs pending, and comes up by itself once the server is back (subtest "Nodes
+boot while the SPIRE server is down").
 
 ## 0. Before you start
 
@@ -154,7 +157,8 @@ systemctl show -p Result,NRestarts spire-agent   # Result=success
   (section 6);
 - `Can re-attest : false` means the agent did not attest with its TPM, and
   none of the automatic recoveries below apply to it;
-- `Result=start-limit-hit` on an agent means it is down for good; go to section 6.
+- `Result=start-limit-hit` on an agent means someone configured a start limit
+  for it; go to section 6.
 
 **Rollback/abort**: read-only.
 
@@ -188,8 +192,8 @@ kube-apiserver kubelet` is unchanged. The helpers reconnect by themselves.
 **Rollback/abort**: if attestation fails, read `journalctl -u spire-agent`
 and the server's journal. The usual causes are a server that can't be
 reached, a TPM the agent can't open (`/dev/tpmrm0`, group `tss`), or an EK
-certificate the server's `ca_path` doesn't trust. If the agent ends up
-`start-limit-hit`, follow section 6 for this node.
+certificate the server's `ca_path` doesn't trust. The agent retries every 5 s
+until the cause is fixed.
 
 Tested by: `ops-spire` subtests "Agent restart" (disk keys: nothing restarts,
 nothing attests) and "Agent restart with keys in memory" (attests again by
@@ -309,9 +313,8 @@ cluster is down until the server is back.
    restarted agent keeps trying to attest (`Failed to retrieve attestation
    result`) and succeeds within seconds of the server's return
    (`Node attestation was successful`). Then the helpers and consumers pick
-   up new SVIDs by themselves. Check every node for `Result=start-limit-hit`
-   (section 1), which the test never ran into, and use section 6 for any node
-   that has it.
+   up new SVIDs by themselves. Nodes that booted during the outage start
+   their consumers by themselves too.
 
 **Verification**: section 1 on every node; then `kubectl get --raw /readyz`,
 `kubectl get nodes` (all Ready), and `etcdctl endpoint health`.
@@ -322,7 +325,11 @@ Tested by: `ops-spire` subtest "SPIRE server outage longer than the SVID
 lifetime". It asserts that every probe fails, that every agent restarted
 and is still running 30 s after the last probe failed, and that once the server
 is back everything recovers by itself. The only consumers that restart are the
-controller manager and the scheduler, which lose their leases.
+controller manager and the scheduler, which lose their leases. Subtest "Nodes
+boot while the SPIRE server is down" reboots control1 and worker1 during a
+2.5-minute outage and asserts that their svid units are still `activating`,
+that no unit failed with "Dependency failed", and that everything, including
+`kube-addons`, comes up by itself once the server is back.
 
 ## 6. Recover an agent that does not recover by itself
 
@@ -494,8 +501,8 @@ into the server host's `kubernetes.spire.server.entries`. So:
 3. Deploy the new node.
 
 Deploying the node first makes its helpers hang with `no identity issued`
-(retrying forever; the unit's start times out after 2 min and starts again),
-and its consumers stay down until step 1 is done. Removing a node from the merge
+(retrying forever, the unit stays `activating`), and its consumers wait until
+step 1 is done, then start by themselves. Removing a node from the merge
 deletes its entries, so its SVIDs expire within one TTL.
 
 **Verification**: section 1 on the new node.

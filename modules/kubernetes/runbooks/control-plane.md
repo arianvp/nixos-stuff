@@ -27,19 +27,21 @@ OpenBao URL (`kubernetes.kube-jwt-signer.openbao`), `$KEY` the signing key
 ## Dependency and startup order
 
 Arrows mean "needs". `Requires=` is hard. If the needed unit fails to *start*,
-the dependent fails with "Dependency failed" and is **never retried by itself**.
+the dependent fails with "Dependency failed" and is **never retried by itself**,
+so the units below that others require wait instead of failing: their start
+jobs stay pending until what they need is there.
 
 ```
 spire-server  (KeyManager must be disk: with memory, a restart makes a new CA the
    ^           agents do not trust, and every agent crashes)
    |  :8081, node attestation (tpm: an agent that lost its key or SVID attests
    |         again with the node's TPM, under the same agent ID)
-spire-agent   Restart=on-failure, RestartSec=100ms, default start limit:
-   ^          5 quick failures and systemd gives up on it
+spire-agent   Restart=on-failure, RestartSec=5s, no start limit
+   ^
    | Wants=
 <x>-svid.service (spiffe-helper)   Restart=always, no start limit,
-   |   TimeoutStartSec=2min: if no SVID within 2 minutes of boot, the start job
-   |   fails and every unit that Requires= it fails with "Dependency failed"
+   |   TimeoutStartSec=infinity: `activating` until the SVID files exist, however
+   |   long SPIRE takes; the units that Requires= it start then
    |
    +--> etcd                         (Requires etcd-svid)
    +--> openbao                      (Requires openbao-svid) --> openbao-config
@@ -71,10 +73,11 @@ Consequences:
   "failed units".
 * Restarting only `kube-apiserver` keeps the running signer. Restarting the
   signer restarts the API server (it `Requires=` the signer).
-* If SPIRE is unreachable for more than 2 minutes after a node boots, its etcd,
-  OpenBao, KMS plugin, signer, API server, controllers, kubelet and kube-proxy
-  fail with "Dependency failed" and stay down. The fix is
-  `systemctl reset-failed && systemctl start multi-user.target`.
+* If SPIRE is unreachable when a node boots, its etcd, OpenBao, KMS plugin,
+  signer, API server, controllers, kubelet, kube-proxy and kube-addons wait
+  (svid units `activating`, start jobs in `systemctl list-jobs`) and start by
+  themselves once SPIRE is back. Nothing fails, so look for stuck jobs rather
+  than failed units.
 
 ## Health check
 
@@ -115,7 +118,7 @@ and a token can be minted.
 | `[-]informer-sync failed` + kms failed | API server started during an OpenBao outage | [OpenBao outage](#total-openbao-outage) |
 | `create token` fails with `transit/sign ... connection refused` | OpenBao down, signing impossible | [OpenBao outage](#total-openbao-outage) |
 | connection refused on :6443, signer `activating` | signer waits for OpenBao | [OpenBao outage](#total-openbao-outage) |
-| `Dependency failed for Kubernetes API server` in the journal | SPIRE was unreachable at boot for > 2 min | [Cold start](#full-cluster-cold-start), step 3 |
+| `*-svid.service` `activating`, start jobs waiting | the SPIRE agent has no SVID for it yet | [SPIRE runbook](spire.md), sections 1 and 5 |
 | pods stuck `ContainerCreating`, events mention `localhost/pause` | the images are not loaded: `kubernetes-images` failed | [Worker crashed](#worker-crashed-or-lost-power) |
 
 **Rollback/abort:** read-only.
@@ -347,15 +350,12 @@ in an unknown order.
 **What happens (measured, workers and control planes first, infra 30s later):**
 the cluster converges by itself. Both API servers become ready, the worker
 becomes Ready, Secrets are readable and workloads run again, because the API
-servers' signers keep retrying until OpenBao is up, SPIRE was back well within
-the svid units' 2-minute window, and the worker loads its images again after
-CRI-O wiped them (see [Worker crashed](#worker-crashed-or-lost-power)).
+servers' signers keep retrying until OpenBao is up, every unit that needs an
+SVID waits for SPIRE, and the worker loads its images again after CRI-O wiped
+them (see [Worker crashed](#worker-crashed-or-lost-power)).
 
-Order matters for two reasons:
-
-* If SPIRE is unreachable for more than **2 minutes** after a node boots, that
-  node's units fail with "Dependency failed" and stay down (step 3 below).
-* If OpenBao is not up, no API server starts.
+Order matters because nothing on a node starts before SPIRE is back, and if
+OpenBao is not up, no API server starts.
 
 **Steps:**
 
@@ -367,11 +367,9 @@ Order matters for two reasons:
    ssh $CP 'etcdctl ... endpoint health'     # as in etcd outage
    curl -s --cacert /run/trust-bundle-svid/bundle.pem $BAO/v1/sys/seal-status
    ```
-3. On every node where `systemctl list-units --failed` shows svid units or
-   their dependents:
-   ```sh
-   systemctl reset-failed && systemctl start --no-block spire-agent.service multi-user.target
-   ```
+3. Nodes come up by themselves once SPIRE is back. On a node that doesn't,
+   `systemctl list-jobs` shows what waits, and `systemctl list-units --failed`
+   what failed for other reasons.
 4. Run the health check.
 
 **Verification:** health check; nodes Ready; workloads Running; Secrets

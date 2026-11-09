@@ -122,20 +122,18 @@ agents keep retrying through a 30-minute one, without hitting their start limit
 *Fix:* HA SPIRE servers on a shared datastore (or at least a warm standby with
 restored keys), longer SVID TTLs, and alerts on SVID age.
 
-### H2. Units that give up permanently and never retry
-- `spire-agent.service`: `Restart=on-failure`, 100 ms delay, default start limit.
-  Five quick failures and it is down for good. No tested failure came near
-  that (at most 4 restarts in 2 min), but a cause that fails fast would.
-- `*-svid.service`: `TimeoutStartSec=2min` (`modules/spire/svid.nix:155`), and
-  consumers use `Requires=`. If SPIRE is more than ~2 min late at boot, etcd,
-  kube-apiserver, kube-addons and others fail with "Dependency failed" and are
-  never retried. The worst-order cold start converged with only ~90 s to spare.
+### H2. Fixed: units wait and retry instead of giving up
+- Fixed: `spire-agent.service` has no start limit on nodes with SVIDs, and the
+  `*-svid.service` units wait for SPIRE as long as it takes, so their consumers
+  (etcd, kube-apiserver, kube-addons, …) start once SPIRE is back instead of
+  failing with "Dependency failed". *Test:* `ops-spire` "Nodes boot while the
+  SPIRE server is down".
 - A wiped etcd member crash-loops every 5 s forever (`member … has already been
   bootstrapped`); it fails safely, but nothing ever surfaces it.
 
-*Fix:* `startLimitIntervalSec = 0` on agents; `Wants=` plus a retry loop, or
-`Restart=` on consumers, instead of a one-shot `Requires=` chain; a start limit
-plus a pre-start hint on etcd.
+*Remaining:* a unit that waits for SPIRE or OpenBao now stays `activating`
+without a time limit, so alerting must watch for stuck jobs as well as failed
+units.
 
 ### H3. `openbao-config.service` reports success while applying nothing
 After a cold start, a lone standby answers with an empty `307` to the dead

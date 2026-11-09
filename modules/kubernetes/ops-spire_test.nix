@@ -48,7 +48,7 @@ let
 in
 {
   name = "ops-spire";
-  globalTimeout = 900;
+  globalTimeout = 1200;
 
   defaults =
     { nodes, ... }:
@@ -429,6 +429,41 @@ in
           check_cluster(timeout=90)
           print(f"the cluster recovered {int(time.monotonic() - start)}s after the server started", flush=True)
           assert restarted_since(before) <= leader_elected, restarted_since(before)
+
+      with subtest("Nodes boot while the SPIRE server is down"):
+          # The svid units keep waiting for their SVID, so their consumers
+          # start once the server is back, however late that is
+          rebooted = [control1, worker1]
+          stop_server()
+          for m in rebooted:
+              m.shutdown()
+          for m in rebooted:
+              m.start()
+          booted = time.monotonic()
+          for m in rebooted:
+              m.succeed("true")
+          time.sleep(max(0, 160 - (time.monotonic() - booted)))
+          for m in rebooted:
+              svid_units = m.succeed("systemctl list-units --all --plain --no-legend '*-svid.service' | cut -d' ' -f1").split()
+              assert svid_units, svid_units
+              for u in svid_units:
+                  state = m.succeed(f"systemctl show -P ActiveState {u}").strip()
+                  assert state == "activating", f"{m.name}: {u} is {state}"
+              m.fail("journalctl -b -o cat | grep 'Dependency failed'")
+              print(m.succeed("systemctl list-jobs --no-legend; systemctl show -p NRestarts -p ActiveState spire-agent.service"))
+          start = time.monotonic()
+          start_server()
+          for m in rebooted:
+              m.wait_until_succeeds(agent_health, timeout=120)
+          check_cluster(timeout=180)
+          for m in rebooted:
+              for u in consumers[m]:
+                  m.wait_for_unit(u, timeout=60)
+          control1.wait_for_unit("kube-addons.service", timeout=60)
+          print(f"the rebooted nodes recovered {int(time.monotonic() - start)}s after the server started", flush=True)
+          for m in rebooted:
+              m.fail("journalctl -b -o cat | grep 'Dependency failed'")
+              m.fail("systemctl show -P Result spire-agent.service | grep -x start-limit-hit")
 
       with subtest("SPIRE server lost without backup"):
           before = invocations()
