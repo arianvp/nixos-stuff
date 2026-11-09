@@ -13,13 +13,14 @@ in
         {
           name,
           config,
-          options,
           ...
         }:
         {
           options = {
             file = lib.mkOption {
               type = lib.types.path;
+              readOnly = true;
+              default = k8sFormats.kubeconfig.generate "${name}.conf" config.settings;
               description = "The generated kubeconfig file";
             };
 
@@ -29,7 +30,6 @@ in
             };
 
             clusterMap = lib.mkOption {
-              # TODO: I can probably access this type through options instead
               type = lib.types.attrsOf k8sFormats.kubeconfig.types.clusterType;
               description = "Map of cluster name to cluster configuration";
             };
@@ -45,24 +45,10 @@ in
             };
           };
 
-          config = {
-            file = k8sFormats.kubeconfig.generate "${name}.conf" config.settings;
-            settings = {
-              clusters = lib.mapAttrsToList (name: cluster: {
-                inherit name;
-                cluster = cluster;
-              }) config.clusterMap;
-
-              contexts = lib.mapAttrsToList (name: context: {
-                inherit name;
-                context = context;
-              }) config.contextMap;
-
-              users = lib.mapAttrsToList (name: user: {
-                inherit name;
-                user = user;
-              }) config.userMap;
-            };
+          config.settings = {
+            clusters = lib.mapAttrsToList (name: cluster: { inherit name cluster; }) config.clusterMap;
+            contexts = lib.mapAttrsToList (name: context: { inherit name context; }) config.contextMap;
+            users = lib.mapAttrsToList (name: user: { inherit name user; }) config.userMap;
           };
         }
       )
