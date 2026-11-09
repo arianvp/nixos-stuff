@@ -11,6 +11,9 @@ let
     "etcd3"
   ];
   initialCluster = lib.concatMapStringsSep "," (n: "${n}=https://${fqdn n}:2380") members;
+  reversedCluster = lib.concatMapStringsSep "," (n: "${n}=https://${fqdn n}:2380") (
+    lib.reverseList members
+  );
   endpoints = lib.concatMapStringsSep "," (n: "https://${fqdn n}:2379") members;
 
   member = {
@@ -21,6 +24,9 @@ let
     # What an operator deploys for the duration of a procedure
     specialisation.existing.configuration.kubernetes.etcd.settings.initial-cluster-state = "existing";
     specialisation.tiny-quota.configuration.kubernetes.etcd.settings.quota-backend-bytes = 2 * 1024 * 1024;
+    specialisation.member-list.configuration.kubernetes.etcd.settings.initial-cluster =
+      lib.mkForce reversedCluster;
+    specialisation.log-level.configuration.kubernetes.etcd.settings.log-level = "warn";
   };
 in
 {
@@ -140,6 +146,37 @@ in
             assert "etcd_server_has_leader 1" in out, out
         # Only on loopback
         spire.fail(f"curl --silent --max-time 5 http://{etcd1.name}.${t.domain}:2381/health")
+
+    with subtest("deploy a config change"):
+        def run_state():
+            return etcd1.succeed(
+                "systemctl show --value -p MainPID -p NRestarts -p ActiveEnterTimestampMonotonic etcd.service"
+            )
+
+        def switch(spec=None):
+            base = "/run/booted-system"
+            if spec:
+                base += f"/specialisation/{spec}"
+            etcd1.succeed(f"{base}/bin/switch-to-configuration test")
+
+        # etcd reads the member list only on its first start, so editing it
+        # restarts nothing, but the next start sees the new list
+        before = run_state()
+        switch("member-list")
+        assert run_state() == before, (before, run_state())
+        etcd1.succeed("grep -q 'etcd3=https://etcd3.${t.domain}:2380,etcd2=' /etc/etcd/etcd.yaml")
+        switch()
+        assert run_state() == before, (before, run_state())
+
+        switch("log-level")
+        etcd1.wait_for_unit("etcd.service", timeout=60)
+        after = run_state()
+        assert after != before, (before, after)
+        wait_healthy()
+        switch()
+        etcd1.wait_for_unit("etcd.service", timeout=60)
+        assert run_state() != after, (after, run_state())
+        wait_healthy()
 
     with subtest("rolling restart"):
         start_writer("writer-rolling")

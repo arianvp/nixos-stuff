@@ -8,7 +8,7 @@ matter for every procedure:
   `Restart=on-failure` every 5s. After 10 starts in 2 minutes it stays
   `failed` (`Result=start-limit-hit`); find out why in `journalctl -u etcd`,
   fix it, then `systemctl reset-failed etcd.service` before starting it again.
-- Config: `/etc/systemd/system/etcd.service` → `--config-file /nix/store/...-etcd.yaml`.
+- Config: `/etc/etcd/etcd.yaml` (`--config-file` in `etcd.service`).
   Flags and `ETCD_*` variables are **ignored**. Change settings through
   `kubernetes.etcd.settings`, never by hand.
 - `initial-cluster` is static and `initial-cluster-state` defaults to `new`
@@ -320,7 +320,13 @@ same window before doing anything else. In the test, two members restarted at
 once were back to healthy after about 8s, with a few failed writes. No action is
 needed beyond section 1.
 
-The same goes for any deploy that changes the etcd config (`restartTriggers`):
-deploy etcd members one at a time, never in parallel.
+The same goes for any deploy that changes the etcd config: it restarts etcd,
+so deploy etcd members one at a time, never in parallel. The exception is the
+keys etcd reads only when its data dir is empty (`initial-cluster`,
+`initial-cluster-state`, `initial-cluster-token`,
+`initial-advertise-peer-urls`): a deploy that changes only those updates
+`/etc/etcd/etcd.yaml` and restarts nothing, so editing the member list is safe
+to roll out everywhere at once.
 
-Tested by: `ops-etcd` subtest 'two members restart at once'.
+Tested by: `ops-etcd` subtests 'two members restart at once' and 'deploy a
+config change'.

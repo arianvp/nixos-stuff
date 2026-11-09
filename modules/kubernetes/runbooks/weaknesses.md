@@ -156,8 +156,9 @@ prune undeclared roles and policies.
 - `nixos-rebuild switch` never restarts OpenBao (`restartIfChanged = false` in
   nixpkgs). Seal key, `retry_join`, `bootstrap` and version changes wait for an
   unplanned restart.
-- etcd's `restartTriggers` include bootstrap-only keys (`initial-cluster`), so
-  editing the member list restarts every member.
+- Fixed: etcd reads its configuration from `/etc/etcd/etcd.yaml` and restarts
+  only when a setting other than the bootstrap-only ones changes.
+  *Test:* `ops-etcd` "deploy a config change".
 - `deploy.sh` restarts changed units with no readiness gate or coordination
   between hosts, and sets the boot profile before switching, so a failed switch
   stays the boot default.

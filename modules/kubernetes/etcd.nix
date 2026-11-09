@@ -8,6 +8,23 @@
 let
   cfg = config.kubernetes.etcd;
   format = pkgs.formats.yaml { };
+  defaultConfigFile = format.generate "etcd.yaml" cfg.settings;
+
+  # etcd reads its config from a stable path, so that a deploy restarts it
+  # only when restartConfig changes. Editing keys that etcd reads only on its
+  # first start, such as the member list, must not restart every member.
+  configPath = "etcd/etcd.yaml";
+  bootstrapKeys = [
+    "initial-cluster"
+    "initial-cluster-state"
+    "initial-cluster-token"
+    "initial-advertise-peer-urls"
+  ];
+  restartConfig =
+    if toString cfg.configFile == toString defaultConfigFile then
+      format.generate "etcd-restart.yaml" (removeAttrs cfg.settings bootstrapKeys)
+    else
+      cfg.configFile;
 
   # An empty member that its peers know as started refuses to start with only
   # "has already been bootstrapped", which etcd decides the same way: the
@@ -132,7 +149,7 @@ in
 
     configFile = lib.mkOption {
       type = lib.types.path;
-      default = format.generate "etcd.yaml" cfg.settings;
+      default = defaultConfigFile;
       defaultText = "A file generated from kubernetes.etcd.settings";
       description = "etcd configuration file.";
     };
@@ -140,6 +157,7 @@ in
 
   config = lib.mkIf cfg.enable {
     environment.systemPackages = [ cfg.package ];
+    environment.etc.${configPath}.source = cfg.configFile;
 
     systemd.services.etcd = {
       description = "etcd key-value store";
@@ -147,15 +165,15 @@ in
       wantedBy = [ "multi-user.target" ];
       after = [ "network-online.target" ];
       wants = [ "network-online.target" ];
-      restartTriggers = [ cfg.configFile ];
+      restartTriggers = [ restartConfig ];
       # A member that keeps failing lands in "failed" after about a minute
       # instead of restarting forever unnoticed
       startLimitBurst = 10;
       startLimitIntervalSec = 120;
       serviceConfig = {
         Type = "notify";
-        ExecStartPre = "${lib.getExe checkBootstrapped} ${cfg.configFile}";
-        ExecStart = "${lib.getExe' cfg.package "etcd"} --config-file ${cfg.configFile}";
+        ExecStartPre = "${lib.getExe checkBootstrapped} /etc/${configPath}";
+        ExecStart = "${lib.getExe' cfg.package "etcd"} --config-file /etc/${configPath}";
         StateDirectory = "etcd";
         StateDirectoryMode = "0700";
         Restart = "on-failure";
