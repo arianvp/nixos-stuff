@@ -12,6 +12,9 @@ let
     "openbao2"
     "openbao3"
   ];
+  # The new machine of "Replace a member with a new machine", outside the
+  # round-robin name
+  spare = "openbao4";
 
   # A real key would be encrypted with systemd-creds
   sealKey = pkgs.writeText "openbao-seal-key" "6b2c5f2a2a4e4c1f9d3e7b8a0c1d2e3f4a5b6c7d8e9f00112233445566778899";
@@ -24,10 +27,14 @@ let
       spire.openbao = {
         enable = true;
         spiffeID = "spiffe://${t.trustDomain}/openbao/${name}";
-        managers = map (n: "spiffe://${t.trustDomain}/openbao/${n}") openbaos;
+        managers = map (n: "spiffe://${t.trustDomain}/openbao/${n}") (openbaos ++ [ spare ]);
         bootstrap = name == lib.head openbaos;
         retryJoin = map (n: "https://${fqdn n}:8200") (lib.remove name openbaos);
         sealKey.file = "${sealKey}";
+        autopilot = {
+          minQuorum = lib.length openbaos;
+          deadServerLastContactThreshold = "1m";
+        };
         policies.admin = ''
           path "*" {
             capabilities = ["create", "read", "update", "delete", "list", "sudo"]
@@ -79,7 +86,7 @@ let
 in
 {
   name = "ops-openbao";
-  globalTimeout = 600;
+  globalTimeout = 900;
 
   defaults =
     { nodes, ... }:
@@ -99,7 +106,7 @@ in
   nodes = {
     spire.imports = [ t.server ];
   }
-  // lib.genAttrs openbaos openbao;
+  // lib.genAttrs (openbaos ++ [ spare ]) openbao;
 
   testScript =
     { nodes, ... }:
@@ -110,6 +117,7 @@ in
       import base64
       import json
       import re
+      import time
 
       client = spire
       openbaos = [openbao1, openbao2, openbao3]
@@ -223,7 +231,8 @@ in
           selector = {"type": "tpm", "value": f"model:{m.name}"}
           return [a for a in json.loads(out).get("agents", []) if selector in a["selectors"]]
 
-      start_all()
+      for m in [spire] + openbaos:
+          m.start()
       client.wait_for_unit("spire-server.service", timeout=60)
       fetch_svid()
 
@@ -305,11 +314,6 @@ in
 
       with subtest("Replace a member that lost its disk"):
           token = wait_healthy("openbao1")
-          autopilot = bao(token, "openbao1", "sys/storage/raft/autopilot/configuration")["data"]
-          show("autopilot configuration", autopilot)
-          # Nothing removes a member that is gone for good: quorum stays at
-          # two of three until someone runs remove-peer
-          assert not autopilot["cleanup_dead_servers"], autopilot
           ids = node_ids(token, "openbao1")
           [agent_before] = agents(openbao3)
           # A new data disk, same TPM and root file system: the SPIRE agent
@@ -355,6 +359,39 @@ in
           assert_derived("openbao2", new_id)
           assert new_id != old_id, new_id
           assert len(servers) == 3 and old_id not in [s["node_id"] for s in servers], servers
+
+      with subtest("Replace a member with a new machine"):
+          token = wait_healthy("openbao1")
+          autopilot = bao(token, "openbao1", "sys/storage/raft/autopilot/configuration")["data"]
+          show("autopilot configuration", autopilot)
+          assert autopilot["cleanup_dead_servers"] and autopilot["min_quorum"] == 3, autopilot
+
+          def voters_are(*names):
+              """The voters are the nodes with these host names"""
+              state = bao_cmd(token, "openbao1", "sys/storage/raft/autopilot/state")
+              hosts = '.data.voters | map(sub("-[0-9a-f]{12}$"; "")) | sort'
+              return state + f" | jq -e '.data.healthy and ({hosts}) == {json.dumps(sorted(names))}'"
+
+          # openbao3 is retired and openbao4 replaces it. Once openbao4 is a
+          # voter, autopilot removes the dead openbao3.
+          openbao3.systemctl("stop openbao.service")
+          openbao3.succeed("rm -rf /var/lib/openbao/*")
+          openbao3.shutdown()
+          openbao4.start()
+          client.wait_until_succeeds(unsealed("openbao4"), timeout=180)
+          client.wait_until_succeeds(voters_are("openbao1", "openbao2", "openbao4"), timeout=180)
+          # Removing a dead openbao4 as well would leave fewer voters than
+          # min_quorum, so it stays
+          openbao4.shutdown()
+          time.sleep(80)
+          state = bao(token, "openbao1", "sys/storage/raft/autopilot/state")["data"]
+          show("autopilot state with a dead voter", state)
+          openbao4_id = node_id(token, "openbao1", "openbao4")
+          assert openbao4_id in state["voters"] and state["failure_tolerance"] == 0, state
+          # openbao3 comes back on an empty disk, and autopilot removes openbao4
+          openbao3.start()
+          client.wait_until_succeeds(voters_are("openbao1", "openbao2", "openbao3"), timeout=180)
+          wait_healthy("openbao1")
 
       with subtest("Replace the bootstrap member that lost its disk"):
           token = wait_healthy("openbao2")

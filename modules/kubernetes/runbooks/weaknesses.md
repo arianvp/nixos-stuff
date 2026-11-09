@@ -200,8 +200,9 @@ contents of `/var/lib/openbao/node-id` before upgrading.
   serving transit for existing tokens, but logins fail (`active cluster node
   not found`). Any KMS plugin or signer that restarts, or whose 1 h token
   expires, is locked out.
-- **M3. Dead raft peers are never removed.** Autopilot `cleanup_dead_servers`
-  is off and `min_quorum` is 0.
+- **M3. Fixed: dead raft peers are removed** by autopilot
+  (`spire.openbao.autopilot`), down to `minQuorum`. *Test:* `ops-openbao`
+  "Replace a member with a new machine".
 - **M4. Nothing defragments etcd or watches its space.** One member over quota
   makes the whole cluster read-only. The alarm survives restart, compaction and
   defrag until someone runs `alarm disarm`, and `endpoint health` fails on every

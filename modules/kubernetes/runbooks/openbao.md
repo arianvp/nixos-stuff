@@ -120,8 +120,10 @@ bao "$B/v1/sys/storage/raft/autopilot/configuration" | jq .data
 - `sys/leader` on every node names the same `leader_address`.
 - raft configuration: exactly 3 servers, all `voter: true`, one per address.
 - autopilot: `healthy: true`, `failure_tolerance: 1`, 3 `voters`.
-- `autopilot/configuration` has `cleanup_dead_servers: false`. Dead members are
-  never removed automatically (section 4).
+- `autopilot/configuration` has `cleanup_dead_servers: true`, `min_quorum: 3`
+  and `dead_server_last_contact_threshold` from
+  `spire.openbao.autopilot.deadServerLastContactThreshold` (default 24h, which
+  OpenBao shows in seconds). `openbao-config` sets them (section 4).
 
 **Transit smoke test** (doesn't touch the Kubernetes key):
 
@@ -240,9 +242,15 @@ but must join as a new member can get a new ID the same way: stop OpenBao,
 `rm /etc/machine-id`, wipe `/var/lib/openbao/*` and reboot. Don't do that to
 openbao1 while the other two are down (section 5).
 
-**If the node is gone for good** (not replaced): autopilot won't remove it
-(`cleanup_dead_servers: false`), and the cluster runs with
-`failure_tolerance: 0`. Remove it by hand:
+**If the node is replaced by a machine with a different host name**: add the
+new node to `retryJoin` and `managers` of the others, deploy it, and retire the
+old one. Once the new node is a voter, autopilot removes the old one after it
+has been out of contact for `dead_server_last_contact_threshold` (24h by
+default). It never removes a voter if that would leave fewer than `min_quorum`
+(`spire.openbao.autopilot.minQuorum`, the number of nodes): a node that is
+down but not replaced stays a voter, and the cluster runs with
+`failure_tolerance: 0` until it is back. To shrink the cluster for good,
+remove the node by hand:
 `bao --data '{"server_id": "<node_id>"}' $B/v1/sys/storage/raft/remove-peer`.
 
 **Abort**: stop `openbao.service` on the node. The cluster keeps running on two nodes.
@@ -250,9 +258,12 @@ openbao1 while the other two are down (section 5).
 Tested by: `ops-openbao` subtest 'Replace a member that lost its disk'
 (openbao3 loses `/var/lib/openbao` and `/var/lib/spire/agent` and reboots; its
 agent comes back under the same agent ID with a new SVID, and OpenBao rejoins
-under the same node ID) and 'Reinstall a member' (openbao2 also loses
+under the same node ID), 'Reinstall a member' (openbao2 also loses
 `/etc/machine-id`, boots with a new one and joins under a new node ID, and
-its old member is gone).
+its old member is gone) and 'Replace a member with a new machine' (openbao4
+replaces a retired openbao3 and autopilot removes openbao3; a dead openbao4
+then stays a voter because of `min_quorum` until openbao3 comes back, after
+which autopilot removes openbao4; with a 1m threshold).
 
 ## 5. Replace the bootstrap member that lost its disk (openbao1)
 

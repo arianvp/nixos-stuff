@@ -8,9 +8,10 @@
 #   revoked. In a raft cluster, one node bootstraps and the others join it.
 #   The bootstrap node joins too when another node is already initialized,
 #   e.g. after it lost its disk.
-# * openbao-config.service applies policies and cert auth roles on every
-#   start, configuration change and whenever a CA is added to the trust
-#   bundle, so that cert auth trusts the current CAs of the trust domain.
+# * openbao-config.service applies policies, cert auth roles and the raft
+#   autopilot configuration on every start, configuration change and
+#   whenever a CA is added to the trust bundle, so that cert auth trusts the
+#   current CAs of the trust domain.
 {
   config,
   lib,
@@ -106,7 +107,21 @@ let
     path "auth/cert/certs/*" {
       capabilities = ["create", "update", "read"]
     }
+    path "sys/storage/raft/autopilot/configuration" {
+      capabilities = ["update", "read"]
+    }
   '';
+
+  autopilotConfig = format.generate "openbao-autopilot.json" (
+    {
+      cleanup_dead_servers = cfg.autopilot.cleanupDeadServers;
+      dead_server_last_contact_threshold = cfg.autopilot.deadServerLastContactThreshold;
+    }
+    # OpenBao wants at least 3 when it cleans up
+    // lib.optionalAttrs cfg.autopilot.cleanupDeadServers {
+      min_quorum = cfg.autopilot.minQuorum;
+    }
+  );
 
   roleData = role: {
     allowed_uri_sans = role.allowedURISANs;
@@ -217,6 +232,38 @@ in
       type = lib.types.port;
       default = 8200;
       description = "Port of the API.";
+    };
+
+    autopilot = {
+      minQuorum = lib.mkOption {
+        type = lib.types.ints.positive;
+        default = lib.length cfg.retryJoin + 1;
+        defaultText = lib.literalExpression "lib.length config.spire.openbao.retryJoin + 1";
+        description = ''
+          Number of voters autopilot never goes below when it removes dead
+          servers: the number of nodes the cluster should have. A node that
+          is down is then only removed once another one has replaced it.
+        '';
+      };
+      cleanupDeadServers = lib.mkOption {
+        type = lib.types.bool;
+        default = cfg.autopilot.minQuorum >= 3;
+        defaultText = lib.literalExpression "config.spire.openbao.autopilot.minQuorum >= 3";
+        description = ''
+          Whether autopilot removes servers it has not heard from for
+          {option}`autopilot.deadServerLastContactThreshold`. OpenBao needs
+          a {option}`autopilot.minQuorum` of at least 3 for it.
+        '';
+      };
+      deadServerLastContactThreshold = lib.mkOption {
+        type = lib.types.str;
+        default = "24h";
+        description = ''
+          How long a server goes without contact with the leader before
+          autopilot considers it dead. It must exceed the time a joining node
+          takes to load a raft snapshot.
+        '';
+      };
     };
 
     sealKey = {
@@ -419,11 +466,14 @@ in
     ];
 
     systemd.services.openbao-config = {
-      description = "Apply OpenBao policies and cert auth roles";
+      description = "Apply OpenBao policies, cert auth roles and autopilot configuration";
       wantedBy = [ "multi-user.target" ];
       wants = [ "openbao.service" ];
       after = [ "openbao.service" ];
-      restartTriggers = [ desiredState ];
+      restartTriggers = [
+        desiredState
+        autopilotConfig
+      ];
       # Keeps retrying while OpenBao comes up
       startLimitIntervalSec = 0;
       path = [
@@ -467,6 +517,9 @@ in
             bao -H "X-Vault-Token: $token" --data @- \
               "${address}/v1/auth/cert/certs/$(jq -r .key <<< "$role")"
         done
+
+        bao -H "X-Vault-Token: $token" --data @${autopilotConfig} \
+          ${address}/v1/sys/storage/raft/autopilot/configuration
       '';
     };
   };
