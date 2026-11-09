@@ -2,6 +2,7 @@
   nixos-hardware,
   homeManagerModule,
   nixbot,
+  nix-grpc-store,
 }:
 {
   config,
@@ -15,12 +16,11 @@
 
     ./hardware-configuration.nix
     ./network.nix
-    # Temporarily disabled: spire-server binds :80/:443 and would conflict
-    # with nixbot's nginx. ./prometheus.nix depends on spire's SVID certs
-    # and controllerManager options, so it goes with it. Re-enable once
-    # spire/nixbot port sharing is sorted out.
-    # ./spire.nix
+    # nixbot's nginx is off since the tunnel, and spire.nix now keeps the
+    # bundle endpoint on :8443 behind nginx's ACME, so the clash is gone.
+    ./spire.nix
     # ./prometheus.nix
+    (import ./nix-farm.nix { inherit nix-grpc-store; })
     ./he-ddns.nix
     (import ./nixbot.nix nixbot)
     ./opkssh.nix
