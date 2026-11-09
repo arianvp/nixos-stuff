@@ -105,6 +105,68 @@
 
   openbaoURL = host: "https://${host}.example.com:8200";
 
+  # A kube-controller-manager group of the controllers that act on workload
+  # objects, which need to reach neither the whole cluster nor anything of the
+  # control plane's own.
+  workloadControllers.controllers = [
+    {
+      name = "cronjob-controller";
+      role = "cronjob-controller";
+    }
+    {
+      name = "daemonset-controller";
+      role = "daemon-set-controller";
+    }
+    {
+      name = "deployment-controller";
+      role = "deployment-controller";
+    }
+    {
+      name = "disruption-controller";
+      role = "disruption-controller";
+    }
+    {
+      name = "endpoints-controller";
+      role = "endpoint-controller";
+    }
+    {
+      name = "endpointslice-controller";
+      role = "endpointslice-controller";
+    }
+    {
+      name = "endpointslice-mirroring-controller";
+      role = "endpointslicemirroring-controller";
+    }
+    {
+      name = "horizontal-pod-autoscaler-controller";
+      role = "horizontal-pod-autoscaler";
+    }
+    {
+      name = "job-controller";
+      role = "job-controller";
+    }
+    {
+      name = "pod-garbage-collector-controller";
+      role = "pod-garbage-collector";
+    }
+    {
+      name = "replicaset-controller";
+      role = "replicaset-controller";
+    }
+    {
+      name = "replicationcontroller-controller";
+      role = "replication-controller";
+    }
+    {
+      name = "statefulset-controller";
+      role = "statefulset-controller";
+    }
+    {
+      name = "ttl-after-finished-controller";
+      role = "ttl-after-finished-controller";
+    }
+  ];
+
   # /etc/hosts lines that point spire.<domain> at the node running `server`.
   # Set on all nodes with defaults.networking.extraHosts.
   spireHosts = serverNode: ''

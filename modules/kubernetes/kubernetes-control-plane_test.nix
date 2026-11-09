@@ -29,7 +29,10 @@ let
         openbao = t.openbaoURL "control1";
         key = signingKey;
       };
-      kubernetes.kube-controller-manager.enable = true;
+      kubernetes.kube-controller-manager = {
+        enable = true;
+        groups.workloads = t.workloadControllers;
+      };
       kubernetes.kube-scheduler.enable = true;
     };
 
@@ -181,6 +184,43 @@ in
     with subtest("Scheduler and controller manager hold their leases"):
         control1.wait_until_succeeds("kubectl -n kube-system get lease kube-scheduler", timeout=60)
         control1.wait_until_succeeds("kubectl -n kube-system get lease kube-controller-manager", timeout=60)
+        control1.wait_until_succeeds("kubectl -n kube-system get lease kube-controller-manager-workloads", timeout=60)
+
+    with subtest("The workload controllers run under an identity of their own"):
+        for m in [control1, control2]:
+            m.wait_for_unit("kube-controller-manager-workloads.service", timeout=60)
+        user = "system:kube-controller-manager-workloads"
+
+        # A ClusterRoleBinding to a role that does not exist is accepted and
+        # grants nothing, so every role the group names has to be there
+        control1.succeed(
+            "kubectl get clusterrole ${
+              lib.concatMapStringsSep " " (
+                controller: "system:controller:${controller.role}"
+              ) t.workloadControllers.controllers
+            }"
+        )
+
+        # And the bindings have to give the group what its controllers do
+        for verb, resource, subresource in [
+            ("create", "pods", None),
+            ("create", "replicasets.apps", None),
+            ("update", "daemonsets.apps", "status"),
+            ("update", "replicationcontrollers", "status"),
+            ("update", "horizontalpodautoscalers.autoscaling", "status"),
+            ("update", "endpoints", None),
+            ("create", "endpointslices.discovery.k8s.io", None),
+            ("delete", "pods", None),
+        ]:
+            flags = f" --subresource={subresource}" if subresource else ""
+            control1.succeed(f"kubectl auth can-i --as={user} {verb} {resource}{flags}")
+
+        # The controllers left with the controller manager keep their reach
+        for verb, resource in [
+            ("delete", "namespaces"),
+            ("create", "clusterrolebindings.rbac.authorization.k8s.io"),
+        ]:
+            control1.fail(f"kubectl auth can-i --as={user} {verb} {resource}")
 
     with subtest("Each API server accepts the service account tokens of the other"):
         check_tokens()
