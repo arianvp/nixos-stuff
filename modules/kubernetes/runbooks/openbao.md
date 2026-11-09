@@ -385,22 +385,17 @@ every key in OpenBao.
 node with `systemd-creds encrypt` if the old one was. A **new, never used** key
 ID. The old key stays available on every node until step 4 is done.
 
-The module only exposes `current_key`/`current_key_id`. OpenBao's static seal
-also takes `previous_key`/`previous_key_id`, which the module has no option
-for. Today the rotation has to go around the module, and this is exactly what the
-test deploys:
+`spire.openbao.sealKey.previous` sets OpenBao's `previous_key` and
+`previous_key_id` and loads the old key as the `seal-key-previous` credential.
+This is what the test deploys:
 
 ```nix
 # step 1 configuration, on every OpenBao node
-spire.openbao.sealKey = { file = "/path/to/new-key"; id = "2"; };
-services.openbao.settings.seal.static = {
-  previous_key_id = "1";
-  previous_key = "file:///run/credentials/openbao.service/seal-key-previous";
-};
-systemd.services.openbao.serviceConfig.LoadCredential = lib.mkForce [
-  "seal-key:/path/to/new-key"
-  "seal-key-previous:/path/to/old-key"
-];   # LoadCredentialEncrypted if the keys are encrypted
+spire.openbao.sealKey = {
+  file = "/path/to/new-key";
+  id = "2";
+  previous = { file = "/path/to/old-key"; id = "1"; };
+};   # encrypted = true on either if that key is encrypted
 ```
 
 **Steps**
@@ -412,7 +407,7 @@ systemd.services.openbao.serviceConfig.LoadCredential = lib.mkForce [
    then wait for unseal and autopilot health (section 2, steps 3 and 4). Once it
    unseals with `previous_key`, OpenBao rewraps its root key with the new key.
 3. Deploy the final configuration (just `sealKey = { file = new; id = "2"; }`,
-   with no `previous_key`) to all nodes, and restart them one at a time again.
+   without `previous`) to all nodes, and restart them one at a time again.
    They must unseal. If one doesn't, its journal says `unknown key id for
    data` (go back to step 1's configuration on that node).
 4. Only now destroy the old key, and update the seal-key backup that goes with

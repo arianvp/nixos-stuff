@@ -134,6 +134,36 @@ let
     roles = lib.mapAttrs (_: roleData) cfg.certRoles;
   };
 
+  sealKeyOptions = {
+    file = lib.mkOption {
+      type = lib.types.str;
+      example = "/var/lib/secrets/openbao-seal-key";
+      description = ''
+        File holding the 32 byte AES key: raw, hex or base64 encoded. A path
+        on the node, as a path in the Nix store would put the key where every
+        user can read it unless {option}`encrypted` is set.
+      '';
+    };
+    encrypted = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = ''
+        Whether {option}`file` is encrypted with
+        {command}`systemd-creds encrypt`, e.g. with the TPM.
+      '';
+    };
+    id = lib.mkOption {
+      type = lib.types.str;
+      description = "Identifier of the seal key.";
+    };
+  };
+
+  sealKeyCredential = name: key: {
+    ${if key.encrypted then "LoadCredentialEncrypted" else "LoadCredential"} = [
+      "${name}:${key.file}"
+    ];
+  };
+
   roleModule = {
     options = {
       allowedURISANs = lib.mkOption {
@@ -266,29 +296,23 @@ in
       };
     };
 
-    sealKey = {
-      file = lib.mkOption {
-        type = lib.types.str;
-        example = "/var/lib/secrets/openbao-seal-key";
-        description = ''
-          File holding the 32 byte AES key OpenBao unseals itself with: raw, hex
-          or base64 encoded. A path on the node, as a path in the Nix store
-          would put the key where every user can read it unless
-          {option}`encrypted` is set.
-        '';
-      };
-      encrypted = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = ''
-          Whether {option}`sealKey.file` is encrypted with
-          {command}`systemd-creds encrypt`, e.g. with the TPM.
-        '';
-      };
-      id = lib.mkOption {
-        type = lib.types.str;
+    sealKey = sealKeyOptions // {
+      id = sealKeyOptions.id // {
         default = "1";
         description = "Identifier of the seal key, to change when replacing it.";
+      };
+      previous = lib.mkOption {
+        type = lib.types.nullOr (lib.types.submodule { options = sealKeyOptions; });
+        default = null;
+        description = ''
+          The seal key that {option}`sealKey` replaces, while rotating. A node
+          that unseals with it wraps the root key with the new key, after
+          which the previous key is only needed for older raft snapshots.
+        '';
+        example = {
+          file = "/var/lib/secrets/openbao-seal-key-1";
+          id = "1";
+        };
       };
     };
 
@@ -422,6 +446,10 @@ in
         seal.static = {
           current_key_id = cfg.sealKey.id;
           current_key = "file:///run/credentials/openbao.service/seal-key";
+        }
+        // lib.optionalAttrs (cfg.sealKey.previous != null) {
+          previous_key_id = cfg.sealKey.previous.id;
+          previous_key = "file:///run/credentials/openbao.service/seal-key-previous";
         };
       };
     };
@@ -451,13 +479,17 @@ in
     systemd.services.openbao = {
       requires = [ svid.unit ];
       after = [ svid.unit ];
-      serviceConfig = {
-        EnvironmentFile = lib.mkIf (cfg.nodeID == null) "/run/openbao-node-id/env";
-        ExecStartPre = lib.mkIf cfg.bootstrap (lib.getExe initializeOrJoin);
-        SupplementaryGroups = [ "openbao-svid" ];
-        ${if cfg.sealKey.encrypted then "LoadCredentialEncrypted" else "LoadCredential"} =
-          "seal-key:${cfg.sealKey.file}";
-      };
+      serviceConfig = lib.mkMerge [
+        {
+          EnvironmentFile = lib.mkIf (cfg.nodeID == null) "/run/openbao-node-id/env";
+          ExecStartPre = lib.mkIf cfg.bootstrap (lib.getExe initializeOrJoin);
+          SupplementaryGroups = [ "openbao-svid" ];
+        }
+        (sealKeyCredential "seal-key" cfg.sealKey)
+        (lib.mkIf (cfg.sealKey.previous != null) (
+          sealKeyCredential "seal-key-previous" cfg.sealKey.previous
+        ))
+      ];
     };
 
     networking.firewall.allowedTCPPorts = [

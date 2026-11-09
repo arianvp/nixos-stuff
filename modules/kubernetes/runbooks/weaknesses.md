@@ -193,9 +193,8 @@ contents of `/var/lib/openbao/node-id` before upgrading.
 ---
 
 ## Medium
-- **M1. Seal key rotation needs workarounds.** It works (OpenBao rewraps the root
-  key), but the module has no `previous_key`, and the second credential needs
-  `mkForce`. *Test:* `ops-openbao` "Seal key rotation".
+- **M1. Fixed: seal key rotation** goes through `spire.openbao.sealKey.previous`.
+  *Test:* `ops-openbao` "Seal key rotation".
 - **M2. OpenBao quorum loss is worse than it looks.** A lone standby keeps
   serving transit for existing tokens, but logins fail (`active cluster node
   not found`). Any KMS plugin or signer that restarts, or whose 1 h token
@@ -233,8 +232,7 @@ contents of `/var/lib/openbao/node-id` before upgrading.
 ---
 
 ## Suggested workstreams, in order
-1. **OpenBao bootstrap safety + `openbao-config` correctness** (C1, H3, H8). Small,
-   high value.
+1. **Done: OpenBao bootstrap safety + `openbao-config` correctness** (C1, H3, H8).
 2. **Node boot robustness** (C3, H2). Small; fixes cold start.
 3. **Decouple the API server from OpenBao availability** (C2, M2): signer key
    cache, `Wants=` instead of `Requires=`, an OpenBao HA target.

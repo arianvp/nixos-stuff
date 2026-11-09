@@ -63,20 +63,13 @@ let
         openbao = "https://openbao.${t.domain}:8200";
       };
 
-      # The module only knows one seal key, so rotating needs to go around it
-      specialisation.seal-rotate.configuration = {
-        spire.openbao.sealKey = {
-          file = lib.mkForce "${newSealKey}";
-          id = lib.mkForce "2";
+      specialisation.seal-rotate.configuration.spire.openbao.sealKey = {
+        file = lib.mkForce "${newSealKey}";
+        id = lib.mkForce "2";
+        previous = {
+          file = "${sealKey}";
+          id = "1";
         };
-        services.openbao.settings.seal.static = {
-          previous_key_id = "1";
-          previous_key = "file:///run/credentials/openbao.service/seal-key-previous";
-        };
-        systemd.services.openbao.serviceConfig.LoadCredential = lib.mkForce [
-          "seal-key:${newSealKey}"
-          "seal-key-previous:${sealKey}"
-        ];
       };
       specialisation.seal-new.configuration.spire.openbao.sealKey = {
         file = lib.mkForce "${newSealKey}";
