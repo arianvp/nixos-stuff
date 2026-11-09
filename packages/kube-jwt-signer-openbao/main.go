@@ -12,6 +12,11 @@
 // trusted, so tokens outlive the version that signed them, and a new version
 // only starts signing once it is publishDelay old, by which time every signer
 // has fetched it.
+//
+// With -cache, it keeps the public keys it read last on disk. If it starts
+// while OpenBao is unreachable, it serves those, so that kube-apiserver starts
+// and verifies tokens, and fails to sign with codes.Unavailable until it
+// reaches OpenBao. Without a cache it waits for OpenBao.
 package main
 
 import (
@@ -26,6 +31,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"net"
 	"net/http"
@@ -39,6 +45,8 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	externaljwtv1 "k8s.io/externaljwt/apis/v1"
 )
@@ -67,7 +75,11 @@ func newKeyVersion(version int, created time.Time, publicKey string) (*keyVersio
 	if block == nil {
 		return nil, errors.New("no PEM block in public key")
 	}
-	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
+	return newKeyVersionPKIX(version, created, block.Bytes)
+}
+
+func newKeyVersionPKIX(version int, created time.Time, der []byte) (*keyVersion, error) {
+	pub, err := x509.ParsePKIXPublicKey(der)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +87,7 @@ func newKeyVersion(version int, created time.Time, publicKey string) (*keyVersio
 	if !ok || ec.Curve != elliptic.P256() {
 		return nil, errors.New("not a P-256 key; the transit key must be ecdsa-p256")
 	}
-	sum := sha256.Sum256(block.Bytes)
+	sum := sha256.Sum256(der)
 	kid := base64.RawURLEncoding.EncodeToString(sum[:])
 	header, err := json.Marshal(map[string]string{"alg": "ES256", "kid": kid, "typ": "JWT"})
 	if err != nil {
@@ -85,7 +97,7 @@ func newKeyVersion(version int, created time.Time, publicKey string) (*keyVersio
 		version: version,
 		created: created,
 		kid:     kid,
-		pkix:    block.Bytes,
+		pkix:    der,
 		header:  base64.RawURLEncoding.EncodeToString(header),
 	}, nil
 }
@@ -96,10 +108,19 @@ type keyset struct {
 	mount string
 	key   string
 	now   func() time.Time
+	// cache is where the public keys are kept across restarts, so that the
+	// API server can verify tokens while OpenBao is unreachable; none if empty
+	cache string
 
 	mu       sync.RWMutex
 	versions []*keyVersion // oldest first
 	fetched  time.Time
+	// live is set once this process has read the key from OpenBao
+	live bool
+
+	// saved is what the cache holds. Only initialize and keepRefreshing use
+	// it, one after the other.
+	saved []*keyVersion
 }
 
 func (k *keyset) refresh(ctx context.Context) error {
@@ -132,10 +153,98 @@ func (k *keyset) refresh(ctx context.Context) error {
 	slices.SortFunc(versions, func(a, b *keyVersion) int { return a.version - b.version })
 
 	k.mu.Lock()
-	defer k.mu.Unlock()
 	k.versions = versions
 	k.fetched = k.now()
+	k.live = true
+	fetched := k.fetched
+	k.mu.Unlock()
+
+	if k.cache != "" && !sameVersions(k.saved, versions) {
+		if err := saveCache(k.cache, k.mount, k.key, versions, fetched); err != nil {
+			slog.Warn("saving the keys", "path", k.cache, "error", err)
+		} else {
+			k.saved = versions
+		}
+	}
 	return nil
+}
+
+func sameVersions(a, b []*keyVersion) bool {
+	return slices.EqualFunc(a, b, func(x, y *keyVersion) bool {
+		return x.version == y.version && x.kid == y.kid && x.created.Equal(y.created)
+	})
+}
+
+// load reads the keys that were last read from OpenBao from the cache
+func (k *keyset) load() error {
+	versions, fetched, err := loadCache(k.cache, k.mount, k.key)
+	if err != nil {
+		return err
+	}
+	k.saved = versions
+	k.mu.Lock()
+	defer k.mu.Unlock()
+	k.versions = versions
+	k.fetched = fetched
+	return nil
+}
+
+func (k *keyset) isLive() bool {
+	k.mu.RLock()
+	defer k.mu.RUnlock()
+	return k.live
+}
+
+// initialize reads the keys from OpenBao. If OpenBao cannot be reached, it
+// falls back to the cache, and without one it keeps trying: kube-apiserver
+// does not start without keys, so rather than failing and taking the API
+// server's start job down with us, we keep starting until OpenBao has the key
+// and the cert auth role.
+func (k *keyset) initialize(ctx context.Context) error {
+	err := k.refresh(ctx)
+	if err == nil {
+		return nil
+	}
+	if k.cache != "" {
+		cacheErr := k.load()
+		if cacheErr == nil {
+			slog.Warn("reading the key, serving the cached public keys until OpenBao answers", "mount", k.mount, "key", k.key, "error", err)
+			return nil
+		}
+		if !errors.Is(cacheErr, fs.ErrNotExist) {
+			slog.Warn("reading the cached keys", "path", k.cache, "error", cacheErr)
+		}
+	}
+	for {
+		slog.Warn("reading the key, retrying", "mount", k.mount, "key", k.key, "error", err)
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(retryInterval):
+		}
+		if err = k.refresh(ctx); err == nil {
+			return nil
+		}
+	}
+}
+
+// keepRefreshing rereads the keys, more often while it has not reached
+// OpenBao yet
+func (k *keyset) keepRefreshing(ctx context.Context) {
+	for {
+		interval := refreshInterval
+		if !k.isLive() {
+			interval = retryInterval
+		}
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(interval):
+		}
+		if err := k.refresh(ctx); err != nil {
+			slog.Warn("refreshing keys", "error", err)
+		}
+	}
 }
 
 // signing is the newest version that has been published long enough, or the
@@ -205,10 +314,13 @@ type signer struct {
 }
 
 func (s *signer) Sign(ctx context.Context, req *externaljwtv1.SignJWTRequest) (*externaljwtv1.SignJWTResponse, error) {
+	if !s.keys.isLive() {
+		return nil, status.Error(codes.Unavailable, "OpenBao has not been reached yet; only the cached public keys are known")
+	}
 	key := s.keys.signing()
 	signature, err := s.keys.sign(ctx, key.version, key.header+"."+req.Claims)
 	if err != nil {
-		return nil, err
+		return nil, status.Errorf(codes.Unavailable, "signing with OpenBao: %v", err)
 	}
 	return &externaljwtv1.SignJWTResponse{Header: key.header, Signature: signature}, nil
 }
@@ -257,6 +369,7 @@ func run() error {
 		caFile    = flag.String("ca-file", "", "CA certificates to verify OpenBao with")
 		maxExpiry = flag.Duration("max-token-expiration", 365*24*time.Hour, "Maximum lifetime of the tokens kube-apiserver may request")
 		timeout   = flag.Duration("timeout", 10*time.Second, "Timeout of requests to OpenBao")
+		cache     = flag.String("cache", "", "File to keep the public keys in, to verify tokens with while OpenBao is unreachable")
 	)
 	flag.Parse()
 	if *address == "" || *certFile == "" || *keyFile == "" || *caFile == "" {
@@ -276,45 +389,20 @@ func run() error {
 		mount: *mount,
 		key:   *key,
 		now:   time.Now,
+		cache: *cache,
 	}
 	s := &signer{keys: keys, maxExpiry: *maxExpiry}
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
-	// kube-apiserver does not start without keys, so neither do we: keep
-	// starting until OpenBao has the key and the cert auth role, rather than
-	// failing and taking the API server's start job down with us
-	for {
-		err := keys.refresh(ctx)
-		if err == nil {
-			break
-		}
+	if err := keys.initialize(ctx); err != nil {
 		if ctx.Err() != nil {
 			return nil
 		}
-		slog.Warn("reading the key, retrying", "mount", *mount, "key", *key, "error", err)
-		select {
-		case <-ctx.Done():
-			return nil
-		case <-time.After(retryInterval):
-		}
+		return err
 	}
-
-	go func() {
-		ticker := time.NewTicker(refreshInterval)
-		defer ticker.Stop()
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-ticker.C:
-				if err := keys.refresh(ctx); err != nil {
-					slog.Warn("refreshing keys", "error", err)
-				}
-			}
-		}
-	}()
+	go keys.keepRefreshing(ctx)
 
 	_ = os.Remove(*socket)
 	lis, err := net.Listen("unix", *socket)

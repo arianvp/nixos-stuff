@@ -37,29 +37,25 @@ The test shows the result:
 *Fix:* only self-init when no `retry_join` peer is initialized (`ExecStartPre`
 probe), or make `bootstrap` a one-shot that real configs never carry after day 1.
 
-### C2. OpenBao is a hard startup dependency of every API server
-`kube-jwt-signer-openbao` is `requiredBy` kube-apiserver, has
-`TimeoutStartSec=infinity`, and reports ready only after it first reads the key
-from OpenBao. With OpenBao down (or unreachable through cert auth, see C4), a
-rebooted control plane node has **no API server**, and the unit sits in
-`activating` forever, never `failed`, so "failed units" alerting misses it.
-During an outage the running API servers degrade as follows:
+### C2. Partly fixed: an OpenBao outage still stops Secrets and new tokens
+The token signer caches OpenBao's public keys on disk. A control plane node
+rebooted during an OpenBao outage now gets its API server back: it verifies
+existing tokens and serves everything but Secrets. Still broken while OpenBao is
+down:
 - token minting fails at once (every `Sign` is a live `transit/sign`); new pods
   hang in `FailedMount`;
 - Secret writes stop after ~148 s (`encryptedDEKSource … expired`, the KMS v2
   DEK lifetime);
-- an API server restarted during the outage reports existing Secrets as
-  `StorageError: corrupt object … not transformable` (misleading: the data is
-  fine) and never becomes ready;
+- an API server restarted during the outage can't read Secrets, reports them as
+  `StorageError: corrupt object … not transformable`, and fails `readyz`
+  (`kms-providers`, `informer-sync`) until OpenBao is back;
 - `readyz` fails on every API server, so a readyz-based load balancer would
   drop all of them.
 
-It recovers by itself ~6 s (signer) to ~72 s (new pods) after OpenBao returns.
-*Test:* `ops-control-plane` "Total OpenBao outage", "Service account tokens".
-*Fix (workstream):* cache the public keys (and the latest key metadata) on
-disk, so the signer becomes ready and verification works without OpenBao, and
-only signing fails. Make the dependency `Wants=` plus readiness, not `Requires=`.
-Decide on an availability target for OpenBao, since it is now as critical as etcd.
+A signer with no cache (a node's first boot) still waits for OpenBao, and stays
+`activating`, never `failed`, so alerting has to watch for stuck jobs.
+*Test:* `ops-control-plane` "Total OpenBao outage", "Service account tokens and their signing key".
+*Next:* an availability target for OpenBao, which is now as critical as etcd.
 
 ### C3. Fixed: pods start again after a worker crashes
 `kubernetes-images` loads the preloaded images after CRI-O has wiped its
@@ -69,7 +65,8 @@ storage, and again whenever CRI-O restarts; the kubelet starts after it.
 ### C4. Losing the SPIRE server's keys breaks OpenBao cert auth for good, with no break-glass
 Cert auth roles pin the trust bundle, and `openbao-config` can only refresh it
 by logging in with cert auth. After a new SPIRE CA, every login fails with
-400/403 indefinitely: KMS plugins, signers (so API servers, via C2), and admins.
+400/403 indefinitely: KMS plugins, signers and admins. API servers come back
+from the signer's cached keys, but can't read Secrets or issue tokens (C2).
 There is no other way in:
 - self-init revokes the root token and creates no recovery keys (`n: 0, t: 0`);
 - `sys/generate-root` returns 405;
@@ -239,9 +236,9 @@ sync the subtest fails depending on writeback timing).
 ## Suggested workstreams, in order
 1. **OpenBao bootstrap safety + `openbao-config` correctness** (C1, H3, H8). Small,
    high value.
-2. **Node boot robustness** (C3, H2). Small; fixes cold start.
-3. **Decouple the API server from OpenBao availability** (C2, M2): signer key
-   cache, `Wants=` instead of `Requires=`, an OpenBao HA target.
+2. **Done: node boot robustness** (C3, H2).
+3. **Partly done: decouple the API server from OpenBao availability** (C2, M2):
+   the signer starts from cached keys; an OpenBao availability target remains.
 4. **Break-glass + trust anchor that survives losing SPIRE** (C4, H1): recovery
    keys offline, an upstream/offline root, HA SPIRE.
 5. **Backups and coordinated DR** (C5, H6, M4) across all three stores.

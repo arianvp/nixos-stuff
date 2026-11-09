@@ -388,13 +388,28 @@ in
           assert read_secret(control1, "encrypted") == "encrypted"
           in_cluster_api(30)
 
-          # A signer that restarts never becomes ready without OpenBao, and the
-          # API server, which Requires= it, never starts: as after a reboot
-          control1.succeed("systemctl restart --no-block kube-jwt-signer-openbao.service")
-          time.sleep(30)
-          control1.succeed("systemctl show -p ActiveState kube-jwt-signer-openbao.service | grep -x ActiveState=activating")
-          control1.fail("systemctl is-active kube-apiserver.service")
-          console.fail(f"kubectl {server(control1)} get --raw /livez --request-timeout=5s")
+          # A node that reboots during the outage gets its API server back:
+          # the signer serves the public keys it cached, so tokens verify,
+          # but it cannot sign, and Secrets stay unreadable without KMS
+          control1.shutdown()
+          since_reboot = time.monotonic()
+          control1.start()
+          control1.wait_for_unit("kube-apiserver.service", timeout=180)
+          measure("control1 API server active after a reboot during the outage", since_reboot)
+          control1.succeed("journalctl -b -u kube-jwt-signer-openbao.service -o cat | grep -q 'serving the cached public keys'")
+          console.wait_until_succeeds(f"kubectl {server(control1)} get --raw /livez", timeout=60)
+          console.wait_until_succeeds(accepts(control1, token), timeout=60)
+          console.succeed(f"kubectl {server(control1)} get nodes")
+          console.succeed(f"kubectl {server(control1)} create configmap after-reboot --from-literal=a=b")
+          out = readyz_verbose(control1)
+          print(out)
+          assert "[-]kms-providers failed" in out, out
+          status, out = console.execute(f"kubectl {server(control1)} create token default --request-timeout=20s 2>&1")
+          print(out)
+          assert status != 0, out
+          status, out = console.execute(f"kubectl {server(control1)} get secret encrypted --request-timeout=15s 2>&1")
+          print(out)
+          assert status != 0, out
 
           infra.systemctl("start openbao.service")
           since = time.monotonic()

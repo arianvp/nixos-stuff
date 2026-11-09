@@ -425,9 +425,9 @@ every agent has the new bundle (step 3), plus up to `restartMaxDelaySec`.
    bundle, so it fails forever (`journalctl -u openbao-config`: `curl: (22)
    ... 400`, then `permission denied`). Service account tokens keep working
    only while `kube-jwt-signer-openbao` holds the OpenBao token it got before
-   the loss. **Do not restart the signer or the API server until this is
-   fixed**: the signer then has to log in, fails, stays `activating`, and
-   `kube-apiserver` (which `Requires=` it) stays down. Fix it with a token
+   the loss. A restarted signer has to log in, fails, and serves the public
+   keys it cached, so its API server comes back and verifies tokens, but
+   mints none until this is fixed. Fix it with a token
    that does not depend on cert auth (a root token generated with the
    OpenBao recovery/unseal procedure, see the OpenBao runbook):
    ```sh
@@ -457,9 +457,9 @@ Tested by: `ops-spire` subtest "SPIRE server lost without backup". It
 asserts steps 1–5: entries return, control1's production-like agent
 rebootstraps by itself, the `insecure_bootstrap` agents need wiping,
 consumers restart by themselves, and the cluster serves again. It then
-asserts that `openbao-config` keeps failing and that restarting the signer
-takes the API server down for good. The OpenBao repair in step 6 is not
-tested.
+asserts that `openbao-config` keeps failing, and that after a restart of the
+signer the API server is ready and verifies tokens but cannot mint them. The
+OpenBao repair in step 6 is not tested.
 
 ## 8. CA rotation
 

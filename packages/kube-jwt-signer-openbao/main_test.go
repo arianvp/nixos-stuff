@@ -102,6 +102,7 @@ type fakeOpenBao struct {
 	logins     int
 	tokenCount int
 	signed     []int // key versions that were asked to sign
+	down       bool  // answers like a sealed OpenBao
 }
 
 func newFakeOpenBao(t *testing.T, created ...time.Time) *fakeOpenBao {
@@ -126,6 +127,10 @@ func (f *fakeOpenBao) addVersion(t *testing.T, at time.Time) {
 func (f *fakeOpenBao) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	if f.down {
+		http.Error(w, `{"errors":["Vault is sealed"]}`, http.StatusServiceUnavailable)
+		return
+	}
 	reply := func(v any) { _ = json.NewEncoder(w).Encode(v) }
 	var body map[string]any
 	_ = json.NewDecoder(r.Body).Decode(&body)
@@ -189,9 +194,10 @@ func (f *fakeOpenBao) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 type fixture struct {
-	fake  *fakeOpenBao
-	keys  *keyset
-	clock *clock
+	server *httptest.Server
+	fake   *fakeOpenBao
+	keys   *keyset
+	clock  *clock
 }
 
 // newFixture serves fake OpenBao over mutual TLS, with key versions created at
@@ -233,7 +239,7 @@ func newFixture(t *testing.T, ages ...time.Duration) *fixture {
 		}
 	}
 
-	f := &fixture{fake: fake, clock: c}
+	f := &fixture{server: server, fake: fake, clock: c}
 	f.keys = &keyset{
 		bao: &openbao{
 			address:   server.URL,

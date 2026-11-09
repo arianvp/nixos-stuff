@@ -81,8 +81,11 @@ in
           after = [ svid.unit ];
           serviceConfig = {
             Type = "notify";
-            # It keeps starting until OpenBao holds the key and the cert auth
-            # role, which openbao-config.service may add much later
+            # It is ready once it has the public keys: from OpenBao, or from
+            # the cache when OpenBao is unreachable. On the first start there
+            # is no cache, so it keeps starting until OpenBao holds the key
+            # and the cert auth role, which openbao-config.service may add
+            # much later.
             TimeoutStartSec = "infinity";
             ExecStart = lib.escapeShellArgs [
               (lib.getExe cfg.package)
@@ -102,10 +105,14 @@ in
               svid.paths.key
               "-ca-file"
               svid.paths.bundle
+              "-cache"
+              "/var/lib/kube-jwt-signer-openbao/keys.json"
             ];
             Restart = "on-failure";
             RestartSec = "5s";
             RuntimeDirectory = "kube-jwt-signer-openbao";
+            StateDirectory = "kube-jwt-signer-openbao";
+            StateDirectoryMode = "0700";
             UMask = "0077";
           };
         };

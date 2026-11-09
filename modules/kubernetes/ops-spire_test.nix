@@ -507,16 +507,22 @@ in
           # BAD: OpenBao's cert auth roles still trust only the old CA, and
           # openbao-config has to log in with cert auth to replace it, so it
           # never can. Tokens are only issued because the signer still holds
-          # the OpenBao token it got before. Once it has to log in again, the
-          # API server, which requires it, does not come back.
+          # the OpenBao token it got before. Once it has to log in again, it
+          # serves the public keys it cached, so the API server comes back
+          # and verifies tokens, but none can be issued.
           spire.wait_until_succeeds("journalctl -u openbao-config.service --since @" + str(since) + " | grep -q 'permission denied'", timeout=60)
           spire.fail("systemctl is-active openbao-config.service")
+          token = control1.succeed("kubectl create token default").strip()
           control1.succeed("systemctl restart --no-block kube-jwt-signer-openbao.service")
-          control1.wait_until_fails("kubectl get --raw /readyz", timeout=30)
-          time.sleep(30)
-          control1.fail("timeout 5 kubectl get --raw /readyz")
-          assert control1.succeed("systemctl show -P ActiveState kube-jwt-signer-openbao.service").strip() == "activating"
-          control1.fail("systemctl is-active kube-apiserver.service")
+          control1.wait_for_unit("kube-apiserver.service", timeout=60)
+          control1.wait_until_succeeds("kubectl get --raw /readyz", timeout=60)
+          control1.succeed(f"journalctl -u kube-jwt-signer-openbao.service --since @{since} -o cat | grep -q 'serving the cached public keys'")
+          control1.succeed(
+              "kubectl auth whoami --kubeconfig=/dev/null --server=https://control1.${t.domain}:6443"
+              f" --certificate-authority=/run/trust-bundle-svid/bundle.pem --token={token}"
+          )
+          time.sleep(10)
+          control1.fail("timeout 20 kubectl create token default")
 
       with subtest("Registration entries come from the configuration of the SPIRE server"):
           # Adding a node, or any workload on one, means deploying the SPIRE server

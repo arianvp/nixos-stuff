@@ -18,11 +18,12 @@ Conventions: `$CP` is a control plane host, `$DOMAIN` the DNS domain, `$BAO` the
 OpenBao URL (`kubernetes.kube-jwt-signer.openbao`), `$KEY` the signing key
 (`kubernetes.kube-jwt-signer.key`, default `<clusterName>-service-accounts`).
 
-> **Read first, 3am operator.** OpenBao is a hard dependency of the control
-> plane. Every service account token is signed by OpenBao, every Secret is
-> decrypted with it, and **an API server node that boots or restarts its signer
-> while OpenBao is down does not start at all**. If OpenBao is down, do not
-> reboot or redeploy control plane nodes. Fix OpenBao first.
+> **Read first, 3am operator.** OpenBao is a hard dependency of most of what
+> the control plane does. Every service account token is signed by OpenBao and
+> every Secret is decrypted with it. An API server that boots or restarts while
+> OpenBao is down starts and verifies existing tokens (its signer serves the
+> public keys it cached on disk), but it can neither mint tokens nor read
+> Secrets, so new pods do not start. Fix OpenBao first.
 
 ## Dependency and startup order
 
@@ -48,8 +49,10 @@ spire-agent   Restart=on-failure, RestartSec=5s, no start limit
    +--> kube-kms-openbao             (Requires kube-kms-openbao-svid; Before= apiserver;
    |                                  starts without OpenBao)
    +--> kube-jwt-signer-openbao      (Requires kube-jwt-signer-openbao-svid;
-   |       Type=notify, TimeoutStartSec=infinity: READY only once it has read
-   |       transit/keys/$KEY from OpenBao, retried every 5s)
+   |       Type=notify: READY once it has read transit/keys/$KEY from OpenBao,
+   |       or at once from its cache /var/lib/kube-jwt-signer-openbao/keys.json
+   |       if OpenBao is unreachable. Without a cache (first boot), it waits
+   |       for OpenBao, retrying every 5s, TimeoutStartSec=infinity)
    |         ^ RequiredBy=, Before=
    +--> kube-apiserver               (Requires kube-apiserver-svid and the signer)
    |       --> etcd (TLS, kube-apiserver SVID)
@@ -66,11 +69,11 @@ worker: crio (after an unclean shutdown it WIPES its storage when it starts)
 
 Consequences:
 
-* No OpenBao, no kube-apiserver on a node that (re)boots: the signer never
-  becomes ready, so the API server's start job waits forever. `systemctl` shows
-  `kube-jwt-signer-openbao.service` as `activating` and `kube-apiserver` as
-  inactive, with a pending start job. Nothing fails, so no alert fires on
-  "failed units".
+* A node that (re)boots without OpenBao starts its API server from the
+  signer's cache: it verifies tokens and serves everything but Secrets, and
+  fails to mint tokens until OpenBao is back. Only on a node whose signer never
+  reached OpenBao (a new node) does the signer stay `activating`, and the API
+  server with it. Nothing fails then, so no alert fires on "failed units".
 * Restarting only `kube-apiserver` keeps the running signer. Restarting the
   signer restarts the API server (it `Requires=` the signer).
 * If SPIRE is unreachable when a node boots, its etcd, OpenBao, KMS plugin,
@@ -116,8 +119,8 @@ and a token can be minted.
 | `[-]etcd failed` (livez fails too) | etcd unreachable | [etcd outage](#etcd-outage) |
 | `[-]kms-providers failed` | KMS plugin cannot reach OpenBao | [OpenBao outage](#total-openbao-outage) |
 | `[-]informer-sync failed` + kms failed | API server started during an OpenBao outage | [OpenBao outage](#total-openbao-outage) |
-| `create token` fails with `transit/sign ... connection refused` | OpenBao down, signing impossible | [OpenBao outage](#total-openbao-outage) |
-| connection refused on :6443, signer `activating` | signer waits for OpenBao | [OpenBao outage](#total-openbao-outage) |
+| `create token` fails with `while signing jwt: rpc error: code = Unavailable` | OpenBao down, signing impossible | [OpenBao outage](#total-openbao-outage) |
+| connection refused on :6443, signer `activating` | a signer with no cache waits for OpenBao | [OpenBao outage](#total-openbao-outage) |
 | `*-svid.service` `activating`, start jobs waiting | the SPIRE agent has no SVID for it yet | [SPIRE runbook](spire.md), sections 1 and 5 |
 | pods stuck `ContainerCreating`, events mention `localhost/pause` | the images are not loaded: `kubernetes-images` failed | [Worker crashed](#worker-crashed-or-lost-power) |
 
@@ -131,8 +134,8 @@ Tested by: `ops-control-plane` subtest 'Health check'.
 plane node down. One node at a time.
 
 **Preconditions:** the health check passes on **all** control planes. **OpenBao
-and etcd are healthy.** The node will not come back without OpenBao. You have a
-shell on a node that stays up.
+and etcd are healthy.** Without OpenBao the node comes back unable to read
+Secrets or mint tokens. You have a shell on a node that stays up.
 
 **Steps, per node `$CP`:**
 
@@ -178,7 +181,8 @@ Tested by: `ops-control-plane` subtest 'Rolling reboot of the control plane'.
 All API servers sign with one ECDSA P-256 key in OpenBao transit
 (`transit/keys/$KEY`). Each `kube-jwt-signer-openbao` signs every token with a
 live `transit/sign` call, re-reads the public keys every 30s, and keeps them in
-memory to verify tokens. A new key version signs only after it is 60s old
+memory and in `/var/lib/kube-jwt-signer-openbao/keys.json` to verify tokens. A
+new key version signs only after it is 60s old
 (`publishDelay`), and every version OpenBao still lists stays trusted.
 
 **When to use:** suspected key compromise, scheduled manual rotation, tokens
@@ -235,13 +239,18 @@ fails, OpenBao down, sealed or unreachable.
 | Minting tokens (`kubectl create token`, kubelet projected volumes) | **fails at once**. New pods hang in `ContainerCreating` with `FailedMount ... transit/sign ... connection refused` |
 | `readyz` | fails (`kms-providers`) within ~10s. A load balancer health-checking readyz would drop **all** API servers |
 | `kube-apiserver` restarted (signer kept running) | starts, never ready (`kms-providers`, `informer-sync`). Every Secret read returns `StorageError: corrupt object ... data from the storage is not transformable`. **The data is not corrupt.** Non-Secret resources work. It logs decrypt errors ~10 times per second |
-| signer restarted, or node rebooted | signer stays `activating`, **no API server on that node** |
+| signer restarted, or node rebooted | the signer starts from its cache (`serving the cached public keys until OpenBao answers` in its journal), and the API server starts as above (measured: unit active 18s after power-on, `/livez` passing ~60s later, once the `storage-readiness` hook stops waiting for the Secrets cache): it verifies existing tokens and serves non-Secret resources, but never becomes ready, cannot read Secrets and cannot mint tokens (`code = Unavailable desc = OpenBao has not been reached yet`). A signer with no cache (a node that never reached OpenBao) stays `activating`, with no API server |
 | Existing pods | keep running, and keep reaching the API server with their existing tokens |
+
+Minting tokens and reading or writing Secrets need OpenBao, so no restart
+order avoids those failures. `readyz` fails because the KMS plugin's health
+check asks OpenBao for the key; that is what KMS v2 health means, and the
+plugin does not delay the API server's start.
 
 Recovery is automatic once OpenBao is back and unsealed (static seal unseals
 itself). In the test: OpenBao unsealed at once, a running API server was ready
-6s later, a restarted one ~20s later, and the stuck signer and its API server
-came up by themselves. New pods were Running ~70s later (kubelet volume-mount
+6s later, a restarted one ~20s later, and signers that started from their cache
+signed again within 5s. New pods were Running ~70s later (kubelet volume-mount
 backoff).
 
 **Steps:**
@@ -252,9 +261,8 @@ curl -s --cacert /run/trust-bundle-svid/bundle.pem $BAO/v1/sys/seal-status
 ssh $CP journalctl -u kube-kms-openbao -u kube-jwt-signer-openbao --since -10min
 ```
 
-1. **Do not restart or reboot API servers, signers or KMS plugins.** Each
-   restart turns a degraded API server into a dead one (signer) or a
-   Secret-less one (apiserver).
+1. **Avoid restarting or rebooting API servers.** A running API server still
+   reads Secrets with its cached data keys; a restarted one cannot.
 2. Freeze deploys and anything that creates pods or Secrets. Pod creation
    already fails, and Secret writes fail after ~2.5 minutes.
 3. Fix OpenBao. It needs its SVID (`openbao-svid.service`, which needs the
@@ -354,8 +362,9 @@ servers' signers keep retrying until OpenBao is up, every unit that needs an
 SVID waits for SPIRE, and the worker loads its images again after CRI-O wiped
 them (see [Worker crashed](#worker-crashed-or-lost-power)).
 
-Order matters because nothing on a node starts before SPIRE is back, and if
-OpenBao is not up, no API server starts.
+Order matters because nothing on a node starts before SPIRE is back, and until
+OpenBao is up the API servers cannot read Secrets or mint tokens, so no new pod
+starts.
 
 **Steps:**
 
@@ -394,8 +403,8 @@ all at once, with no readiness gate:
 * A version bump of `pkgs.kubernetes` restarts `kube-apiserver`,
   `kube-controller-manager` and `kube-scheduler` together on that node.
 * A change to the signer's options or package restarts
-  `kube-jwt-signer-openbao` and therefore `kube-apiserver`. **During an OpenBao
-  outage this kills the node's API server** (see above).
+  `kube-jwt-signer-openbao` and therefore `kube-apiserver`. During an OpenBao
+  outage the restarted API server cannot read Secrets (see above).
 * A change to `kubernetes.encryption` changes the encryption config and so
   restarts the API server, and maybe `kube-kms-openbao`.
 * etcd has `restartTriggers` on its config file.
