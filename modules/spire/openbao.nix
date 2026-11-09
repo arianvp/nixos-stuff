@@ -437,12 +437,24 @@ in
         RestartSec = "5s";
       };
       script = ''
+        set -o pipefail
+        response=$(mktemp)
+        trap 'rm -f "$response"' EXIT
+
+        # A standby whose active node is gone answers with an empty redirect
+        # to it, so anything but a 2xx is a failure
         bao() {
-          curl --silent --show-error --fail-with-body \
+          local status
+          status=$(curl --silent --show-error --output "$response" --write-out '%{http_code}' \
             --cacert ${svid.paths.bundle} --cert ${svid.paths.cert} --key ${svid.paths.key} \
-            "$@"
+            "$@") || true
+          if [[ $status != 2?? ]]; then
+            echo "HTTP $status from ''${*: -1}: $(cat "$response")" >&2
+            return 1
+          fi
+          cat "$response"
         }
-        token=$(bao --data '{"name": "openbao-config"}' ${address}/v1/auth/cert/login | jq -r .auth.client_token)
+        token=$(bao --data '{"name": "openbao-config"}' ${address}/v1/auth/cert/login | jq -er .auth.client_token)
 
         jq -c '.policies | to_entries[]' ${desiredState} | while read -r policy; do
           jq '{policy: .value}' <<< "$policy" |

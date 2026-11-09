@@ -474,7 +474,7 @@ in
           # never can. Tokens are only issued because the signer still holds
           # the OpenBao token it got before. Once it has to log in again, the
           # API server, which requires it, does not come back.
-          spire.wait_until_succeeds("journalctl -u openbao-config.service --since @" + str(since) + " | grep -q 'permission denied'", timeout=60)
+          spire.wait_until_succeeds("journalctl -u openbao-config.service --since @" + str(since) + " | grep -q 'auth/cert/login: .*invalid certificate'", timeout=60)
           spire.fail("systemctl is-active openbao-config.service")
           control1.succeed("systemctl restart --no-block kube-jwt-signer-openbao.service")
           control1.wait_until_fails("kubectl get --raw /readyz", timeout=30)

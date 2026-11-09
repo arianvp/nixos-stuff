@@ -44,7 +44,10 @@ Setup (`modules/spire/openbao.nix`):
   `405 unsupported operation` either way. The only way in is cert auth with an
   X509-SVID.
 - `openbao-config.service` reapplies policies and cert auth roles (including
-  the trust bundle) on boot, on config change, and when SPIRE adds a CA.
+  the trust bundle) on boot, on config change, and when SPIRE adds a CA. It
+  fails on any reply but a 2xx and then retries every 5s, so `active` means
+  everything was applied. It doesn't delete policies or roles removed from
+  the configuration.
 
 ## 0. Getting in: shell setup
 
@@ -434,18 +437,16 @@ starts.
    static seal key, even alone, but stays a standby until a second node is up.
 2. Wait until `sys/leader` names a leader and autopilot is healthy (section 1).
    In the test this takes well under a minute once two nodes are up.
-3. **Re-run openbao-config on every node**: `systemctl restart openbao-config`.
-   A node that boots while the old active node is still down advertises that
-   dead node and answers every request with an empty `307` redirect to it.
-   `openbao-config` takes those for success, logs nothing, and stays
-   `active (exited)` without having applied any policy, role or CA. Normally
-   this is harmless because the data is already in raft, but it means a CA
-   change that arrived during the outage was never applied.
+3. Wait until `openbao-config` is `active (exited)` on every node. A node that
+   boots while the old active node is still down advertises that dead node and
+   answers every request with an empty `307` redirect to it. `openbao-config`
+   fails on those (`HTTP 307 from …` in its journal) and retries every 5s until
+   there is a leader, so it shows `activating (auto-restart)` meanwhile.
 4. Run the transit smoke test. Then check that API servers start
    (`kube-jwt-signer-openbao` and `kube-kms-openbao` can log in).
 
-**Verification**: section 1 is healthy. `journalctl -u openbao-config -b` shows
-no curl errors, and `systemctl show -P NRestarts openbao-config` is 0.
+**Verification**: section 1 is healthy, and `systemctl is-active openbao-config`
+says `active` on every node.
 
 **Abort**: n/a. If a node doesn't unseal, check `journalctl -u openbao -b` for
 seal key errors (wrong credential, `unknown key id`) and SVID errors.
@@ -463,6 +464,6 @@ make it join as a new member: stop it, wipe `/var/lib/openbao/*`, start it
 
 Tested by: `ops-openbao` subtest 'Full cold start' (all three crashed less
 than a minute after openbao1 rejoined, openbao1 started alone, checks the 307
-behaviour and that openbao-config "succeeds" without a leader, then the rest
-start and transit works).
+behaviour and that openbao-config keeps failing without a leader, then the
+rest start, openbao-config succeeds and transit works).
 

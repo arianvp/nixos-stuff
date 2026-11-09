@@ -414,17 +414,16 @@ in
           for m in openbaos:
               m.crash()
           openbao1.start()
-          openbao1.wait_for_unit("openbao-config.service", timeout=180)
-          client.wait_until_succeeds(unsealed("openbao1"), timeout=30)
+          client.wait_until_succeeds(unsealed("openbao1"), timeout=180)
           # The lone node still advertises the crashed active node and answers
-          # every request with a redirect to it. openbao-config takes the
-          # empty 307 replies for success: it reports policies and roles as
-          # applied while nothing was written, and never retries.
+          # every request with a redirect to it. openbao-config fails on the
+          # empty 307 replies and retries until there is a leader.
           lone = leader("openbao1")
           show("lone node leader", lone)
           assert not lone["is_self"] and lone["leader_address"] != "", lone
-          restarts = openbao1.succeed("systemctl show -P NRestarts openbao-config.service").strip()
-          assert restarts == "0", restarts
+          openbao1.wait_until_succeeds("journalctl -u openbao-config -b --no-pager | grep -q 'HTTP 307 from'", timeout=60)
+          openbao1.wait_until_succeeds("test $(systemctl show -P NRestarts openbao-config.service) -gt 0", timeout=30)
+          openbao1.fail("systemctl is-active openbao-config.service")
           fetch_svid()
           login = client.succeed(
               curl("-o /dev/null -w '%{http_code}' --cert /tmp/admin/svid.0.pem --key /tmp/admin/svid.0.key", body({"name": "admin"}), url("openbao1", "auth/cert/login"))
@@ -433,6 +432,7 @@ in
           openbao3.start()
           openbao2.start()
           token = wait_healthy("openbao1", timeout=180)
+          openbao1.wait_for_unit("openbao-config.service", timeout=60)
           check_transit(token, "openbao1", [ciphertext])
           assert node_ids(token, "openbao1") == ids, ids
 

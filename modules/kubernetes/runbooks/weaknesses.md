@@ -134,15 +134,11 @@ restored keys), longer SVID TTLs, and alerts on SVID age.
 `Restart=` on consumers, instead of a one-shot `Requires=` chain; a start limit
 plus a pre-start hint on etcd.
 
-### H3. `openbao-config.service` reports success while applying nothing
-After a cold start, a lone standby answers with an empty `307` to the dead
-leader. `curl --fail-with-body` doesn't fail on 3xx, and the script has no
-`pipefail`, so the unit exits 0 and `RemainAfterExit` keeps it "active". If
-SPIRE adds a CA in that window, cert auth never learns it, and every login fails
-when the old CA expires. It also never deletes policies or roles removed from Nix.
+### H3. Fixed: `openbao-config.service` fails when it applies nothing
+It fails on any non-2xx answer, redirects included, and on a missing token, and
+retries until a leader answers.
+*Remaining:* it never deletes policies or roles removed from Nix.
 *Test:* `ops-openbao` "Full cold start".
-*Fix:* `set -o pipefail`, `jq -e`, check for a 2xx, `-L` or address the leader;
-prune undeclared roles and policies.
 
 ### H4. Config deploys don't do what you'd expect
 - `nixos-rebuild switch` never restarts OpenBao (`restartIfChanged = false` in
