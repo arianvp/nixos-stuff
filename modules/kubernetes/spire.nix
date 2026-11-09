@@ -170,6 +170,21 @@ in
       };
     };
 
+    etcdAdmins = lib.mkOption {
+      type = lib.types.attrsOf (lib.types.listOf lib.types.str);
+      default = { };
+      description = ''
+        Workload selectors, per name, of processes on this node that may use
+        etcd as clients with full access: operators, backups and monitoring.
+        Their X509-SVIDs carry the DNS name `etcd-admin` and the SPIFFE ID
+        `spiffe://<td>/k8s/etcd-admin/<name>`, which Kubernetes maps to a user
+        of that name in no group, so they are not cluster admins.
+      '';
+      example = {
+        backup = [ "systemd:id:etcd-backup.service" ];
+      };
+    };
+
     entries = lib.mkOption {
       type = lib.types.attrsOf (lib.types.submodule entryModule);
       default = { };
@@ -198,7 +213,15 @@ in
             spiffeID = spiffeID "k8s/admin/${name}";
             inherit selectors;
           }
-        ) cfg.admins;
+        ) cfg.admins
+        // lib.mapAttrs' (
+          name: selectors:
+          lib.nameValuePair "${hostName}-etcd-admin-${name}" {
+            spiffeID = spiffeID "k8s/etcd-admin/${name}";
+            inherit selectors;
+            dnsNames = [ "etcd-admin" ];
+          }
+        ) cfg.etcdAdmins;
       }
 
       # kubectl authenticates as the SPIFFE ID of whoever runs it
@@ -268,7 +291,10 @@ in
                 initial-cluster = lib.mkDefault "${hostName}=https://${fqdn}:2380";
                 # Any SVID chains to the trust bundle, so restrict who may connect
                 client-transport-security = tls // {
-                  allowed-hostname = [ "kube-apiserver" ];
+                  allowed-hostname = [
+                    "kube-apiserver"
+                    "etcd-admin"
+                  ];
                 };
                 peer-transport-security = tls // {
                   allowed-hostname = [ "etcd-peer" ];

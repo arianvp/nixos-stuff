@@ -174,14 +174,13 @@ leader is one of the two (the leadership transfer times out).
 *Fix:* deterministic per-member slots, or gate each restart on cluster health.
 Better still, make etcd and the API server reload CA files so no restart is needed.
 
-### H6. No operator, backup or monitoring identities for etcd
-etcd accepts only the DNS SAN `kube-apiserver` (`modules/kubernetes/spire.nix:290`)
-and auth is off. Operators, backups and Prometheus would all impersonate the API
-server with full read/write, and audit can't tell them apart. There is no
-`listen-metrics-urls`. Using a member's own SVID returns a misleading
-`context deadline exceeded … unhealthy cluster` instead of an authorization error.
-*Fix:* an `etcd-admin` allowed name, a metrics listener on loopback, and later
-etcd RBAC.
+### H6. Partly fixed: operator, backup and monitoring identities for etcd
+`kubernetes.spire.etcdAdmins` registers operators with the DNS SAN `etcd-admin`,
+which etcd accepts as a client and Kubernetes doesn't treat as an admin. Health
+and metrics are served without a client certificate on `127.0.0.1:2381`.
+*Remaining:* etcd auth is off, so `etcd-admin` can read and write everything.
+*Test:* `ops-etcd` "etcd-admin is not a Kubernetes identity", "health and metrics
+  without a client certificate".
 
 ### H7. Slow failover and no health checks on the endpoints
 `api.<domain>` and `openbao.<domain>` are DNS round-robin. With the first

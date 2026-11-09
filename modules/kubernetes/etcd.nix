@@ -31,6 +31,15 @@ in
             readOnly = true;
             description = "Path to the data directory.";
           };
+          listen-metrics-urls = lib.mkOption {
+            type = lib.types.str;
+            default = "http://127.0.0.1:2381";
+            description = ''
+              Comma-separated URLs that serve `/metrics` and `/health`. With
+              `http://` they need no client certificate, so keep them on
+              loopback or a monitoring network.
+            '';
+          };
         };
       };
       default = { };

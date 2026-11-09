@@ -33,18 +33,17 @@ in
       imports = [ t.node ];
       networking.extraHosts = t.spireHosts nodes.spire;
       kubernetes.spire.admins = lib.mkForce { };
+      environment.systemPackages = [ pkgs.curl ];
     };
 
   nodes = {
     spire = {
       imports = [ t.server ];
-      environment.systemPackages = [ pkgs.etcd ];
-      # The operator: the only client name etcd accepts is the API server's
-      kubernetes.spire.entries.etcd-operator = {
-        spiffeID = "spiffe://${t.trustDomain}/test/etcd-operator";
-        selectors = [ "systemd:id:backdoor.service" ];
-        dnsNames = [ "kube-apiserver" ];
-      };
+      environment.systemPackages = [
+        pkgs.etcd
+        pkgs.openssl
+      ];
+      kubernetes.spire.etcdAdmins.operator = [ "systemd:id:backdoor.service" ];
     };
   }
   // lib.genAttrs members (_: member);
@@ -114,13 +113,33 @@ in
             assert m.name in out, out
         assert ctl("alarm list").strip() == ""
         # A member's own SVID only carries etcd-peer, so members cannot be used
-        # as an admin workstation; only the kube-apiserver name works
+        # as an admin workstation
         etcd1.fail(
             "etcdctl --cacert /run/etcd-svid/bundle.pem --cert /run/etcd-svid/svid.pem"
             f" --key /run/etcd-svid/svid.key --endpoints {ep(etcd1)} --command-timeout=5s endpoint health"
         )
         # etcd auth is off, so the operator identity has full write access
         ctl("put /ops/health ok")
+
+    with subtest("etcd-admin is not a Kubernetes identity"):
+        # The API server takes the user from the CN and the groups from O. The
+        # operator's SVID has its SPIFFE ID as CN and no O, so it is an
+        # ordinary user in no group, never system:masters.
+        cert = spire.succeed("openssl x509 -in /root/op/svid.0.pem -noout -subject -ext subjectAltName -nameopt sep_multiline")
+        print(cert)
+        assert "CN=spiffe://${t.trustDomain}/k8s/etcd-admin/operator" in cert, cert
+        assert "O=" not in cert, cert
+        assert "DNS:etcd-admin" in cert, cert
+        assert "kube-apiserver" not in cert, cert
+
+    with subtest("health and metrics without a client certificate"):
+        for m in members:
+            out = m.succeed("curl --fail --silent --max-time 5 http://127.0.0.1:2381/health")
+            assert json.loads(out)["health"] == "true", out
+            out = m.succeed("curl --fail --silent --max-time 5 http://127.0.0.1:2381/metrics")
+            assert "etcd_server_has_leader 1" in out, out
+        # Only on loopback
+        spire.fail(f"curl --silent --max-time 5 http://{etcd1.name}.${t.domain}:2381/health")
 
     with subtest("rolling restart"):
         start_writer("writer-rolling")

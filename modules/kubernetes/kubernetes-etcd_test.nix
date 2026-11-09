@@ -60,7 +60,7 @@ in
         out = etcd1.succeed("${etcdctl} --endpoints https://etcd3.${t.domain}:2379 get foo --print-value-only")
         assert out.strip() == "bar", out
 
-    with subtest("Only the API server's DNS name may connect as a client"):
+    with subtest("A member's peer SVID is rejected as a client"):
         etcd1.fail("etcdctl --cacert bundle.0.pem --cert /run/etcd-svid/svid.pem --key /run/etcd-svid/svid.key --endpoints https://etcd1.${t.domain}:2379 get foo")
 
     with subtest("Clients without an SVID are rejected"):

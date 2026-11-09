@@ -12,8 +12,14 @@ matter for every procedure:
 - `initial-cluster` is static and `initial-cluster-state` is unset (`new`).
   Both only matter when the data dir is empty.
 - Peers must present DNS SAN `etcd-peer`. Clients must present DNS SAN
-  `kube-apiserver`. There is no other client identity and etcd auth is off, so
-  **whoever holds a `kube-apiserver` SVID has full read/write on all of etcd**.
+  `kube-apiserver` (the API servers) or `etcd-admin` (operators, backups,
+  monitoring; `kubernetes.spire.etcdAdmins`). etcd auth is off, so **whoever
+  holds either SVID has full read/write on all of etcd**. `etcd-admin` SVIDs
+  are not Kubernetes admins: the API server sees their SPIFFE ID as a user in
+  no group.
+- Each member serves `/health` and `/metrics` on `http://127.0.0.1:2381`
+  (`kubernetes.etcd.settings.listen-metrics-urls`) without a client
+  certificate.
 - etcd restarts by itself, after a random delay of up to
   `kubernetes.spire.restartMaxDelaySec` (600s), whenever SPIRE adds a CA to the
   trust bundle. Check `journalctl -u etcd-svid-bundle` before you assume a
@@ -21,28 +27,37 @@ matter for every procedure:
 
 ## 0. Get an operator identity
 
-Use the API server's identity, as root on a control-plane node:
+Declare yourself an etcd admin on a machine with a SPIRE agent, and deploy it
+and then the SPIRE server (which registers the entry):
 
-```sh
-export ETCDCTL_CACERT=/run/kube-apiserver-svid/bundle.pem
-export ETCDCTL_CERT=/run/kube-apiserver-svid/svid.pem
-export ETCDCTL_KEY=/run/kube-apiserver-svid/svid.key
-export ETCDCTL_ENDPOINTS=https://etcd1.example.com:2379,https://etcd2.example.com:2379,https://etcd3.example.com:2379
+```nix
+kubernetes.spire.etcdAdmins.<you> = [ "unix:uid:0" ];   # any workload selectors
 ```
 
-If no control plane is up (e.g. during disaster recovery), register an entry on
-the SPIRE server for a shell on a machine with an agent, with
-`dnsNames = [ "kube-apiserver" ]`, as `ops-etcd` does for the test driver
-(`selectors = [ "systemd:id:backdoor.service" ]`), then:
+`ops-etcd` does this for the test driver with
+`selectors = [ "systemd:id:backdoor.service" ]`. Then, on that machine:
 
 ```sh
 mkdir -p /root/op && spire-agent api fetch x509 -socketPath /run/spire/agent/public/api.sock -write /root/op
 export ETCDCTL_CACERT=/root/op/bundle.0.pem ETCDCTL_CERT=/root/op/svid.0.pem ETCDCTL_KEY=/root/op/svid.0.key
+export ETCDCTL_ENDPOINTS=https://etcd1.example.com:2379,https://etcd2.example.com:2379,https://etcd3.example.com:2379
 ```
 
-The fetched SVID expires (default 1h); fetch again when you get TLS errors. Do
-not try the member's own `/run/etcd-svid/*`: it only carries `etcd-peer` and
-is rejected as a client. The commands below assume the variables above are set.
+The SVID carries DNS SAN `etcd-admin` and the SPIFFE ID
+`spiffe://example.com/k8s/etcd-admin/<you>`, so it is distinct from the API
+servers' and cannot act on the Kubernetes API as an admin. Do not borrow
+`/run/kube-apiserver-svid/*` on a control plane. The fetched SVID expires
+(default 1h); fetch again when you get TLS errors. Do not try the member's own
+`/run/etcd-svid/*`: it only carries `etcd-peer` and is rejected as a client,
+with a misleading `context deadline exceeded` rather than an authorization
+error. The commands below assume the variables above are set.
+
+For a quick look on a member itself, no identity is needed:
+
+```sh
+curl -s http://127.0.0.1:2381/health    # {"health":"true",...}
+curl -s http://127.0.0.1:2381/metrics | grep -E '^etcd_server_(has_leader|is_leader)|^etcd_mvcc_db_total_size_in_bytes'
+```
 
 ## 1. Health check
 
@@ -60,7 +75,8 @@ etcdctl alarm list                           # empty
 `context deadline exceeded` while others are fine is down or partitioned; look
 at `journalctl -u etcd -u etcd-svid -b` on it.
 **Rollback**: read-only.
-Tested by: `ops-etcd` subtest 'health check'.
+Tested by: `ops-etcd` subtests 'health check', 'etcd-admin is not a Kubernetes
+identity' and 'health and metrics without a client certificate'.
 
 ## 2. Rolling restart / reboot
 
