@@ -35,7 +35,7 @@ let
 
     [dirname_tpm_seq_model]
     oid = OID:2.23.133.2.2
-    str = UTF8:"ST33HTPHAHD4"
+    str = UTF8:"${cfg.model}"
 
     [dirname_tpm_seq_version]
     oid = OID:2.23.133.2.3
@@ -53,6 +53,14 @@ in
       type = lib.types.path;
       description = "Path to the CA certificate";
     };
+    model = lib.mkOption {
+      type = lib.types.str;
+      default = "ST33HTPHAHD4";
+      description = ''
+        TPM model in the EKCert, which SPIRE's TPM attestor offers as the
+        `tpm:model` selector.
+      '';
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -66,25 +74,28 @@ in
           ]
         }:$PATH
 
-        tpm2_createek -G rsa -u ek.pub -c ek.ctx -f pem
+        # The TPM state outlives a reboot of the VM, and with it the certificate
+        if ! tpm2_nvreadpublic 0x01c00002 > /dev/null 2>&1; then
+          tpm2_createek -G rsa -u ek.pub -c ek.ctx -f pem
 
-        # Sign a certificate with the provisioning CA
-        openssl x509 \
-          -extfile ${ek_config} \
-          -new -days 365 \
-          -subj "/CN=swtpm-ekcert" \
-          -extensions tpm_policy \
-          -CA ${cfg.certificate} -CAkey ${cfg.key} \
-          -out ekcert.der -outform der \
-          -force_pubkey ek.pub
+          # Sign a certificate with the provisioning CA
+          openssl x509 \
+            -extfile ${ek_config} \
+            -new -days 365 \
+            -subj "/CN=swtpm-ekcert" \
+            -extensions tpm_policy \
+            -CA ${cfg.certificate} -CAkey ${cfg.key} \
+            -out ekcert.der -outform der \
+            -force_pubkey ek.pub
 
-        # Create NVRAM slot for the certificate
-        tpm2_nvdefine 0x01c00002 \
-          -C o \
-          -a "ownerread|policyread|policywrite|ownerwrite|authread|authwrite" \
-          -s "$(wc -c ekcert.der | cut -f 1 -d ' ')"
+          # Create NVRAM slot for the certificate
+          tpm2_nvdefine 0x01c00002 \
+            -C o \
+            -a "ownerread|policyread|policywrite|ownerwrite|authread|authwrite" \
+            -s "$(wc -c ekcert.der | cut -f 1 -d ' ')"
 
-        tpm2_nvwrite 0x01c00002 -C o -i ekcert.der
+          tpm2_nvwrite 0x01c00002 -C o -i ekcert.der
+        fi
       '';
     };
 

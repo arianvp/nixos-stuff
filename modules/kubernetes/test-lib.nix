@@ -1,15 +1,28 @@
 # Shared setup for the Kubernetes tests: a SPIRE trust domain whose agents
-# attest with http_challenge, so nodes need no provisioning from the test script.
+# attest with their TPM, as in production. Each node's swtpm gets an EK
+# certificate from the test CA whose TPM model is the node's host name, so a
+# node alias selects it by tpm:model although its EK is new on every run.
 { lib }:
+let
+  # The node alias every workload of a node runs under
+  nodeID = host: "spiffe://example.com/node/${host}";
+in
 {
+  inherit nodeID;
   trustDomain = "example.com";
   domain = "example.com";
 
   # Every node: a SPIRE agent and the SPIRE wiring of the Kubernetes modules
   node =
-    { config, ... }:
+    { config, pkgs, ... }:
+    let
+      hostName = config.networking.hostName;
+    in
     {
-      imports = [ ./. ];
+      imports = [
+        ./.
+        ../tpm2-ekcert-provisioning.nix
+      ];
 
       networking.domain = "example.com";
       networking.useNetworkd = true;
@@ -17,8 +30,14 @@
       # lines of /etc/hosts, as with names that resolve to several nodes
       system.nssDatabases.hosts = lib.mkBefore [ "files" ];
 
-      networking.firewall.allowedTCPPorts = [ 80 ];
-      systemd.services.spire-agent.serviceConfig.AmbientCapabilities = [ "CAP_NET_BIND_SERVICE" ];
+      virtualisation.useEFIBoot = true;
+      virtualisation.tpm.provisioningRootCA = {
+        enable = true;
+        key = ../../tests/tpm-ca.key;
+        certificate = ../../tests/tpm-ca.crt;
+        model = hostName;
+      };
+
       services.spire.agent = {
         enable = true;
         settings = {
@@ -30,8 +49,11 @@
             insecure_bootstrap = true;
           };
           plugins = {
-            KeyManager.memory.plugin_data = { };
-            NodeAttestor.http_challenge.plugin_data.port = 80;
+            KeyManager.disk.plugin_data.directory = "$STATE_DIRECTORY";
+            NodeAttestor.tpm = {
+              plugin_cmd = lib.getExe' pkgs.spire-tpm-plugin "tpm_attestor_agent";
+              plugin_data = { };
+            };
             WorkloadAttestor.systemd.plugin_data = { };
             WorkloadAttestor.unix.plugin_data = { };
           };
@@ -40,7 +62,12 @@
 
       kubernetes.spire = {
         enable = true;
-        parentID = "spiffe://example.com/spire/agent/http_challenge/${config.networking.hostName}";
+        parentID = nodeID hostName;
+        entries."${hostName}-node" = {
+          spiffeID = nodeID hostName;
+          parentID = "spiffe://example.com/spire/server";
+          selectors = [ "tpm:model:${hostName}" ];
+        };
         # The test driver's shell
         admins.root = [ "systemd:id:backdoor.service" ];
       };
@@ -49,20 +76,24 @@
   # The SPIRE server, which registers what every node asks for. Every node
   # needs spireHosts pointing at it.
   server =
-    { nodes, ... }:
+    { nodes, pkgs, ... }:
     {
+      environment.etc."spire/server/tpm-ca/tpm-ca.crt".source = ../../tests/tpm-ca.crt;
       services.spire.server = {
         enable = true;
         openFirewall = true;
         settings = {
           server.trust_domain = "example.com";
           plugins = {
-            KeyManager.memory.plugin_data = { };
+            KeyManager.disk.plugin_data.keys_path = "$STATE_DIRECTORY/keys.json";
             DataStore.sql.plugin_data = {
               database_type = "sqlite3";
               connection_string = "$STATE_DIRECTORY/datastore.sqlite3";
             };
-            NodeAttestor.http_challenge.plugin_data.required_port = 80;
+            NodeAttestor.tpm = {
+              plugin_cmd = lib.getExe' pkgs.spire-tpm-plugin "tpm_attestor_server";
+              plugin_data.ca_path = "/etc/spire/server/tpm-ca";
+            };
           };
         };
       };
