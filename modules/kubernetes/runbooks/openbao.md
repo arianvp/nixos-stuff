@@ -22,7 +22,9 @@ Setup (`modules/spire/openbao.nix`):
 - Three nodes, raft storage in `/var/lib/openbao` (a symlink to
   `/var/lib/private/openbao`, `DynamicUser`), API on `:8200`, cluster port `:8201`.
 - `openbao1` has `spire.openbao.bootstrap = true`: on **empty storage** it
-  initializes a **new** cluster. The others `retry_join` it.
+  initializes a **new** cluster, unless openbao2 or openbao3 says it is
+  initialized, in which case it joins them (section 5). The others
+  `retry_join` it.
 - Raft node IDs are `<host name>-<12 hex digits>`, e.g. `openbao1-3f2a9c1e04bd`.
   The digits come from an app-specific hash of `/etc/machine-id`
   (`openbao-node-id.service` writes `BAO_RAFT_NODE_ID` to
@@ -249,65 +251,60 @@ under the same node ID) and 'Reinstall a member' (openbao2 also loses
 `/etc/machine-id`, boots with a new one and joins under a new node ID, and
 its old member is gone).
 
-## 5. Replace the bootstrap member that lost its disk (openbao1) — DANGER
+## 5. Replace the bootstrap member that lost its disk (openbao1)
 
 **When**: openbao1 (`bootstrap = true`) lost `/var/lib/openbao`.
 
-**What goes wrong if you just start it**: with empty storage and
-`bootstrap = true`, openbao1 **self-initializes a brand-new single-node
-cluster**. It doesn't join through its `retry_join`. It unseals, becomes active,
-gets a **new `kubernetes` transit key and a new service account signing key**,
-and answers on `openbao.example.com`,
-which clients round-robin to. Any KMS plugin that lands on it fails to decrypt
-existing Secrets, and Secrets written through it are encrypted with a key the
-real cluster doesn't have. An API server whose signer lands on it signs service
-account tokens that the other API servers reject. Meanwhile the real cluster keeps openbao1's old node
-ID as an unreachable voter (`failure_tolerance: 0`). Tested: this happens.
+Before OpenBao starts on a `bootstrap = true` node, an `ExecStartPre` asks each
+`retryJoin` node for `GET /v1/sys/init`, checking its certificate against the
+trust bundle. If one answers `initialized: true`, OpenBao starts without its
+self-init configuration and joins the cluster through `retry_join` like any
+other member (section 4): under the same node ID, or under a new one if the
+machine was reinstalled. The
+journal of the `ExecStartPre` says which way it went:
+`journalctl -u openbao -b | grep -E 'is initialized, joining|initializing the cluster'`.
 
-The same applies to **any** node deployed with `bootstrap = true` on empty
-storage, e.g. a rebuilt machine.
-
-**Preconditions**: openbao2 and openbao3 are healthy. Use `B=https://openbao2...`.
+**Preconditions**: openbao2 or openbao3 is up and serves `sys/init`. Use
+`B=https://openbao2...`.
 
 **Steps**
 
-1. If openbao1 is already running on empty storage (split brain): on openbao1
-   run `systemctl stop openbao.service` **now**. Then take it out of the
-   `openbao.example.com` name, or keep it stopped.
-   Check with `unauth https://openbao1.example.com:8200/v1/sys/seal-status | jq .cluster_id`:
-   it differs from openbao2's.
-2. On openbao1: `rm -rf /var/lib/openbao/*`
-3. Remove the old peer from the real cluster:
-   ```sh
-   old=$(bao $B/v1/sys/storage/raft/configuration | jq -r '.data.config.servers[] | select(.address | startswith("openbao1.")) | .node_id')
-   bao --data "{\"server_id\": \"$old\"}" $B/v1/sys/storage/raft/remove-peer
-   ```
-4. Deploy openbao1 with `spire.openbao.bootstrap = false` (keep its `retryJoin`
-   pointing at openbao2 and openbao3) with `nixos-rebuild switch` (not `test`:
-   a reboot into the old generation brings back `bootstrap = true`). The deploy
-   doesn't restart a running OpenBao (`restartIfChanged = false`), which is why
-   OpenBao is stopped first.
-5. `systemctl start openbao.service` on openbao1.
-6. Verify that `cluster_id` on openbao1 equals openbao2's, the raft configuration
+1. On openbao1: `systemctl stop openbao.service`
+2. `rm -rf /var/lib/openbao/*` (if the disk was replaced, it is already empty)
+3. `systemctl start openbao.service`
+4. Verify that `cluster_id` on openbao1 equals openbao2's, the raft configuration
    has 3 servers, autopilot is healthy, and the transit smoke test passes on
    openbao1.
-7. Leave `bootstrap = false` on openbao1 for good. `bootstrap` only matters on
-   empty storage, and the safe value for every node of an existing cluster is
-   `false`. Setting it back to `true` re-arms the trap.
 
-**Secrets written during a split brain**: any Secret written by an API server
-whose KMS plugin talked to the rogue openbao1 is encrypted with the rogue key.
-Before wiping openbao1 in step 2, snapshot the rogue cluster
-(`GET sys/storage/raft/snapshot` against openbao1, with a token from openbao1) if
-there is any chance of that.
+**Remaining danger: openbao1 with empty storage while no other node answers**.
+If neither openbao2 nor openbao3 answers `sys/init` when openbao1 starts (both
+down, unreachable, or without a valid SVID), openbao1 can't tell a lost disk
+from the first boot of the cluster. It **self-initializes a brand-new
+single-node cluster**: a new `cluster_id`, a **new `kubernetes` transit key and
+a new service account signing key**, served on `openbao.example.com`, which
+clients round-robin to. KMS plugins that land on it fail to decrypt existing
+Secrets and encrypt new ones with a key the real cluster doesn't have, and
+signers sign tokens the other API servers reject. Never start a wiped openbao1
+while the other two are down. The same applies to any node deployed with
+`bootstrap = true` and empty storage, e.g. a rebuilt machine.
 
-**Abort**: before step 3, nothing has changed on the real cluster. After step
-3, the real cluster has two voters and `failure_tolerance: 0` until openbao1
-joins. Go on to step 4 rather than back.
+To recover from that split brain:
+
+1. On openbao1, `systemctl stop openbao.service` **now**. Check with
+   `unauth https://openbao1.example.com:8200/v1/sys/seal-status | jq .cluster_id`
+   (while it runs) that it differs from openbao2's.
+2. Any Secret written by an API server whose KMS plugin talked to the rogue
+   openbao1 is encrypted with the rogue key. If there is any chance of that,
+   snapshot the rogue cluster first (`GET sys/storage/raft/snapshot` against
+   openbao1, with a token from openbao1).
+3. Once openbao2 or openbao3 is back and healthy, do steps 2 to 4 above.
+
+**Abort**: stop `openbao.service` on openbao1. The cluster keeps running on two
+nodes.
 
 Tested by: `ops-openbao` subtest 'Replace the bootstrap member that lost its disk'
-(asserts the split brain, then does steps 2 to 6 with a `bootstrap = false`
-specialisation).
+(openbao1 is wiped and started with its unchanged configuration, rejoins the
+cluster with the same `cluster_id` and decrypts what was encrypted before).
 
 ## 6. Raft snapshot backup and restore
 

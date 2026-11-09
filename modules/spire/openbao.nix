@@ -6,6 +6,8 @@
 # * It initializes itself on first start: it enables cert auth and lets the
 #   SVIDs of its nodes manage policies and cert auth roles. The root token is
 #   revoked. In a raft cluster, one node bootstraps and the others join it.
+#   The bootstrap node joins too when another node is already initialized,
+#   e.g. after it lost its disk.
 # * openbao-config.service applies policies and cert auth roles on every
 #   start, configuration change and whenever a CA is added to the trust
 #   bundle, so that cert auth trusts the current CAs of the trust domain.
@@ -62,6 +64,30 @@ let
     extra.request = lib.imap1 (i: request: {
       "request-${toString i}" = request;
     }) requests;
+  };
+
+  # Self-init is a no-op on initialized storage, so this needn't look at the
+  # local storage. That also covers a restart before a join completed.
+  initializeFile = "/run/openbao/initialize.json";
+  initializeOrJoin = pkgs.writeShellApplication {
+    name = "openbao-initialize-or-join";
+    runtimeInputs = [
+      pkgs.curl
+      pkgs.jq
+    ];
+    text = ''
+      peers=(${lib.escapeShellArgs cfg.retryJoin})
+      for peer in "''${peers[@]}"; do
+        if curl --silent --show-error --fail --connect-timeout 3 --max-time 5 \
+          --cacert ${svid.paths.bundle} "$peer/v1/sys/init" | jq -e .initialized > /dev/null; then
+          echo "$peer is initialized, joining its cluster"
+          echo '{}' > ${initializeFile}
+          exit 0
+        fi
+      done
+      echo "No node to join is initialized, initializing the cluster unless already done"
+      cat ${format.generate "openbao-initialize.json" { inherit initialize; }} > ${initializeFile}
+    '';
   };
 
   # The engines first, as the requests that follow configure what is in them
@@ -151,7 +177,12 @@ in
       default = true;
       description = ''
         Whether this node initializes the cluster. Exactly one node of a cluster
-        does; the others join it with {option}`retryJoin`.
+        does; the others join it with {option}`retryJoin`. Before it starts,
+        it asks the nodes of {option}`retryJoin` whether they are initialized.
+        If one is, it joins them like the others, so that a bootstrap node
+        that lost its storage doesn't initialize a second cluster. A bootstrap
+        node with empty storage that reaches none of them, e.g. because they
+        are down, still initializes a new cluster.
       '';
     };
 
@@ -328,8 +359,6 @@ in
           tls_cert_file = svid.paths.cert;
           tls_key_file = svid.paths.key;
         };
-        # Absent, not empty, on the nodes that join the cluster instead
-        initialize = lib.mkIf cfg.bootstrap initialize;
         storage.raft = {
           path = "/var/lib/openbao";
         }
@@ -367,11 +396,17 @@ in
       '';
     };
 
+    services.openbao.extraArgs = lib.mkIf cfg.bootstrap [
+      "-config"
+      initializeFile
+    ];
+
     systemd.services.openbao = {
       requires = [ svid.unit ];
       after = [ svid.unit ];
       serviceConfig = {
         EnvironmentFile = lib.mkIf (cfg.nodeID == null) "/run/openbao-node-id/env";
+        ExecStartPre = lib.mkIf cfg.bootstrap (lib.getExe initializeOrJoin);
         SupplementaryGroups = [ "openbao-svid" ];
         ${if cfg.sealKey.encrypted then "LoadCredentialEncrypted" else "LoadCredential"} =
           "seal-key:${cfg.sealKey.file}";

@@ -56,9 +56,6 @@ let
         openbao = "https://openbao.${t.domain}:8200";
       };
 
-      # What an operator deploys to put a wiped bootstrap node back
-      specialisation.joiner.configuration.spire.openbao.bootstrap = lib.mkForce false;
-
       # The module only knows one seal key, so rotating needs to go around it
       specialisation.seal-rotate.configuration = {
         spire.openbao.sealKey = {
@@ -361,39 +358,22 @@ in
 
       with subtest("Replace the bootstrap member that lost its disk"):
           token = wait_healthy("openbao2")
-          old_id = node_id(token, "openbao2", "openbao1")
           cluster_id = seal_status("openbao2")["cluster_id"]
+          ids = node_ids(token, "openbao2")
           secret = encrypt(token, "openbao2", key="kubernetes")
           openbao1.systemctl("stop openbao.service")
           openbao1.succeed("rm -rf /var/lib/openbao/*")
           openbao1.systemctl("start openbao.service")
           client.wait_until_succeeds(unsealed("openbao1"), timeout=120)
-          # Split brain: with empty storage, the bootstrap node initializes a
-          # new single node cluster instead of joining through retry_join. It
-          # answers on openbao.${t.domain} with a new transit key that cannot
-          # decrypt what Kubernetes stored.
-          rogue = seal_status("openbao1")
-          show("wiped bootstrap node", rogue)
-          assert rogue["cluster_id"] != cluster_id, rogue
-          assert leader("openbao1")["is_self"]
-          # The admin role exists once openbao-config has run, as after a reboot
-          openbao1.systemctl("restart openbao-config.service")
-          rogue_token = admin_token("openbao1")
-          assert len(raft_servers(rogue_token, "openbao1")) == 1
-          client.fail(decrypt_cmd(rogue_token, "openbao1", secret, key="kubernetes"))
-          # The real cluster keeps the lost node as a voter it cannot reach
-          assert old_id in [s["node_id"] for s in raft_servers(token, "openbao2")]
-          tolerance = bao(token, "openbao2", "sys/storage/raft/autopilot/state")["data"]["failure_tolerance"]
-          assert tolerance == 0, tolerance
-
-          openbao1.systemctl("stop openbao.service")
-          openbao1.succeed("rm -rf /var/lib/openbao/*")
-          bao(token, "openbao2", "sys/storage/raft/remove-peer", body({"server_id": old_id}))
-          show("switch to joiner", switch(openbao1, "joiner"))
-          openbao1.systemctl("start openbao.service")
-          client.wait_until_succeeds(unsealed("openbao1"), timeout=120)
-          assert seal_status("openbao1")["cluster_id"] == cluster_id
+          # With empty storage, the bootstrap node finds its peers initialized
+          # and joins them through retry_join instead of initializing a new
+          # cluster
+          rejoined = seal_status("openbao1")
+          show("wiped bootstrap node", rejoined)
+          assert rejoined["cluster_id"] == cluster_id, rejoined
+          openbao1.succeed("journalctl -u openbao -b --no-pager | grep -q 'is initialized, joining its cluster'")
           token = wait_healthy("openbao2")
+          assert node_ids(token, "openbao2") == ids, ids
           client.succeed(decrypt_cmd(token, "openbao1", secret, key="kubernetes"))
 
       with subtest("Raft snapshot backup and restore"):

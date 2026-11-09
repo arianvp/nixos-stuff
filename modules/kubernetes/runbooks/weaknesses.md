@@ -22,20 +22,13 @@ entry, with keys on disk (`test-lib.nix`).
 
 ## Critical
 
-### C1. Wiping the OpenBao bootstrap node silently creates a second cluster
-`initialize` is set whenever `bootstrap = true` (`modules/spire/openbao.nix:311`),
-whether or not the data dir is empty. Re-installing or replacing openbao1
-self-initializes a new single-node cluster instead of joining via `retry_join`.
-The test shows the result:
-- a new `cluster_id`;
-- new transit keys for KMS **and** for service account signing;
-- the node serves on the round-robin `openbao.<domain>`, so some API servers
-  encrypt Secrets and sign tokens with keys the real cluster doesn't have;
-- the real cluster keeps the dead voter, so `failure_tolerance` drops to 0.
-
+### C1. Fixed: a wiped OpenBao bootstrap node rejoins instead of creating a second cluster
+Before starting, the bootstrap node asks its `retry_join` peers for
+`sys/init`. If any of them is initialized, it starts without `initialize` and
+joins the existing cluster.
+*Remaining:* a bootstrap node that is wiped while no peer answers still
+initializes a new cluster (runbook §5).
 *Test:* `ops-openbao` "Replace the bootstrap member that lost its disk".
-*Fix:* only self-init when no `retry_join` peer is initialized (`ExecStartPre`
-probe), or make `bootstrap` a one-shot that real configs never carry after day 1.
 
 ### C2. OpenBao is a hard startup dependency of every API server
 `kube-jwt-signer-openbao` is `requiredBy` kube-apiserver, has
