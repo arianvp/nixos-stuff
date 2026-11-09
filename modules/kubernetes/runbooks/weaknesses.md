@@ -191,15 +191,15 @@ answers before it is ready, and clients don't fail over on an HTTP answer.
 everywhere during a KMS outage).
 
 
-### H8. A power loss soon after an OpenBao node joins loses its raft identity
-OpenBao writes `/var/lib/openbao/node-id` without fsync, and the module sets no
-`storage.raft.node_id`. A crash shortly after a node (re)joins brings it back
-under a new ID that the raft configuration doesn't know. It aborts every
-election ("not part of stable configuration") and never rejoins, which leaves
-the cluster at `failure_tolerance 0`.
-*Test:* `ops-openbao` "Full cold start" (it syncs before crashing; without the
-sync the subtest fails depending on writeback timing).
-*Fix:* set `storage.raft.node_id` to the host name in `modules/spire/openbao.nix`.
+### H8. Fixed: OpenBao raft nodes keep their identity across a power loss
+The raft node ID is the host name plus an app-specific hash of the machine ID,
+passed in `BAO_RAFT_NODE_ID` on every start, so OpenBao never writes or reads
+`/var/lib/openbao/node-id`. A node that loses its data keeps its ID; a
+reinstalled machine, with a new machine ID, joins as a new member. Existing
+nodes that joined with a random ID need `spire.openbao.nodeID` set to the
+contents of `/var/lib/openbao/node-id` before upgrading.
+*Test:* `ops-openbao` "Full cold start", "Replace a member that lost its disk",
+"Reinstall a member".
 
 ---
 

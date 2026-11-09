@@ -21,6 +21,7 @@ let
   svid = config.spire.svids.openbao;
   format = pkgs.formats.json { };
   address = "https://${cfg.dnsName}:${toString cfg.port}";
+  nodeIDApp = "40fd988b-8b05-43c3-b67a-bfb3963a3659";
 
   # Requests run in order, but Nix sorts the keys of objects, so they go in
   # lists
@@ -151,6 +152,26 @@ in
       description = ''
         Whether this node initializes the cluster. Exactly one node of a cluster
         does; the others join it with {option}`retryJoin`.
+      '';
+    };
+
+    nodeID = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = ''
+        Raft node ID, unique in the cluster. By default it is the host name
+        followed by the first 12 hex digits of an app-specific hash of the
+        machine ID, e.g. `openbao1-3f2a9c1e04bd`, which OpenBao gets from
+        `BAO_RAFT_NODE_ID` on every start. A node that loses
+        {file}`/var/lib/openbao` keeps its ID and takes the place of its old
+        raft peer, while a reinstalled machine, with a new machine ID, joins
+        as a new member. The hash keeps the machine ID itself out of the raft
+        configuration and snapshots.
+
+        A string sets `storage.raft.node_id` instead. A node whose ID changes
+        is no longer the same raft member, so on a node that joined with a
+        random ID, which OpenBao picks when none is set, set this to the
+        contents of its {file}`/var/lib/openbao/node-id`.
       '';
     };
 
@@ -312,6 +333,9 @@ in
         storage.raft = {
           path = "/var/lib/openbao";
         }
+        // lib.optionalAttrs (cfg.nodeID != null) {
+          node_id = cfg.nodeID;
+        }
         # OpenBao rejects an empty retry_join, so only join when asked to
         // lib.optionalAttrs (cfg.retryJoin != [ ]) {
           retry_join = map (address: {
@@ -326,10 +350,28 @@ in
       };
     };
 
+    systemd.services.openbao-node-id = lib.mkIf (cfg.nodeID == null) {
+      description = "Derive the OpenBao raft node ID from the machine ID";
+      requiredBy = [ "openbao.service" ];
+      before = [ "openbao.service" ];
+      # Restarting it would restart OpenBao, which has restartIfChanged = false
+      restartIfChanged = false;
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        RuntimeDirectory = "openbao-node-id";
+      };
+      script = ''
+        id=$(${config.systemd.package}/bin/systemd-id128 machine-id --app-specific=${nodeIDApp})
+        echo "BAO_RAFT_NODE_ID=${config.networking.hostName}-''${id:0:12}" > "$RUNTIME_DIRECTORY/env"
+      '';
+    };
+
     systemd.services.openbao = {
       requires = [ svid.unit ];
       after = [ svid.unit ];
       serviceConfig = {
+        EnvironmentFile = lib.mkIf (cfg.nodeID == null) "/run/openbao-node-id/env";
         SupplementaryGroups = [ "openbao-svid" ];
         ${if cfg.sealKey.encrypted then "LoadCredentialEncrypted" else "LoadCredential"} =
           "seal-key:${cfg.sealKey.file}";

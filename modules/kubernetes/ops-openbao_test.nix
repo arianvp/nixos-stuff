@@ -112,6 +112,7 @@ in
     ''
       import base64
       import json
+      import re
 
       client = spire
       openbaos = [openbao1, openbao2, openbao3]
@@ -169,6 +170,13 @@ in
 
       def node_id(token, target, name):
           return next(s["node_id"] for s in raft_servers(token, target) if f"{name}." in s["address"])
+
+      def node_ids(token, target):
+          return sorted(s["node_id"] for s in raft_servers(token, target))
+
+      def assert_derived(name, node):
+          """The host name and 12 hex digits of the app-specific machine ID"""
+          assert re.fullmatch(f"{name}-[0-9a-f]{{12}}", node), (name, node)
 
       def wait_healthy(target, timeout=120):
           """All nodes unsealed, three voters, autopilot healthy"""
@@ -230,6 +238,9 @@ in
           servers = raft_servers(token, "openbao1")
           assert len(servers) == 3 and all(s["voter"] for s in servers), servers
           assert leader("openbao1")["leader_address"] != ""
+          show("raft node IDs", node_ids(token, "openbao1"))
+          for m in openbaos:
+              assert_derived(m.name, node_id(token, "openbao1", m.name))
           # Raft state needs a token, which only an SVID can get
           client.fail(curl(url("openbao1", "sys/storage/raft/configuration")))
           # Self-init leaves no recovery keys, and generate-root is not even
@@ -253,6 +264,7 @@ in
 
       with subtest("Rolling restart"):
           token = admin_token("openbao2")
+          ids = node_ids(token, "openbao2")
           bao(token, "openbao2", "transit/keys/ops", "-X POST")
           first = encrypt(token, "openbao2")
           for m in openbaos:
@@ -267,6 +279,8 @@ in
                   m.systemctl("start openbao.service")
               token = wait_healthy(other)
               check_transit(token, m.name, [first])
+          # openbao3 rebooted
+          assert node_ids(token, "openbao1") == ids, ids
 
       with subtest("Quorum loss and recovery"):
           token = admin_token("openbao1")
@@ -299,9 +313,10 @@ in
           # Nothing removes a member that is gone for good: quorum stays at
           # two of three until someone runs remove-peer
           assert not autopilot["cleanup_dead_servers"], autopilot
-          old_id = node_id(token, "openbao1", "openbao3")
+          ids = node_ids(token, "openbao1")
           [agent_before] = agents(openbao3)
-          # Reinstalled on a new disk, same TPM: the SPIRE agent lost its key and SVID
+          # A new data disk, same TPM and root file system: the SPIRE agent
+          # lost its key and SVID, and the machine ID stays
           openbao3.systemctl("stop openbao.service spire-agent.service")
           openbao3.succeed("rm -rf /var/lib/openbao/* /var/lib/spire/agent")
           openbao3.shutdown()
@@ -316,10 +331,33 @@ in
           token = wait_healthy("openbao1")
           servers = raft_servers(token, "openbao1")
           show("servers after rejoin", servers)
-          # retry_join rejoins under a new node ID, which replaces the old peer
-          # at the same address
+          # retry_join rejoins under the same node ID, so the member is replaced
+          # in place
+          assert sorted(s["node_id"] for s in servers) == ids, servers
+
+      with subtest("Reinstall a member"):
+          token = wait_healthy("openbao1")
+          old_id = node_id(token, "openbao1", "openbao2")
+          machine_id = openbao2.succeed("cat /etc/machine-id").strip()
+          # A reinstall loses everything but the TPM. Without /etc/machine-id,
+          # systemd generates a new one on the next boot.
+          openbao2.systemctl("stop openbao.service spire-agent.service")
+          openbao2.succeed("rm -rf /var/lib/openbao/* /var/lib/spire/agent /etc/machine-id")
+          openbao2.shutdown()
+          openbao2.start()
+          client.wait_until_succeeds(unsealed("openbao2"), timeout=120)
+          new_machine_id = openbao2.succeed("cat /etc/machine-id").strip()
+          show("machine ID before and after", [machine_id, new_machine_id])
+          assert re.fullmatch("[0-9a-f]{32}", new_machine_id) and new_machine_id != machine_id, new_machine_id
+          token = wait_healthy("openbao1")
+          servers = raft_servers(token, "openbao1")
+          show("servers after reinstall", servers)
+          # The node joins as a new member. It joins at the address of the old
+          # one, so autopilot removes the old member as it adds the new one.
+          new_id = node_id(token, "openbao1", "openbao2")
+          assert_derived("openbao2", new_id)
+          assert new_id != old_id, new_id
           assert len(servers) == 3 and old_id not in [s["node_id"] for s in servers], servers
-          assert node_id(token, "openbao1", "openbao3") != old_id
 
       with subtest("Replace the bootstrap member that lost its disk"):
           token = wait_healthy("openbao2")
@@ -390,16 +428,9 @@ in
           if leader("openbao1")["is_self"]:
               bao(token, "openbao1", "sys/step-down", "-X PUT")
               client.wait_until_succeeds(curl(url("openbao1", "sys/leader")) + " | jq -e '.is_self == false and .leader_address != \"\"'", timeout=60)
-          # BAD: OpenBao writes the random raft node ID of a node that joined
-          # to /var/lib/openbao/node-id without fsync. openbao1 rejoined less
-          # than a minute ago, and a crash before writeback loses that file:
-          # the node comes back under a new ID that is not in the raft
-          # configuration ("not part of stable configuration, aborting
-          # election") and never rejoins. Flushing first keeps this subtest
-          # about the cold start.
-          assert openbao1.succeed("cat /var/lib/openbao/node-id").strip() == node_id(token, "openbao2", "openbao1")
-          for m in openbaos:
-              m.succeed("sync")
+          # openbao1 rejoined less than a minute ago. Its raft node ID is
+          # derived on every start, so a crash before writeback can't change it.
+          ids = node_ids(token, "openbao2")
           for m in openbaos:
               m.crash()
           openbao1.start()
@@ -423,6 +454,7 @@ in
           openbao2.start()
           token = wait_healthy("openbao1", timeout=180)
           check_transit(token, "openbao1", [ciphertext])
+          assert node_ids(token, "openbao1") == ids, ids
 
       with subtest("Seal key rotation"):
           token = wait_healthy("openbao1")

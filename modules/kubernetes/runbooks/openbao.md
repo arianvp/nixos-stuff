@@ -23,6 +23,18 @@ Setup (`modules/spire/openbao.nix`):
   `/var/lib/private/openbao`, `DynamicUser`), API on `:8200`, cluster port `:8201`.
 - `openbao1` has `spire.openbao.bootstrap = true`: on **empty storage** it
   initializes a **new** cluster. The others `retry_join` it.
+- Raft node IDs are `<host name>-<12 hex digits>`, e.g. `openbao1-3f2a9c1e04bd`.
+  The digits come from an app-specific hash of `/etc/machine-id`
+  (`openbao-node-id.service` writes `BAO_RAFT_NODE_ID` to
+  `/run/openbao-node-id/env` on every start), so a node keeps its ID as long as
+  its machine ID stays, and a reinstalled machine joins as a new member. Show a
+  node's ID with `cat /run/openbao-node-id/env`.
+- `spire.openbao.nodeID` pins the ID (`storage.raft.node_id`) instead. Nodes
+  that joined before the ID was derived have a random ID, which OpenBao keeps
+  in `/var/lib/openbao/node-id`: before deploying this module to such a
+  cluster, set `nodeID` on every node to the contents of that file (or to the
+  `node_id` that `raft/configuration` lists for its address). Otherwise the
+  node comes up under a new ID and never rejoins (section 8).
 - Static seal: the key comes from the `seal-key` systemd credential. Nodes
   unseal themselves. There are no unseal keys to type in.
 - No root token: self-init revokes it. Self-init creates **no recovery keys**
@@ -205,14 +217,23 @@ the SPIRE server.
 
 1. On the node: `systemctl stop openbao.service`
 2. `rm -rf /var/lib/openbao/*` (if the disk was replaced, it is already empty)
-3. `systemctl start openbao.service`. `retry_join` joins the cluster with a
-   **new** node ID. Raft replaces the old peer at the same address, so no dead
-   voter stays behind.
-4. Wait for unseal and autopilot health (section 2, steps 3 and 4). The node
-   first shows as a non-voter, and autopilot promotes it after 10s.
+3. `systemctl start openbao.service`. `retry_join` joins the cluster under
+   the same node ID, as the machine ID didn't change, so the node takes the
+   place of its old peer.
+4. Wait for unseal and autopilot health (section 2, steps 3 and 4).
 
 **Verification**: `raft/configuration` has exactly 3 servers, one per address,
-and the node ID of this node changed. Autopilot is healthy.
+and the `node_id` of this node is the one it had before. Autopilot is healthy.
+
+**If the machine was reinstalled** (new root file system, so a new
+`/etc/machine-id`): there is nothing to wipe or remove. Deploy it and let it
+boot. It joins under a new node ID with the same host name prefix. As it joins
+at the address of its old member, autopilot removes the old member while it
+adds the new one, so no dead voter stays behind. Verify as above, except that
+the `node_id` of this node changed. A node that kept its root file system
+but must join as a new member can get a new ID the same way: stop OpenBao,
+`rm /etc/machine-id`, wipe `/var/lib/openbao/*` and reboot. Don't do that to
+openbao1 while the other two are down (section 5).
 
 **If the node is gone for good** (not replaced): autopilot won't remove it
 (`cleanup_dead_servers: false`), and the cluster runs with
@@ -223,7 +244,10 @@ and the node ID of this node changed. Autopilot is healthy.
 
 Tested by: `ops-openbao` subtest 'Replace a member that lost its disk'
 (openbao3 loses `/var/lib/openbao` and `/var/lib/spire/agent` and reboots; its
-agent comes back under the same agent ID with a new SVID, and OpenBao rejoins).
+agent comes back under the same agent ID with a new SVID, and OpenBao rejoins
+under the same node ID) and 'Reinstall a member' (openbao2 also loses
+`/etc/machine-id`, boots with a new one and joins under a new node ID, and
+its old member is gone).
 
 ## 5. Replace the bootstrap member that lost its disk (openbao1) — DANGER
 
@@ -431,17 +455,17 @@ seal key errors (wrong credential, `unknown key id`) and SVID errors.
 
 **A node that unseals but never rejoins**: its journal says `storage.raft: not
 part of stable configuration, aborting election`, and autopilot shows a voter at
-its address with `last_index: 0`. The node lost `/var/lib/openbao/node-id`
-(OpenBao writes it without fsync, so power loss within about 30s of a node
-joining loses it) and came up under a new random ID. Compare
-`cat /var/lib/openbao/node-id` on the node with the `node_id` the raft
-configuration lists for its address. To fix it, treat it as a member that lost
-its disk (section 4, or section 5 for openbao1): stop it, wipe
-`/var/lib/openbao/*`, `remove-peer` the old ID, start it.
+its address with `last_index: 0`. The node came up under a different node ID
+than the raft configuration lists for its address, while keeping its raft
+data: its machine ID changed, or `spire.openbao.nodeID` changed, e.g. on a
+node that joined with a random ID (`/var/lib/openbao/node-id`) and was
+deployed without pinning it (Setup). Compare `cat /run/openbao-node-id/env`
+with the `node_id` of its address. Set `nodeID` to the old ID and deploy, or
+make it join as a new member: stop it, wipe `/var/lib/openbao/*`, start it
+(section 4, or section 5 for openbao1).
 
-Tested by: `ops-openbao` subtest 'Full cold start' (all three crashed after a
-`sync`, openbao1 started alone, checks the 307 behaviour and that
-openbao-config "succeeds" without a leader, then the rest start and transit
-works). Without the `sync`, 2 of 3 runs lost openbao1's node ID, which had
-rejoined about 45s earlier.
+Tested by: `ops-openbao` subtest 'Full cold start' (all three crashed less
+than a minute after openbao1 rejoined, openbao1 started alone, checks the 307
+behaviour and that openbao-config "succeeds" without a leader, then the rest
+start and transit works).
 
