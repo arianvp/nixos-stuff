@@ -475,19 +475,24 @@ in
                   assert read_secret(m, "encrypted") == "encrypted"
           diagnose_on_failure(control_plane_converges, *everyone)
 
-          # CRI-O wipes its storage after an unclean shutdown, after
-          # kubernetes-images.service has loaded the images into it, so the
-          # node has no pause image and no pod can start until the images are
-          # loaded again
-          control1.wait_until_succeeds(
-              "kubectl get events --field-selector reason=FailedCreatePodSandBox -o jsonpath='{.items[*].message}' | grep -q 'localhost/pause'",
-              timeout=60,
-          )
-          worker1.fail("crictl images -q localhost/pause | grep .")
-          worker1.succeed("systemctl restart kubernetes-images.service")
-          since = time.monotonic()
+          # CRI-O wipes its storage after an unclean shutdown, and the images
+          # are loaded after that
           control1.wait_until_succeeds("kubectl rollout status deployment/web --timeout=5s", timeout=120)
           in_cluster_api(60)
-          measure("workload serving again after reloading the images", since)
+          measure("workload serving after infra powered on", since)
+          worker1.succeed("journalctl -b -u crio.service -o cat | grep -q 'Wiping storage directory .* because of unclean shutdown'")
+          worker1.succeed("crictl images | grep -q localhost/pause")
+          status, out = control1.execute(
+              "kubectl get events --field-selector reason=FailedCreatePodSandBox -o jsonpath='{.items[*].message}'"
+          )
+          assert "localhost/pause" not in out, out
+
+          # A CRI-O restart loads the images again
+          before = worker1.succeed("systemctl show -P InvocationID kubernetes-images.service").strip()
+          worker1.systemctl("restart crio.service")
+          worker1.wait_for_unit("kubernetes-images.service", timeout=60)
+          assert worker1.succeed("systemctl show -P InvocationID kubernetes-images.service").strip() != before
+          worker1.wait_for_unit("kubelet.service", timeout=60)
+          control1.wait_until_succeeds("kubectl rollout status deployment/web --timeout=5s", timeout=60)
     '';
 }

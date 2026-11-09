@@ -56,9 +56,10 @@ spire-agent   Restart=on-failure, RestartSec=100ms, default start limit:
    +--> kube-controller-manager, kube-scheduler   (Requires their svid; After= apiserver)
    +--> kubelet, kube-proxy                       (Requires their svid)
 
-worker: kubernetes-images.service (oneshot, Before= crio) loads images into
-        CRI-O storage, then crio starts. After an unclean shutdown crio WIPES
-        its storage, so the images (including the pause image) are gone.
+worker: crio (after an unclean shutdown it WIPES its storage when it starts)
+        <-- kubernetes-images.service (oneshot, After= and BindsTo= crio: loads
+            the images, including the pause image, every time crio starts)
+        <-- kubelet (Requires crio, Wants= and After= kubernetes-images)
 ```
 
 Consequences:
@@ -115,7 +116,7 @@ and a token can be minted.
 | `create token` fails with `transit/sign ... connection refused` | OpenBao down, signing impossible | [OpenBao outage](#total-openbao-outage) |
 | connection refused on :6443, signer `activating` | signer waits for OpenBao | [OpenBao outage](#total-openbao-outage) |
 | `Dependency failed for Kubernetes API server` in the journal | SPIRE was unreachable at boot for > 2 min | [Cold start](#full-cluster-cold-start), step 3 |
-| pods stuck `ContainerCreating`, events mention `localhost/pause` | CRI-O wiped its images after a crash | [Worker crashed](#worker-crashed-or-lost-power) |
+| pods stuck `ContainerCreating`, events mention `localhost/pause` | the images are not loaded: `kubernetes-images` failed | [Worker crashed](#worker-crashed-or-lost-power) |
 
 **Rollback/abort:** read-only.
 
@@ -326,15 +327,15 @@ Tested by: `ops-control-plane` subtest 'Worker maintenance'.
 ### Worker crashed or lost power
 
 After an **unclean** shutdown, CRI-O wipes `/var/lib/containers/storage` when it
-starts. `kubernetes-images.service` has already loaded the preloaded images
-(including the pause image) before CRI-O starts, so they are gone. Every pod
-fails with `FailedCreatePodSandBox ... unable to pull image ... localhost/pause`.
+starts. `kubernetes-images.service` loads the preloaded images (including the
+pause image) again once CRI-O is ready, and the kubelet starts after it, so
+pods come back by themselves. If pods fail with `FailedCreatePodSandBox ...
+localhost/pause`, the load failed:
 
 ```sh
+ssh $NODE systemctl status kubernetes-images.service
 ssh $NODE crictl images | grep pause || ssh $NODE systemctl restart kubernetes-images.service
 ```
-
-Pods start within seconds after the images are loaded again.
 
 Tested by: `ops-control-plane` subtest 'Cold start in the worst order'.
 
@@ -344,11 +345,11 @@ Tested by: `ops-control-plane` subtest 'Cold start in the worst order'.
 in an unknown order.
 
 **What happens (measured, workers and control planes first, infra 30s later):**
-the control plane converges by itself. Both API servers become ready, the
-worker becomes Ready and Secrets are readable, because the API servers' signers
-keep retrying until OpenBao is up, and SPIRE was back well within the svid
-units' 2-minute window. **Workloads do not come back**, because CRI-O wiped the
-worker's images (see [Worker crashed](#worker-crashed-or-lost-power)).
+the cluster converges by itself. Both API servers become ready, the worker
+becomes Ready, Secrets are readable and workloads run again, because the API
+servers' signers keep retrying until OpenBao is up, SPIRE was back well within
+the svid units' 2-minute window, and the worker loads its images again after
+CRI-O wiped them (see [Worker crashed](#worker-crashed-or-lost-power)).
 
 Order matters for two reasons:
 
@@ -371,8 +372,7 @@ Order matters for two reasons:
    ```sh
    systemctl reset-failed && systemctl start --no-block spire-agent.service multi-user.target
    ```
-4. On every worker: `systemctl restart kubernetes-images.service`.
-5. Run the health check.
+4. Run the health check.
 
 **Verification:** health check; nodes Ready; workloads Running; Secrets
 readable through every API server; pods reach the API server.

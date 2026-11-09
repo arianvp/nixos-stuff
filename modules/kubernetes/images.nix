@@ -46,10 +46,13 @@ in
     virtualisation.cri-o.pauseImage = imageName cfg.pauseImage;
     virtualisation.cri-o.settings.crio.image.pinned_images = map imageName cfg.images;
 
+    # CRI-O wipes its storage when it starts after an unclean shutdown, so load
+    # the images once it is ready, and again whenever it starts
     systemd.services.kubernetes-images = {
       description = "Load container images for Kubernetes";
       wantedBy = [ "crio.service" ];
-      before = [ "crio.service" ];
+      after = [ "crio.service" ];
+      bindsTo = [ "crio.service" ];
       restartTriggers = cfg.images;
       serviceConfig = {
         Type = "oneshot";
@@ -59,6 +62,12 @@ in
           "${lib.getExe pkgs.skopeo} copy --quiet docker-archive:${image} containers-storage:${imageName image}"
         ) cfg.images;
       };
+    };
+
+    # Without the pause image no pod sandbox can be created
+    systemd.services.kubelet = {
+      wants = [ "kubernetes-images.service" ];
+      after = [ "kubernetes-images.service" ];
     };
   };
 }

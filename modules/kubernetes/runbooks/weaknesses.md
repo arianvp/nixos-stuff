@@ -61,14 +61,10 @@ disk, so the signer becomes ready and verification works without OpenBao, and
 only signing fails. Make the dependency `Wants=` plus readiness, not `Requires=`.
 Decide on an availability target for OpenBao, since it is now as critical as etcd.
 
-### C3. After a worker crashes, no pod can start on it
-After an unclean shutdown CRI-O wipes its storage, but `kubernetes-images` runs
-**before** crio (`modules/kubernetes/images.nix:51-52`). The pause image and the
-preloaded images are gone, and pods fail with `FailedCreatePodSandBox …
-localhost/pause`. After a power loss, workloads never come back by themselves.
-*Test:* `ops-control-plane` "Full cluster cold start".
-*Fix:* order the image load `after`/`partOf` crio (or use crio's
-`pinned_images` with an additional image store that survives the wipe).
+### C3. Fixed: pods start again after a worker crashes
+`kubernetes-images` loads the preloaded images after CRI-O has wiped its
+storage, and again whenever CRI-O restarts; the kubelet starts after it.
+*Test:* `ops-control-plane` "Cold start in the worst order".
 
 ### C4. Losing the SPIRE server's keys breaks OpenBao cert auth for good, with no break-glass
 Cert auth roles pin the trust bundle, and `openbao-config` can only refresh it
