@@ -1,4 +1,8 @@
-{pkgs,...}:
+{ config, pkgs, utils, ... }:
+let
+  # The adapter by its serial number, whichever ttyUSB it comes up as.
+  port = "serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller_ATALb147613-if00-port0";
+in
 {
 
   # Simple prompt for ampex210 terminal compatibility
@@ -38,22 +42,31 @@
   # makes the blocks above reach a login shell.
   home-manager.users.arian.programs.readline.enable = true;
 
-  # The terminal runs in its native Ampex mode, which vpagent targets.
-  # man renders badly with it, most likely because the entry declares xmc#1:
-  # every bold and underline costs a character cell, so the columns of a man
-  # page drift.
-  boot.kernelParams = [
-    "systemd.tty.term.ttyUSB0=ampex210"
-  ];
+  # The getty generator only starts gettys on serial consoles, so this one
+  # starts whenever the adapter is plugged in. serial-getty@ passes $TERM to
+  # agetty, which hands it to login and the PAM session. With TERM=dumb,
+  # systemd neither resets the terminal when the getty starts nor writes OSC
+  # 3008 contexts for the service and the session, none of which the 210
+  # understands.
+  #
+  # The drop-in is named overrides.conf, like the one NixOS gives the
+  # template, and so replaces it: the template's ExecStart is repeated here.
+  systemd.services."serial-getty@${utils.escapeSystemdPath port}" = {
+    overrideStrategy = "asDropin";
+    serviceConfig.ExecStart = config.systemd.services."serial-getty@".serviceConfig.ExecStart;
+    wantedBy = [ "${utils.escapeSystemdPath "/dev/${port}"}.device" ];
+    environment.TERM = "dumb";
+  };
 
-  # Changes from nixpkgs:
-  # 1. no explicit loginProgram (util-linux agetty already sets it?)
-  #    (Though we currently patch it to use shadow?)
-  # 2. No @I;  instead use - as stdin is connected to the tty
-  /*systemd.services."serial-getty@".serviceConfig.ExecStart = [
-    ""
-    "${pkgs.util-linux}/bin/agetty --no-reset --noclear --issue-file=/etc/issue 9600 - $${TERM}"
-  ];*/
-  
-  # TODO: all the agetty stuff
+  # The shell then runs the terminal in its native Ampex mode, which vpagent
+  # targets. man renders badly with it, most likely because the entry declares
+  # xmc#1: every bold and underline costs a character cell, so the columns of
+  # a man page drift. systemd tools started from the shell would emit colours,
+  # hyperlinks and window titles again, so those are turned off.
+  programs.bash.loginShellInit = ''
+    if [ "$TERM" = dumb ] && [ "$(tty)" = "$(readlink -f /dev/${port})" ]; then
+      export TERM=ampex210
+      export SYSTEMD_COLORS=0 SYSTEMD_URLIFY=0 SYSTEMD_ADJUST_TERMINAL_TITLE=0
+    fi
+  '';
 }
