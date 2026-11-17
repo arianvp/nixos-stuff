@@ -3,6 +3,8 @@
   rustPlatform,
   fetchFromGitHub,
   git,
+  pkg-config,
+  sqlite,
 }:
 rustPlatform.buildRustPackage (finalAttrs: {
   pname = "git-meta";
@@ -22,6 +24,8 @@ rustPlatform.buildRustPackage (finalAttrs: {
     "git-meta-cli"
   ];
   cargoTestFlags = finalAttrs.cargoBuildFlags;
+  nativeBuildInputs = [ pkg-config ];
+  buildInputs = [ sqlite ];
   nativeCheckInputs = [ git ];
 
   meta = {
