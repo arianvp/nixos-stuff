@@ -1,0 +1,35 @@
+# The Ampex 210 has no ANSI: colour, the progress bar and less -R's resets all
+# show up on it as garbage. It has no Unicode either, so the nodes are ASCII,
+# and the pager draws the graph's lines and curves in its line graphics.
+[[--scope]]
+--when.environments = ["TERM=ampex210"]
+[--scope.ui]
+color = "never"
+diff-formatter = ":git"
+progress-indicator = false
+graph.style = "curved"
+pager = ["jj-ampex210-pager"]
+[--scope.templates]
+log_node = "builtin_log_node_ascii"
+op_log_node = "builtin_op_log_node_ascii"
+
+# Half intensity takes no cell, so the part of an ID after its shortest
+# prefix can be dimmed the way jj greys it in colour.
+[--scope.template-aliases]
+'format_short_id(id)' = '''
+id.shortest(8).prefix()
+++ if(id.shortest(8).rest(),
+  raw_escape_sequence("\e)") ++ id.shortest(8).rest() ++ raw_escape_sequence("\e("))
+'''
+
+# Not in a description being edited, nor for Claude Code's tools, which
+# inherit TERM from vpagent but read the output themselves.
+[[--scope]]
+--when.commands = ["commit", "describe", "split", "squash"]
+[--scope.template-aliases]
+'format_short_id(id)' = 'id.shortest(8)'
+
+[[--scope]]
+--when.environments = ["CLAUDECODE=1"]
+[--scope.template-aliases]
+'format_short_id(id)' = 'id.shortest(8)'

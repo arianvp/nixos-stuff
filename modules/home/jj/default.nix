@@ -7,6 +7,7 @@
     ./go.nix
     ./claude-code.nix
     ./git-meta.nix
+    ./ampex210.nix
   ];
 
   programs.jjui.enable = true;
