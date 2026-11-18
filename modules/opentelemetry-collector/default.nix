@@ -7,7 +7,7 @@
 {
   services.opentelemetry-collector = {
     enable = true;
-    package = pkgs.opentelemetry-collector-contrib;
+    package = pkgs.otelcol;
     settings = {
 
       # Receivers

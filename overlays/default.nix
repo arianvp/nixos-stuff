@@ -8,4 +8,5 @@ map import [
   ./he-ddns.nix
   ./jj-gh-stack.nix
   ./git-meta.nix
+  ./otelcol.nix
 ]

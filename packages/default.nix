@@ -10,5 +10,6 @@ in
     he-ddns
     jj-gh-stack
     git-meta
+    otelcol
     ;
 }
