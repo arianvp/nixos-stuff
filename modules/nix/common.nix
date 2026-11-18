@@ -10,7 +10,7 @@
     ];
 
     substituters = [
-      "https://nixos.snix.store?priority=39" # lots of issues with lix
+      # "https://nixos.snix.store?priority=39" # lots of issues with lix
     ];
 
     allowed-users = [ "@wheel" ];
