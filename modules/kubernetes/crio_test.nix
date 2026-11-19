@@ -13,7 +13,7 @@
     };
   };
   nodes.machine = {
-    imports = [ ./crio.nix ];
+    virtualisation.cri-o.enable = true;
 
     virtualisation.memorySize = 16384;
 

@@ -1,14 +1,14 @@
-
+{ lib, config, ... }:
 {
+  config = lib.mkIf config.kubernetes.kubelet.enable {
+    # TODO: Upstream sets watchdog. NixOS doesn't.
+    virtualisation.cri-o.enable = true;
 
-  # TODO: Upstream sets watchdog. NixOS doesn't.
-  # Again the problem is that NixOS sucks
-  virtualisation.containers.enable = true;
-  virtualisation.cri-o.enable = true;
-  virtualisation.podman.enable = true;
+    kubernetes.kubelet.settings.containerRuntimeEndpoint = lib.mkDefault "unix:///run/crio/crio.sock";
 
-
-  # TODO: The upstream module unconditionally pollutes /etc/cni.d
-  # https://github.com/NixOS/nixpkgs/blob/dda3dcd3fe03e991015e9a74b22d35950f264a54/nixos/modules/virtualisation/cri-o.nix#L151-L154
-  # https://github.com/NixOS/nixpkgs/issues/406296
+    systemd.services.kubelet = {
+      after = [ "crio.service" ];
+      requires = [ "crio.service" ];
+    };
+  };
 }

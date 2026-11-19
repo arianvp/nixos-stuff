@@ -94,7 +94,7 @@ let
             certificateAuthority = lib.mkOption {
               type = lib.types.nullOr lib.types.str;
               default = null;
-              description = "Base64-encoded PEM CA certificate for validating issuer's TLS cert";
+              description = "PEM-encoded CA certificates for validating the issuer's TLS certificate";
             };
           };
         };

@@ -8,6 +8,7 @@
 let
   cfg = config.kubernetes.kube-apiserver;
   k8sFormats = import ./formats { inherit lib pkgs; };
+  k8sLib = import ./lib.nix { inherit lib; };
 
   # Generate optional config files
   authenticationConfigFile = lib.mapNullable (k8sFormats.kubeApiserverConfigurations.authenticationConfiguration.generate "authentication-config.yaml") cfg.authenticationConfig;
@@ -78,22 +79,12 @@ in
 
     # Command-line arguments
     args = lib.mkOption {
-      type = lib.types.attrsOf (
-        lib.types.nullOr (
-          lib.types.oneOf [
-            lib.types.str
-            lib.types.int
-            lib.types.bool
-            lib.types.path
-            (lib.types.listOf lib.types.str)
-          ]
-        )
-      );
+      type = k8sLib.argsType;
       default = { };
       description = "Command-line arguments to pass to kube-apiserver";
       example = lib.literalExpression ''
         {
-          etcd-servers = "https://127.0.0.1:2379";
+          etcd-servers = [ "https://127.0.0.1:2379" ];
           service-account-issuer = "https://kubernetes.default.svc";
           service-account-key-file = "/etc/kubernetes/pki/sa.pub";
           service-account-signing-key-file = "/etc/kubernetes/pki/sa.key";
@@ -111,27 +102,27 @@ in
       admission-control-config-file = admissionConfigFile;
       encryption-provider-config = encryptionConfigFile;
       tracing-config-file = tracingConfigFile;
+
+      # Restart quickly: without these, shutting down waits a minute for
+      # watches while refusing connections
+      shutdown-watch-termination-grace-period = lib.mkDefault "5s";
+      shutdown-send-retry-after = lib.mkDefault true;
     };
 
     systemd.services.kube-apiserver = lib.mkMerge [
       {
+        description = "Kubernetes API server";
         wantedBy = [ "multi-user.target" ];
 
         serviceConfig = {
           Type = "notify";
-          RuntimeDirectory = "kubernetes";
-          ExecStart =
-            let
-              args = lib.cli.toCommandLineShellGNU { } cfg.args;
-            in
-            "${lib.getExe' cfg.package "kube-apiserver"} ${args}";
-
+          ExecStart = "${lib.getExe' cfg.package "kube-apiserver"} ${k8sLib.toArgs cfg.args}";
           Restart = "on-failure";
           RestartSec = "5s";
+          LimitNOFILE = 65536;
         };
       }
-      # TODO: Only when advertise-addr is unset
-      (lib.mkIf true {
+      (lib.mkIf ((cfg.args.advertise-address or null) == null) {
         # Fixes: Unable to find suitable network address.error='no default routes
         # found in "/proc/net/route" or "/proc/net/ipv6_route"'. Try to set the
         # AdvertiseAddress directly or provide a valid BindAddress to fix this.
