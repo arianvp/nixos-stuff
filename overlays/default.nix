@@ -6,6 +6,6 @@ map import [
   ./opkssh.nix
   ./gnome-ssh-askpass4.nix
   ./he-ddns.nix
-  ./jj-stack.nix
+  ./jj-gh-stack.nix
   ./git-meta.nix
 ]

@@ -1,0 +1,9 @@
+# Branches I push are named arianvp/*. Fetching only those and the trunks keeps
+# everyone else's branches, and the commits jj imports with them, out of my repos.
+# A repo with another trunk or with shared branches adds them in its repo config.
+[templates]
+git_push_bookmark = '"arianvp/push-" ++ change_id.short()'
+
+[remotes.origin]
+fetch-bookmarks = "main | master | arianvp/*"
+auto-track-bookmarks = "arianvp/*"

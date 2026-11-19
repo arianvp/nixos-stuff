@@ -1,0 +1,16 @@
+{
+  "name": "jj-gh-stack",
+  "version": "0.1.0",
+  "description": "Stacked pull requests on GitHub with jj",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "jj-gh-stack": "src/main.ts"
+  },
+  "dependencies": {
+    "@octokit/core": "^7.0.8"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2"
+  }
+}

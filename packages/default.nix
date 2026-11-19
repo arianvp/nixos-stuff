@@ -8,7 +8,7 @@ in
     spire-tpm-plugin
     spire
     he-ddns
-    jj-stack
+    jj-gh-stack
     git-meta
     ;
 }

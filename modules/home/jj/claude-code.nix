@@ -154,6 +154,7 @@ in
       "Bash(jj git push *)"
       "Bash(jj gerrit *)"
       "Bash(jj stack submit *)"
+      "Bash(jj stack merge *)"
       "Bash(jj rebase-mine*)"
       "Bash(jj op abandon *)"
       "Bash(jj op integrate *)"
