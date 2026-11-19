@@ -7,13 +7,14 @@
 {
   imports = [
     ../../modules/spire/controller-manager.nix
+    ../../modules/spire/oidc-discovery-provider.nix
   ];
 
   services.spire.agent = {
     enable = true;
     settings = {
       agent = {
-        trust_bundle_url = "https://spire-server.nixos.sh";
+        trust_bundle_url = "https://spire-server.nixos.sh:8443";
         trust_bundle_format = "spiffe";
         server_address = "spire-server.nixos.sh";
         rebootstrap_mode = "auto";
@@ -57,9 +58,45 @@
     };
   };
 
-  systemd.services.spire-server.serviceConfig = {
-    AmbientCapabilities = [ "CAP_NET_BIND_SERVICE" ];
-    CapabilityBoundingSet = [ "CAP_NET_BIND_SERVICE" ];
+  systemd.services.spire-server = {
+    after = [ "acme-spire-server.nixos.sh.service" ];
+    wants = [ "acme-spire-server.nixos.sh.service" ];
+    serviceConfig.LoadCredential = [
+      "fullchain.pem:${config.security.acme.certs."spire-server.nixos.sh".directory}/fullchain.pem"
+      "key.pem:${config.security.acme.certs."spire-server.nixos.sh".directory}/key.pem"
+    ];
+  };
+
+  # nixbot's nginx is off (Cloudflare tunnel), so nothing else serves :80/:443.
+  # This also puts websites/nixos.sh back online.
+  services.nginx.enable = true;
+  security.acme.certs."spire-server.nixos.sh".reloadServices = [ "spire-server.service" ];
+  services.nginx.virtualHosts."spire-server.nixos.sh" = {
+    enableACME = true;
+    forceSSL = true;
+    locations."/".return = "404";
+  };
+  services.nginx.virtualHosts."id.nixos.sh" = {
+    enableACME = true;
+    forceSSL = true;
+    locations."/".proxyPass = "http://127.0.0.1:8090";
+  };
+  networking.firewall.allowedTCPPorts = [ 8443 ];
+
+  spire.oidc-discovery-provider = {
+    enable = true;
+    settings = {
+      domains = [ "id.nixos.sh" ];
+      jwt_issuer = "https://id.nixos.sh";
+      insecure_addr = "127.0.0.1:8090";
+      set_key_use = true;
+      server_api.poll_interval = "10s";
+    };
+  };
+  systemd.services.spire-oidc-discovery-provider.serviceConfig = {
+    # the server's dynamic user, so it can open the private API socket
+    DynamicUser = true;
+    User = "spire-server";
   };
 
   services.spire.server = {
@@ -68,15 +105,25 @@
       server = {
         trust_domain = "nixos.sh";
         log_level = "debug";
+        # Numtide's farm daemons and niks3 validate this trust domain's
+        # JWT-SVIDs through OIDC discovery at this issuer.
+        jwt_issuer = "https://id.nixos.sh";
         federation = {
+          # nginx does ACME for this name and id.nixos.sh and terminates the
+          # OIDC issuer on :443; the bundle endpoint serves that certificate
+          # on 8443. SPIRE's own ACME would need :443 for TLS-ALPN.
           bundle_endpoint = {
-            address = "0.0.0.0";
-            port = 443;
-            acme = {
-              domain_name = "spire-server.nixos.sh";
-              email = "arian.vanputten@gmail.com";
-              tos_accepted = true;
+            address = "::";
+            port = 8443;
+            profile.https_web.serving_cert_file = {
+              cert_file_path = "/run/credentials/spire-server.service/fullchain.pem";
+              key_file_path = "/run/credentials/spire-server.service/key.pem";
+              file_sync_interval = "1h";
             };
+          };
+          federates_with."numtide.com" = {
+            bundle_endpoint_url = "https://spire.numtide.com:8443";
+            bundle_endpoint_profile.https_web = { };
           };
         };
       };

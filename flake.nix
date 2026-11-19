@@ -26,6 +26,11 @@
       url = "github:Mic92/nixbot";
       inputs.nixpkgs.follows = "unstable";
     };
+    nix-grpc-store = {
+      # Mic92/nix-grpc-store#219 (SPIFFE access rules), until it is merged
+      url = "github:zimbatm/nix-grpc-store/spiffe-id-rules";
+      inputs.nixpkgs.follows = "unstable";
+    };
   };
 
   outputs =
@@ -35,6 +40,7 @@
       home-manager,
       lanzaboote,
       nix-darwin,
+      nix-grpc-store,
       nixbot,
       nixos-hardware,
       unstable,
@@ -101,7 +107,12 @@
         utm = nixosSystem ./hosts/utm/configuration.nix;
         altra = nixosSystem (
           importApply ./hosts/altra/configuration.nix {
-            inherit nixos-hardware homeManagerModule nixbot;
+            inherit
+              nixos-hardware
+              homeManagerModule
+              nixbot
+              nix-grpc-store
+              ;
           }
         );
         arianvp-me = nixosSystem ./hosts/arianvp.me/configuration.nix;
