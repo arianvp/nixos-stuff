@@ -173,7 +173,10 @@ in
           args.advertise-address = config.networking.primaryIPv6Address;
         };
         kubernetes.kube-jwt-signer.openbao = t.openbaoURL "control";
-        kubernetes.kube-controller-manager.enable = true;
+        kubernetes.kube-controller-manager = {
+          enable = true;
+          groups.workloads = t.workloadControllers;
+        };
         kubernetes.kube-scheduler.enable = true;
       };
 

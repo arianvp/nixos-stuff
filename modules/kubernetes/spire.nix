@@ -68,23 +68,31 @@ let
   # clients of etcd and the kubelets, and client-go in the kubelet and
   # kube-proxy read their CA files only on startup, so the unit restarts when a
   # CA is added to the trust bundle.
-  svidFor = unit: {
-    spire.svids.${unit} = {
-      restartOnBundleChange = [ "${unit}.service" ];
-      restartMaxDelaySec = cfg.restartMaxDelaySec;
-    };
-    systemd.services.${unit} = {
-      requires = [ svids.${unit}.unit ];
-      after = [ svids.${unit}.unit ];
-    };
+  svidSettings = unit: {
+    restartOnBundleChange = [ "${unit}.service" ];
+    restartMaxDelaySec = cfg.restartMaxDelaySec;
   };
 
-  entry = name: path: extra: {
-    kubernetes.spire.entries."${hostName}-${name}" = {
+  svidOrdering = unit: {
+    requires = [ svids.${unit}.unit ];
+    after = [ svids.${unit}.unit ];
+  };
+
+  entrySettings =
+    unit: path: extra:
+    {
       spiffeID = spiffeID path;
-      selectors = [ "systemd:id:${svids.${name}.unit}" ];
+      selectors = [ "systemd:id:${svids.${unit}.unit}" ];
     }
     // extra;
+
+  svidFor = unit: {
+    spire.svids.${unit} = svidSettings unit;
+    systemd.services.${unit} = svidOrdering unit;
+  };
+
+  entry = unit: path: extra: {
+    kubernetes.spire.entries."${hostName}-${unit}" = entrySettings unit path extra;
   };
 
   # The workloads of this node run under its own agent
@@ -391,6 +399,110 @@ in
                 root-ca-file = svids.kube-controller-manager.paths.bundle;
               };
           }
+          # Per group, but keyed under static attributes rather than through
+          # svidFor and entry: resolving the names of the groups reads the
+          # attributes every module defines, so a module whose attributes are
+          # the group names would be defined in terms of itself.
+          (
+            let
+              groups = k8s.kube-controller-manager.groups;
+              forGroups =
+                f:
+                lib.mapAttrs' (
+                  name: group:
+                  let
+                    unit = "kube-controller-manager-${name}";
+                  in
+                  lib.nameValuePair unit (f unit group)
+                ) groups;
+            in
+            {
+              spire.svids = forGroups (unit: _: svidSettings unit);
+              systemd.services = forGroups (unit: _: svidOrdering unit);
+              kubernetes.kubeconfigs = forGroups (unit: _: svidKubeconfig svids.${unit});
+
+              kubernetes.spire.entries = lib.mapAttrs' (
+                name: _:
+                let
+                  unit = "kube-controller-manager-${name}";
+                in
+                lib.nameValuePair "${hostName}-${unit}" (entrySettings unit "k8s/system/${unit}" { })
+              ) groups;
+
+              kubernetes.addons.manifests = lib.listToAttrs (
+                lib.concatLists (
+                  lib.mapAttrsToList (
+                    name: group:
+                    let
+                      unit = "kube-controller-manager-${name}";
+                      user = {
+                        apiGroup = "rbac.authorization.k8s.io";
+                        kind = "User";
+                        name = "system:${unit}";
+                      };
+                    in
+                    [
+                      # Leader election, which the system:controller:* roles do
+                      # not grant: the controller manager's own role has its
+                      # own lease by name
+                      (lib.nameValuePair "${unit}-lease" {
+                        apiVersion = "rbac.authorization.k8s.io/v1";
+                        kind = "Role";
+                        metadata = {
+                          name = unit;
+                          namespace = "kube-system";
+                        };
+                        rules = [
+                          {
+                            apiGroups = [ "coordination.k8s.io" ];
+                            resources = [ "leases" ];
+                            verbs = [ "create" ];
+                          }
+                          {
+                            apiGroups = [ "coordination.k8s.io" ];
+                            resources = [ "leases" ];
+                            resourceNames = [ unit ];
+                            verbs = [
+                              "get"
+                              "update"
+                            ];
+                          }
+                        ];
+                      })
+                      (lib.nameValuePair "${unit}-lease-binding" {
+                        apiVersion = "rbac.authorization.k8s.io/v1";
+                        kind = "RoleBinding";
+                        metadata = {
+                          name = unit;
+                          namespace = "kube-system";
+                        };
+                        roleRef = {
+                          apiGroup = "rbac.authorization.k8s.io";
+                          kind = "Role";
+                          name = unit;
+                        };
+                        subjects = [ user ];
+                      })
+                    ]
+                    ++ map (
+                      controller:
+                      lib.nameValuePair "${unit}-${controller.role}" {
+                        apiVersion = "rbac.authorization.k8s.io/v1";
+                        kind = "ClusterRoleBinding";
+                        metadata.name = "${unit}:${controller.role}";
+                        roleRef = {
+                          apiGroup = "rbac.authorization.k8s.io";
+                          kind = "ClusterRole";
+                          name = "system:controller:${controller.role}";
+                        };
+                        subjects = [ user ];
+                      }
+                    ) group.controllers
+                  ) groups
+                )
+              );
+            }
+          )
         ]
       ))
 
