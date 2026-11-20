@@ -8,7 +8,7 @@ import type { Entry } from "./stack.ts";
  * commit makes GitHub merge exactly what jj shows, or refuse.
  */
 export async function merge(gh: Repo, stack: Entry[]): Promise<void> {
-  const { octokit, owner, repo } = gh;
+  const { octokit, owner, repo, mergeMethod } = gh;
   const top = stack[stack.length - 1];
   const pr = await findPullRequest(gh, top.branch);
   if (!pr) throw new Error(`${top.branch} has no open PR; run submit first`);
@@ -16,7 +16,13 @@ export async function merge(gh: Repo, stack: Entry[]): Promise<void> {
 
   const pull_number = pr.number;
   const response = await octokit
-    .request("PUT /repos/{owner}/{repo}/pulls/{pull_number}/merge-async", { owner, repo, pull_number, sha: top.commitId })
+    .request("PUT /repos/{owner}/{repo}/pulls/{pull_number}/merge-async", {
+      owner,
+      repo,
+      pull_number,
+      sha: top.commitId,
+      merge_method: mergeMethod,
+    })
     .catch((error) => {
       if (error.status === 409) return error.response;
       throw error;
