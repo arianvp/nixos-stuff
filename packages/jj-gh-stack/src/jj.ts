@@ -66,6 +66,13 @@ export function pushBookmarkName(changeId: string): string {
   return query("log", "--no-graph", "-r", changeId, "-T", template).trim();
 }
 
+/** Local bookmarks that track a bookmark on `remote`. */
+export function trackedBookmarks(remote: string): Set<string> {
+  const template = 'if(!remote, name ++ "\\n")';
+  const names = query("--quiet", "bookmark", "list", "--tracked", "--remote", remote, "-T", template);
+  return new Set(names.split("\n").filter(Boolean));
+}
+
 export function remoteUrl(remote: string): string {
   const line = query("git", "remote", "list")
     .split("\n")
