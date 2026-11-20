@@ -7,7 +7,10 @@ export interface Repo {
   owner: string;
   repo: string;
   defaultBranch: string;
+  mergeMethod: MergeMethod;
 }
+
+export type MergeMethod = "rebase" | "merge" | "squash";
 
 export interface PullRequest {
   number: number;
@@ -36,7 +39,19 @@ export async function connect(remote: string): Promise<Repo> {
   const [, owner, repo] = match;
   const octokit = new Octokit({ auth: token() });
   const { data } = await octokit.request("GET /repos/{owner}/{repo}", { owner, repo });
-  return { octokit, owner, repo, defaultBranch: data.default_branch };
+  return { octokit, owner, repo, defaultBranch: data.default_branch, mergeMethod: mergeMethod(data) };
+}
+
+/** Prefers rebase, which lands one commit per change as jj shows the stack. */
+function mergeMethod(settings: {
+  allow_rebase_merge?: boolean;
+  allow_merge_commit?: boolean;
+  allow_squash_merge?: boolean;
+}): MergeMethod {
+  if (settings.allow_rebase_merge) return "rebase";
+  if (settings.allow_merge_commit) return "merge";
+  if (settings.allow_squash_merge) return "squash";
+  throw new Error("the repository allows no merge method");
 }
 
 export async function findPullRequest({ octokit, owner, repo }: Repo, branch: string): Promise<PullRequest | undefined> {
