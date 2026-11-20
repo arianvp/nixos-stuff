@@ -9,14 +9,18 @@ export function syncable(rev: string): Change[] {
 /**
  * Brings the stack up to date after GitHub merged or rebased part of it. Fetching adopts
  * GitHub's rebases of commits you have not touched since you pushed them. A change you
- * did edit comes back divergent, and converge merges the two versions into one.
+ * did edit comes back divergent, and converge merges the two versions into one. A merge
+ * that drops change IDs (squash, merge commit) leaves the stack on the old commits, so
+ * it is rebased onto trunk, dropping changes that trunk already contains.
  */
 export function sync(stack: Pick<Change, "changeId">[], remote: string): void {
   jj("git", "fetch", "--remote", remote);
   if (stack.length === 0) return;
   const left = `(${revset(stack)}) & mutable()`;
-  if (changes(left).length === 0) return;
-  jj("converge", "--no-interactive", "-r", left);
-  jj("rebase", "-s", `roots(${left})`, "-d", "trunk()", "--skip-emptied");
-  if (changes(left).length > 0) jj("git", "push", "--remote", remote, "-r", left);
+  const divergent = `(${left}) & divergent()`;
+  if (changes(divergent).length > 0) jj("converge", "--no-interactive", "-r", divergent);
+  const behind = `roots(${left}) ~ trunk()+`;
+  if (changes(behind).length > 0) jj("rebase", "-s", behind, "-d", "trunk()", "--skip-emptied");
+  const bookmarked = `(${left}) & bookmarks()`;
+  if (changes(bookmarked).length > 0) jj("git", "push", "--remote", remote, "-r", bookmarked);
 }
