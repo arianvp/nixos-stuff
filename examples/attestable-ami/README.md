@@ -143,3 +143,41 @@ whose private half nobody sees except an attested instance:
 The image decrypts the private key at boot, and nginx serves HTTPS with it.
 Clients only need to trust your CA: it certified a key that KMS only releases
 to this image, so whoever answers with it runs this image.
+
+## Nitro Sandboxes
+
+A [Nitro Sandbox](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/amazon-ec2-nitro-sandboxes.html)
+is a lightweight VM that the Nitro hypervisor runs next to its parent
+instance, not nested inside it. The attested image is the parent, and its
+guest is built from the same modules:
+
+- `modules/nitro-sandbox-patch.nix`: AWS's extension of the kernel, which
+  isn't upstream: the Nitro Enclaves driver's sandbox support for parents,
+  and virtio device memory buffers and the paravirtual clock for guests in
+  confidential mode. Amazon Linux 2023's `kernel6.18` source RPM carries it
+  as a single patch, which applies to nixpkgs' 6.18 kernel as is.
+- `modules/nitro-sandbox-kernel.nix`: the parent's kernel, nixpkgs' with that
+  patch.
+- `modules/nitro-sandbox-guest-kernel.nix`: the guest's kernel, with only the
+  devices a sandbox has and everything built in, so there are no modules to
+  load or trust and lockdown is fixed at build time.
+- `modules/nitro-sandbox-parent.nix`: reserves the memory pool the sandboxes
+  run in, launches the sandbox at boot with Firecracker, and prints what
+  arrives over vsock to the serial console.
+- `sandbox/guest.nix`: a sealed NixOS laid out like AWS's own sandbox guest.
+  A sandbox boots a kernel, an initrd and a command line, and measures those
+  three only. It gets the system from a read-only drive, the store of
+  `modules/verity-store.nix`, whose root hash is on the measured command
+  line. Its workload greets the parent over vsock and powers the sandbox off.
+
+`sandbox/test.nix` boots the sandbox's kernel, initrd, command line and drive
+under QEMU with a vsock device and checks that its greeting arrives. On EC2,
+launch the AMI with enclaves enabled on an instance type that supports Nitro
+Sandboxes, which excludes flex instances, instances with nested
+virtualization and instances with fewer than 4 vCPUs:
+
+```console
+$ aws ec2 run-instances --image-id "$ami" --instance-type m7i.xlarge \
+    --enclave-options Enabled=true …
+$ aws ec2 get-console-output --instance-id … --latest --output text | grep Hello
+```

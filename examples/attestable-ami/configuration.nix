@@ -1,8 +1,9 @@
 # The appliance: generic building blocks from ./modules, the EC2 specifics, and
 # the workload.
-{ lib, ... }:
+{ lib, guest, ... }:
 {
   imports = [
+    ./modules/nitro-sandbox-parent.nix
     ./modules/appliance.nix
     ./modules/boot-state.nix
     ./modules/lockdown.nix
@@ -37,6 +38,8 @@
     keyId = lib.fileContents ./kms-key-arn.txt;
     secrets.example = { };
   };
+
+  services.nitro-sandbox.guest = guest.config.system.build.nitro-sandbox;
 
   # NitroTPM measures into the SHA-384 bank.
   services.log-boot-state.pcrBank = "sha384";
