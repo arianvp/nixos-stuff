@@ -37,13 +37,17 @@ And the AWS specifics:
 - `modules/kms-decrypt.nix`: decrypts secrets from the user data with a KMS
   key pinned in `kms-key-arn.txt`. KMS only releases them to an instance that
   presents the PCR values of this image and this user data.
+- `modules/tls-identity.nix`: serves HTTPS with a private key that only an
+  instance running this image ever holds.
 - `create-ami.nix`: uploads the image with coldsnap and registers it with
   NitroTPM support.
 
 `test.nix` boots the image under OVMF with a software TPM and a stand-in for
 IMDS, and checks that the firmware and systemd measured exactly the predicted
 PCR values, that credentials arrive through the user data, that lockdown and
-IPE are enforced, and that IPE refuses a binary copied out of the store.
+IPE are enforced, that IPE refuses a binary copied out of the store, and that
+the image serves TLS with the certified key. Only the KMS requests themselves
+need a real NitroTPM.
 
 ## Usage
 
@@ -101,3 +105,41 @@ from the boot entry and measures it into PCR12
 and systemd measures the user data into it before importing credentials from
 it. Binding PCR12 therefore binds the exact user data as well, and changing
 the user data means updating the policy.
+
+## A TLS identity only the image holds
+
+KMS can't sign on behalf of an attested instance, but it can create a key pair
+whose private half nobody sees except an attested instance:
+
+1. Have KMS create the key pair. You get the public key, and the private key
+   encrypted under the pinned key:
+
+   ```console
+   $ aws kms generate-data-key-pair-without-plaintext --key-id "$(cat kms-key-arn.txt)" \
+       --key-pair-spec ECC_NIST_P256 > key-pair.json
+   $ jq -r .PublicKey key-pair.json | base64 -d | openssl pkey -pubin -inform DER -out key.pub
+   ```
+
+2. Certify the public key with your CA. There is no CSR, as nobody can sign
+   one:
+
+   ```console
+   $ echo subjectAltName=DNS:appliance.example.com > extensions
+   $ openssl x509 -new -force_pubkey key.pub -subj /CN=appliance.example.com \
+       -extfile extensions -CA ca.pem -CAkey ca.key -out cert.pem
+   ```
+
+3. Put the encrypted private key and the certificate in the user data, next to
+   any other secrets, then bind the key policy to it as above:
+
+   ```console
+   $ jq -n --rawfile certificate cert.pem --slurpfile pair key-pair.json \
+       '{"systemd.credentials": [
+          {name: "kms.tls-key", text: $pair[0].PrivateKeyCiphertextBlob},
+          {name: "tls.certificate", text: $certificate}
+        ]}' > user-data.json
+   ```
+
+The image decrypts the private key at boot, and nginx serves HTTPS with it.
+Clients only need to trust your CA: it certified a key that KMS only releases
+to this image, so whoever answers with it runs this image.

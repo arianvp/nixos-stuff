@@ -5,14 +5,37 @@
   appliance,
   predict-pcr12,
   hostPkgs,
+  lib,
   ...
 }:
 let
   image = appliance.config.system.build.images.attestable-ami;
 
-  # Variants that report what they received from the user data, and that try
-  # to run a copy of a store binary from the tmpfs root, which the IPE policy
-  # must refuse unless IPE is permissive.
+  # A CA, and a certificate for a key whose private half the CA never sees,
+  # like one from `aws kms generate-data-key-pair-without-plaintext`.
+  pki = hostPkgs.runCommand "pki" { nativeBuildInputs = [ hostPkgs.openssl ]; } ''
+    mkdir $out && cd $out
+    openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -outform DER -out key.der
+    openssl pkey -inform DER -in key.der -pubout -out key.pub
+    openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes \
+      -keyout ca.key -out ca.pem -subj /CN=ca -days 1
+    echo subjectAltName=IP:192.168.1.10 > extensions
+    openssl x509 -new -force_pubkey key.pub -subj /CN=appliance \
+      -extfile extensions -CA ca.pem -CAkey ca.key -days 1 -out cert.pem
+  '';
+
+  userData = hostPkgs.runCommand "user-data" { nativeBuildInputs = [ hostPkgs.jq ]; } ''
+    jq --null-input --join-output --rawfile certificate ${pki}/cert.pem '{"systemd.credentials": [
+      {name: "kms.example", text: "Y2lwaGVydGV4dA=="},
+      {name: "kms.tls-key", text: "Y2lwaGVydGV4dA=="},
+      {name: "tls.certificate", text: $certificate}
+    ]}' > $out
+  '';
+
+  # Variants that report what they received from the user data, that try to
+  # run a copy of a store binary from the tmpfs root, which the IPE policy must
+  # refuse unless IPE is permissive, and that get their TLS key from ./pki
+  # instead of KMS, which needs a NitroTPM.
   probe =
     kernelParams:
     (appliance.extendModules {
@@ -21,6 +44,8 @@ let
           { lib, pkgs, ... }:
           {
             boot.kernelParams = kernelParams;
+            systemd.services.kms-decrypt-tls-key.serviceConfig.ExecStart =
+              lib.mkForce "${pkgs.coreutils}/bin/cat ${pki}/key.der";
             systemd.services.show-credential = {
               description = "Print the credential imported from the user data";
               wantedBy = [ "multi-user.target" ];
@@ -60,15 +85,6 @@ let
   enforcing = probe [ ];
   permissive = probe [ "ipe.enforce=0" ];
 
-  userData = builtins.toJSON {
-    "systemd.credentials" = [
-      {
-        name = "kms.example";
-        text = "Y2lwaGVydGV4dA==";
-      }
-    ];
-  };
-
   node =
     { lib, ... }:
     {
@@ -84,10 +100,12 @@ let
       };
     };
 
-  # Stands in for EC2's DHCP and IMDSv2, serving `userData`.
+  # Stands in for EC2's DHCP and IMDSv2, serving `userData`, and talks TLS to
+  # the enforcing variant at 192.168.1.10.
   imds =
-    { lib, pkgs, ... }:
+    { nodes, pkgs, ... }:
     {
+      environment.systemPackages = [ pkgs.curl ];
       networking.firewall.enable = false;
       networking.interfaces.eth1.ipv4.addresses = lib.mkForce [
         {
@@ -107,6 +125,10 @@ let
           interface = "eth1";
           dhcp-range = "192.168.1.100,192.168.1.200";
           dhcp-option = "option:router,192.168.1.254";
+          # The MAC the test driver gives the enforcing variant.
+          dhcp-host = "52:54:00:12:01:${
+            lib.fixedWidthString 2 "0" (lib.toHexString nodes.enforcing.virtualisation.test.nodeNumber)
+          },192.168.1.10";
         };
       };
       systemd.services.imds = {
@@ -115,7 +137,7 @@ let
           import http.server
 
           TOKEN = b"token"
-          USER_DATA = ${builtins.toJSON userData}.encode()
+          USER_DATA = open("${userData}", "rb").read()
 
 
           class Handler(http.server.BaseHTTPRequestHandler):
@@ -185,7 +207,7 @@ in
       # The firmware leaves PCR 12 alone, but systemd measures the user data
       # into it.
       expected["PCR12"] = subprocess.run(
-          ["${predict-pcr12}/bin/predict-pcr12", "${hostPkgs.writeText "user-data" userData}"],
+          ["${predict-pcr12}/bin/predict-pcr12", "${userData}"],
           check=True, capture_output=True, text=True,
       ).stdout.strip()
 
@@ -227,6 +249,13 @@ in
           enforcing.wait_for_console_text(r"Failed to start .*Run a binary from outside the store")
           permissive.wait_for_console_text(
               r"Finished .*Run a binary from outside the store", timeout=timedelta(minutes=2)
+          )
+
+      with subtest("The image serves TLS with the key the CA certified"):
+          imds.wait_until_succeeds(
+              "curl --fail --silent --cacert ${pki}/ca.pem https://192.168.1.10/"
+              " | grep 'served by an attested image'",
+              timeout=60,
           )
     '';
 }
