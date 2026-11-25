@@ -24,6 +24,17 @@ let
       ];
     }
   ];
+  # Snapshots the working copy at turn boundaries, so each turn's edits show up
+  # as their own operations and are never folded into the user's edits.
+  # Claude Code waits on these hooks, so they get a timeout.
+  snapshot = map (h: h // { hooks = map (c: c // { timeout = 30; }) h.hooks; }) (
+    hook "claude-jj-snapshot" ''
+      cd "$(jq -r .cwd)" 2>/dev/null || exit 0
+      jj root >/dev/null 2>&1 || exit 0
+      # stdout of UserPromptSubmit hooks is injected into the context.
+      jj util snapshot >/dev/null
+    ''
+  );
   # Not under .claude/: Claude's sandbox mounts the project's .claude/ read-only,
   # which would make every worktree beneath it read-only too.
   worktrees = ".work";
@@ -121,6 +132,12 @@ in
           fi
         ''
       );
+      UserPromptSubmit = snapshot;
+      Stop = snapshot;
+      # Fires instead of Stop when a turn ends on an API error.
+      StopFailure = snapshot;
+      # Background agents keep editing after their parent's turn has ended.
+      SubagentStop = snapshot;
       WorktreeRemove = hook "claude-worktree-remove" ''
         path="$(jq -r .worktree_path)"
         # WorktreeCreate puts worktrees at <main checkout>/${worktrees}/<name>.
