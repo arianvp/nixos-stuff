@@ -9,7 +9,10 @@
     ./modules/nitrotpm.nix
   ];
 
-  image.modules.attestable-ami = ./modules/single-uki.nix;
+  image.modules.attestable-ami.imports = [
+    ./modules/single-uki.nix
+    ./modules/ipe.nix
+  ];
 
   system.image = {
     id = "attestable-ami";

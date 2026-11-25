@@ -19,6 +19,10 @@ thing. Most of them have nothing to do with AWS:
   own kernel modules, without giving up reproducibility.
 - `modules/lockdown.nix`: kernel lockdown, so not even root can modify or read
   the running kernel.
+- `modules/ipe.nix`: an IPE policy, added to the image module, that only lets
+  the kernel run code from the initramfs and the verity store. A binary
+  written anywhere else never runs, not even as root, and nothing can switch
+  IPE off.
 - `modules/boot-state.nix`: prints the measured PCRs and the kernel's security
   state to the console.
 
@@ -31,8 +35,8 @@ And the AWS specifics:
   NitroTPM support.
 
 `test.nix` boots the image under OVMF with a software TPM and checks that the
-firmware measured exactly the predicted PCR values, and that the kernel is
-locked down.
+firmware measured exactly the predicted PCR values, that lockdown and IPE are
+enforced, and that IPE refuses a binary copied out of the store.
 
 ## Usage
 
