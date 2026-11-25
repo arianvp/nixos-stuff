@@ -15,6 +15,10 @@ thing. Most of them have nothing to do with AWS:
 - `modules/single-uki.nix`: an image module, registered as
   `image.modules.attestable-ami`, that adds an ESP holding a single UKI that
   the firmware boots directly, and measures into PCR4.
+- `modules/kernel-certificates.nix`: a kernel that only trusts this system's
+  own kernel modules, without giving up reproducibility.
+- `modules/lockdown.nix`: kernel lockdown, so not even root can modify or read
+  the running kernel.
 - `modules/boot-state.nix`: prints the measured PCRs and the kernel's security
   state to the console.
 
@@ -27,7 +31,8 @@ And the AWS specifics:
   NitroTPM support.
 
 `test.nix` boots the image under OVMF with a software TPM and checks that the
-firmware measured exactly the predicted PCR values.
+firmware measured exactly the predicted PCR values, and that the kernel is
+locked down.
 
 ## Usage
 
