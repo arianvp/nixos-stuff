@@ -49,7 +49,7 @@ in
 
       boot(machine, "${image}/${image.passthru.filePath}")
 
-      for pcr in (4, 7, 12):
+      for pcr in (4, 7, 11, 12):
           with subtest(f"PCR{pcr} matches the prediction"):
               machine.wait_for_console_text(
                   rf"(?i)pcr-sha384/{pcr}:{expected[f'PCR{pcr}']}", timeout=timedelta(minutes=2)
