@@ -1,0 +1,32 @@
+# The appliance: generic building blocks from ./modules, the EC2 specifics, and
+# the workload.
+{
+  imports = [
+    ./modules/appliance.nix
+    ./modules/boot-state.nix
+    ./modules/ec2.nix
+    ./modules/nitrotpm.nix
+  ];
+
+  image.modules.attestable-ami = ./modules/single-uki.nix;
+
+  system.image = {
+    id = "attestable-ami";
+    version = "1";
+  };
+
+  # Not needed on EC2, but lets the test boot the very image that gets uploaded.
+  boot.initrd.availableKernelModules = [
+    "virtio_pci"
+    "virtio_blk"
+  ];
+
+  # NitroTPM measures into the SHA-384 bank.
+  services.log-boot-state.pcrBank = "sha384";
+
+  nixpkgs.overlays = [
+    (final: prev: { nitrotpm-tools = final.callPackage ./nitrotpm-tools.nix { }; })
+  ];
+
+  system.stateVersion = "26.05";
+}
