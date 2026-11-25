@@ -1,5 +1,6 @@
 # Uploads the image straight into an EBS snapshot (no instance or S3 bucket
-# involved) and registers it as a NitroTPM-enabled AMI. Prints the AMI ID.
+# involved) and registers it as a NitroTPM-enabled AMI with its Secure Boot
+# variables. Prints the AMI ID.
 {
   writeShellApplication,
   awscli2,
@@ -28,6 +29,7 @@ writeShellApplication {
       --virtualization-type hvm \
       --root-device-name /dev/xvda \
       --block-device-mappings "DeviceName=/dev/xvda,Ebs={SnapshotId=$snapshot}" \
+      --uefi-data file://${config.system.build.secureBoot}/uefi-data.aws \
       --query ImageId --output text
   '';
   meta.description = "Upload ${config.image.baseName} as an attestable AMI";

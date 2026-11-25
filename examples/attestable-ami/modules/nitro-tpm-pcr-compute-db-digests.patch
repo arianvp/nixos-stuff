@@ -1,0 +1,128 @@
+diff --git a/nitro-tpm-pcr-compute/src/main.rs b/nitro-tpm-pcr-compute/src/main.rs
+index 3831e2583f..9e51e134e9 100644
+--- a/nitro-tpm-pcr-compute/src/main.rs
++++ b/nitro-tpm-pcr-compute/src/main.rs
+@@ -226,6 +226,7 @@ fn pcr7<'a, Image>(
+     const IMAGE_SECURITY_DATABASE_GUID: uuid::Uuid =
+         uuid::uuid!("d719b2cb-3d3a-4596-a3bc-dad00e67656f");
+     const EFI_CERT_X509_GUID: uuid::Uuid = uuid::uuid!("a5c059a1-94e4-4aa7-87b5-ab155c2bf072");
++    const EFI_CERT_SHA256_GUID: uuid::Uuid = uuid::uuid!("c1c41626-504c-4092-aca9-41f936934328");
+ 
+     let mut pcr7 = Pcr::new(algorithm);
+ 
+@@ -303,46 +304,34 @@ fn pcr7<'a, Image>(
+     // EFI_IMAGE_SECURITY_DATABASE variable that was used to validate the UEFI image has previously
+     // been measured in PCR[7]. If it has not been, it MUST be measured into PCR[7]. If it has been
+     // measured previously, it MUST NOT be measured again.
+-    let efi_signature_data = esl::try_from(&signature_database)
+-        .context("Could not parse signature database file")?
+-        .into_iter()
+-        // We only support X.509 certificates
+-        .filter(|efi_signature_list| efi_signature_list.signature_type == EFI_CERT_X509_GUID)
+-        .flat_map(|efi_signature_list| efi_signature_list.signatures.into_iter())
+-        .collect::<Vec<_>>();
++    let efi_signature_lists = esl::try_from(&signature_database)
++        .context("Could not parse signature database file")?;
++    let signatures_of_type = |signature_type| {
++        efi_signature_lists
++            .iter()
++            .filter(move |efi_signature_list| efi_signature_list.signature_type == signature_type)
++            .flat_map(|efi_signature_list| efi_signature_list.signatures.iter())
++            .collect::<Vec<_>>()
++    };
++    let efi_signature_data = signatures_of_type(EFI_CERT_X509_GUID);
++    let efi_signature_digests = signatures_of_type(EFI_CERT_SHA256_GUID);
+ 
+     let mut seen_efi_signature_data = std::collections::HashSet::new();
+     let measured_efi_signature_data = images
+         .iter()
+-        .map(|image| {
+-            // Look for a matching image signature
+-            authenticode::AttributeCertificateIterator::new(image)?
+-                .into_iter()
+-                .flatten()
+-                .map(|attribute_certificate| {
+-                    // Walk the certificate chain
+-                    Ok::<_, anyhow::Error>(
+-                        attribute_certificate?
+-                            .get_authenticode_signature()?
+-                            .certificates()
+-                            .map(x509_cert::der::Encode::to_der)
+-                            .find_map(|certificate| {
+-                                // Look up the certificate in the signature database. This does not
+-                                // validate the signature or apply the signature denylist; Secure
+-                                // Boot does both.
+-                                certificate
+-                                    .map(|certificate| {
+-                                        efi_signature_data.iter().find(|efi_signature_data| {
+-                                            certificate == efi_signature_data.signature_data
+-                                        })
+-                                    })
+-                                    .transpose()
+-                            })
+-                            .transpose()?,
+-                    )
+-                })
+-                .find_map(Result::transpose)
+-                .transpose()
++        .map(|image| -> anyhow::Result<_> {
++            let certificate = image_certificate(image, &efi_signature_data)?;
++            if certificate.is_some() {
++                return Ok(certificate);
++            }
++
++            // An image can also be allowed by the SHA-256 digest of its Authenticode hash, and
++            // EDK2 measures that entry the same way.
++            let digest = pe_hash(&aws_lc_rs::digest::SHA256, image)?;
++            Ok(efi_signature_digests
++                .iter()
++                .copied()
++                .find(|efi_signature_data| efi_signature_data.signature_data == digest.as_ref()))
+         })
+         .filter_map(Result::transpose)
+         .filter(|efi_signature_data| {
+@@ -372,6 +361,44 @@ fn pcr7<'a, Image>(
+     Ok(pcr7.into())
+ }
+ 
++/// Finds the signature database entry with a certificate from the image's signatures.
++fn image_certificate<'a, 'b, Image>(
++    image: &'a Image,
++    efi_signature_data: &[&'b esl::EfiSignatureData],
++) -> anyhow::Result<Option<&'b esl::EfiSignatureData>>
++where
++    Image: authenticode::PeTrait,
++{
++    // Look for a matching image signature
++    authenticode::AttributeCertificateIterator::new(image)?
++        .into_iter()
++        .flatten()
++        .map(|attribute_certificate| {
++            // Walk the certificate chain
++            Ok::<_, anyhow::Error>(
++                attribute_certificate?
++                    .get_authenticode_signature()?
++                    .certificates()
++                    .map(x509_cert::der::Encode::to_der)
++                    .find_map(|certificate| {
++                        // Look up the certificate in the signature database. This does not
++                        // validate the signature or apply the signature denylist; Secure Boot
++                        // does both.
++                        certificate
++                            .map(|certificate| {
++                                efi_signature_data.iter().copied().find(|efi_signature_data| {
++                                    certificate == efi_signature_data.signature_data
++                                })
++                            })
++                            .transpose()
++                    })
++                    .transpose()?,
++            )
++        })
++        .find_map(Result::transpose)
++        .transpose()
++}
++
+ fn separator_hash(algorithm: &'static aws_lc_rs::digest::Algorithm) -> aws_lc_rs::digest::Digest {
+     aws_lc_rs::digest::digest(algorithm, &[0u8; 4])
+ }
