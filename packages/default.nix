@@ -12,5 +12,6 @@ in
     git-meta
     otelcol
     aws-agent-skills
+    iam-policy-autopilot
     ;
 }

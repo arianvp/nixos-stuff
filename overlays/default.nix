@@ -10,4 +10,5 @@ map import [
   ./git-meta.nix
   ./otelcol.nix
   ./aws-agent-skills.nix
+  ./iam-policy-autopilot.nix
 ]
