@@ -5,11 +5,13 @@
   ...
 }:
 {
+  imports = [ ./aws-subagents.nix ];
 
   #
   home.packages = [
     pkgs.socat
     pkgs.ripgrep
+    pkgs.awscli2
   ]
   ++ (lib.optional pkgs.stdenv.hostPlatform.isLinux pkgs.bubblewrap);
 
@@ -56,6 +58,7 @@
     enable = true;
     skills = lib.mkMerge [
       {
+        aws-scoped-credentials = ./skills/aws-scoped-credentials;
         bump-systemd = ./skills/bump-systemd;
         jj-clone = ./skills/jj-clone;
         offline-docs = ./skills/offline-docs;
