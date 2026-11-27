@@ -11,4 +11,5 @@ map import [
   ./otelcol.nix
   ./aws-agent-skills.nix
   ./iam-policy-autopilot.nix
+  ./awscli2.nix
 ]
