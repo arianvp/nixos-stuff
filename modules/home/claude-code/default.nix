@@ -54,11 +54,14 @@
 
   programs.claude-code = {
     enable = true;
-    skills = {
-      bump-systemd = ./skills/bump-systemd;
-      jj-clone = ./skills/jj-clone;
-      offline-docs = ./skills/offline-docs;
-    };
+    skills = lib.mkMerge [
+      {
+        bump-systemd = ./skills/bump-systemd;
+        jj-clone = ./skills/jj-clone;
+        offline-docs = ./skills/offline-docs;
+      }
+      pkgs.aws-agent-skills.skills
+    ];
 
     rules.jj = ''
       YOU MUST ALWAYS USE JJ FOR VERSION CONTROL. NOT GIT.
@@ -96,6 +99,11 @@
     mcpServers.linear-server = {
       type = "http";
       url = "https://mcp.linear.app/mcp";
+    };
+
+    mcpServers.aws-mcp = {
+      type = "http";
+      url = "https://aws-mcp.us-east-1.api.aws/mcp";
     };
 
     settings = {

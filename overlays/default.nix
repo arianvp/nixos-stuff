@@ -9,4 +9,5 @@ map import [
   ./jj-gh-stack.nix
   ./git-meta.nix
   ./otelcol.nix
+  ./aws-agent-skills.nix
 ]
