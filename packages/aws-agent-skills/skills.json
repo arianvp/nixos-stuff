@@ -1,0 +1,110 @@
+{
+  "amazon-bedrock": {
+    "version": "v9",
+    "sha256": "b22ff09ef6d9f5d14fbc8a690e52479a3aa2dc6480a37cfce21d75e12cc73f30"
+  },
+  "aws-ai-ml": {
+    "version": "v8",
+    "sha256": "1f824e5b152db0becda83ba72a132c1bc1a188071ced49d9f0e50d9449a8469a"
+  },
+  "aws-amplify": {
+    "version": "v2",
+    "sha256": "756939efa483882958124f2b6f3dc0f723fd327701e14e74a70ce2d5f0203bd1"
+  },
+  "aws-auth": {
+    "version": "v1",
+    "sha256": "d2ef609c33358c775861dd90d99386f546ee7d457b5e108e7541fc4b10eb54ae"
+  },
+  "aws-billing-and-cost-management": {
+    "version": "v1",
+    "sha256": "73bc781376198a4d996098e68c34cfaf840ba20a4104bd10836e05621c35634a"
+  },
+  "aws-cdk": {
+    "version": "v2",
+    "sha256": "da8d82cdee254bebdb66b59a9c1a1fff1ad9f080c542bb3208e8f531208c0861"
+  },
+  "aws-cdk-blocks": {
+    "version": "v1",
+    "sha256": "ae625ca10eacbd40e85f4be648f25265fd7dc2e3d1aa57be1bafa202c59d6650"
+  },
+  "aws-cloudformation": {
+    "version": "v3",
+    "sha256": "ef1b94211f647cc46d591fd67a51c0db40d5beb2d9d9b3048fe82db799284220"
+  },
+  "aws-compute": {
+    "version": "v2",
+    "sha256": "c5c94d16ac76eb33a2f494a6dc1a6d38d89e6cfcda0737d75fc2db941eb19ea4"
+  },
+  "aws-containers": {
+    "version": "v7",
+    "sha256": "0c29a5baadb0e4f1bc1358f0cc645ab9ebed3f7ebddcfe33667cdf291d4a6332"
+  },
+  "aws-database": {
+    "version": "v3",
+    "sha256": "4e404ae7b20deee88ff0c33530b4f3ee7f7b5aadfa46be2c8875b60c11961428"
+  },
+  "aws-deployment": {
+    "version": "v1",
+    "sha256": "17bd2ddcd250f73b62c2176394b0db3516ff96a5395bd696ea2492c113ebf4bb"
+  },
+  "aws-iam": {
+    "version": "v3",
+    "sha256": "649a1e522534d16b663e4b07ee3aeba03dda054e16b55f5fd28c7a9237df190c"
+  },
+  "aws-investigation": {
+    "version": "v1",
+    "sha256": "e802e2221bcc11f19c280ff3b4f47e4b4cb6bc899d3db22f62a9e7128079de7a"
+  },
+  "aws-messaging-and-streaming": {
+    "version": "v4",
+    "sha256": "6f5df17f463f85d18a0d138629bca211fa686d308d894ccb103c4c09b7ce2968"
+  },
+  "aws-networking": {
+    "version": "v2",
+    "sha256": "e6592fcc8806d0c818e467b6af4e03ca36a1525854e03f952d3b35e21b0d07c3"
+  },
+  "aws-observability": {
+    "version": "v16",
+    "sha256": "40ab738f781bb46bd8c3feaa0ce58c26faaeea2f0dbbe889f9a147eab45e34f2"
+  },
+  "aws-sdk-js-v3-usage": {
+    "version": "v2",
+    "sha256": "b8023db6e127ea29d958308953308bea56128047d2b856aad71fb0b04621296b"
+  },
+  "aws-sdk-python-usage": {
+    "version": "v1",
+    "sha256": "23c5e21478ba87373ed6e19b1937e2062bef4a267c8df9f230b40ece43ecc2be"
+  },
+  "aws-sdk-swift-usage": {
+    "version": "v1",
+    "sha256": "9d8e5dad7a160db3752c90df636526a5210fc3fc746dc24d79449af30120301e"
+  },
+  "aws-security": {
+    "version": "v1",
+    "sha256": "24636d42462bc4d68105b0c11257d845caaf3ddc907e19fd33363ec5dc6051e0"
+  },
+  "aws-serverless": {
+    "version": "v8",
+    "sha256": "5224dd49e3bf436248963a06c9bb5386bd9d0e11a2acef45b37c267da60c40ba"
+  },
+  "aws-storage": {
+    "version": "v2",
+    "sha256": "de09cd9d6f3d216908c5f490aeb506d3d59feefca4cea512a65a825484feb6dc"
+  },
+  "aws-well-architected-review": {
+    "version": "v5",
+    "sha256": "5392c0576325e0f8388ea5ed8b5ced32f649cbf630d04ff296aeb1705568dd7e"
+  },
+  "launch-with-aws": {
+    "version": "v5",
+    "sha256": "2d44ee3c736ad0077c776049724034a68aec703109e85ba1c5bee4da4d7ec1fb"
+  },
+  "ocr-document-processing-skill": {
+    "version": "v1",
+    "sha256": "7633b8865b2d04af70ecfef07b84b162c7c58f7dc37b09736313f5871aa70a88"
+  },
+  "signing-in-to-aws": {
+    "version": "v2",
+    "sha256": "43ee2bc3ba0c8020de0b59d5bb40ad41f43334d6ffa7bd20c1cab5e486d389be"
+  }
+}

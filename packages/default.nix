@@ -11,5 +11,6 @@ in
     jj-gh-stack
     git-meta
     otelcol
+    aws-agent-skills
     ;
 }
