@@ -2,6 +2,7 @@
   nixos-hardware,
   homeManagerModule,
   nixbot,
+  rex,
 }:
 {
   config,
@@ -23,6 +24,7 @@
     # ./prometheus.nix
     ./he-ddns.nix
     (import ./nixbot.nix nixbot)
+    (import ./rex.nix rex)
     ./opkssh.nix
 
     # TODO: something better

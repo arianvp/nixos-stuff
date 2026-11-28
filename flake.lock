@@ -189,6 +189,23 @@
         "type": "github"
       }
     },
+    "rex": {
+      "inputs": {
+        "nixpkgs": [
+          "unstable"
+        ]
+      },
+      "locked": {
+        "lastModified": 1795838691,
+        "narHash": "sha256-IL0XDgRaew6gRZQtG6bBsNQ5G5yiRYx7ybK/HA+fXXE=",
+        "type": "tarball",
+        "url": "https://pkgs.superlogical.com/rex/nix/snapshot/0.1.0-snapshot.2705.tar.gz"
+      },
+      "original": {
+        "type": "tarball",
+        "url": "https://pkgs.superlogical.com/rex/nix/snapshot.tar.gz"
+      }
+    },
     "root": {
       "inputs": {
         "cgroup-exporter": "cgroup-exporter",
@@ -197,6 +214,7 @@
         "nix-darwin": "nix-darwin",
         "nixbot": "nixbot",
         "nixos-hardware": "nixos-hardware",
+        "rex": "rex",
         "stable": "stable",
         "unstable": "unstable"
       }
