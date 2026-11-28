@@ -1,0 +1,70 @@
+diff --git a/nitro-tpm-attest/examples/kms_decrypt.rs b/nitro-tpm-attest/examples/kms_decrypt.rs
+index 645da036f7..83884ebe6b 100644
+--- a/nitro-tpm-attest/examples/kms_decrypt.rs
++++ b/nitro-tpm-attest/examples/kms_decrypt.rs
+@@ -1,6 +1,8 @@ struct Arguments {
+ // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ // SPDX-License-Identifier: MIT-0
+ 
++use std::io::Write as _;
++
+ /// Decrypt a ciphertext with an AWS KMS managed key that is conditional on the instance state
+ #[derive(clap::Parser)]
+ struct Arguments {
+@@ -8,13 +10,23 @@ struct Arguments {
+     #[arg(short, long)]
+     key_id: String,
+     /// Base64 encoded ciphertext (like outputted by the AWS CLI)
+-    ciphertext: String,
++    #[arg(required_unless_present = "ciphertext_file")]
++    ciphertext: Option<String>,
++    /// File containing the base64 encoded ciphertext
++    #[arg(long, conflicts_with = "ciphertext")]
++    ciphertext_file: Option<std::path::PathBuf>,
+ }
+ 
+ #[tokio::main]
+ async fn main() -> anyhow::Result<()> {
+     let arguments: Arguments = clap::Parser::parse();
+ 
++    let ciphertext = match (arguments.ciphertext, arguments.ciphertext_file) {
++        (Some(ciphertext), _) => ciphertext,
++        (None, Some(path)) => std::fs::read_to_string(path)?,
++        (None, None) => unreachable!("clap requires one of them"),
++    };
++
+     let private_key = openssl::pkey::PKey::from_rsa(openssl::rsa::Rsa::generate(2048)?)?;
+     let public_key = private_key.public_key_to_der()?;
+ 
+@@ -23,13 +35,13 @@ async fn main() -> anyhow::Result<()> {
+ 
+     let plaintext = decrypt(
+         &arguments.key_id,
+-        &arguments.ciphertext,
++        ciphertext.trim(),
+         attestation_document,
+         private_key,
+     )
+     .await?;
+ 
+-    print!("{plaintext}");
++    std::io::stdout().write_all(&plaintext)?;
+ 
+     Ok(())
+ }
+@@ -39,7 +51,7 @@ async fn decrypt(
+     ciphertext: &str,
+     attestation_document: Vec<u8>,
+     private_key: openssl::pkey::PKey<openssl::pkey::Private>,
+-) -> anyhow::Result<String> {
++) -> anyhow::Result<Vec<u8>> {
+     let ciphertext = <base64ct::Base64 as base64ct::Encoding>::decode_vec(ciphertext)?;
+     let recipient_info = aws_sdk_kms::types::RecipientInfo::builder()
+         .set_key_encryption_algorithm(Some(
+@@ -66,5 +78,5 @@ async fn decrypt(
+     let plaintext = openssl::cms::CmsContentInfo::from_der(ciphertext_for_recipient)?
+         .decrypt_without_cert_check(&private_key)?;
+ 
+-    Ok(String::from_utf8(plaintext)?)
++    Ok(plaintext)
+ }

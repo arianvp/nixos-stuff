@@ -1,11 +1,14 @@
 # The appliance: generic building blocks from ./modules, the EC2 specifics, and
 # the workload.
+{ lib, ... }:
 {
   imports = [
     ./modules/appliance.nix
     ./modules/boot-state.nix
     ./modules/lockdown.nix
     ./modules/ec2.nix
+    ./modules/imds.nix
+    ./modules/kms-decrypt.nix
     ./modules/nitrotpm.nix
   ];
 
@@ -26,6 +29,13 @@
   ];
 
   security.lockdown = "confidentiality";
+
+  # Decrypts the `kms.example` credential from the user data to
+  # /run/kms-decrypt/example.
+  services.kms-decrypt = {
+    keyId = lib.fileContents ./kms-key-arn.txt;
+    secrets.example = { };
+  };
 
   # NitroTPM measures into the SHA-384 bank.
   services.log-boot-state.pcrBank = "sha384";
