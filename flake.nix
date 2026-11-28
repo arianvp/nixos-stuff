@@ -26,6 +26,10 @@
       url = "github:Mic92/nixbot";
       inputs.nixpkgs.follows = "unstable";
     };
+    rex = {
+      url = "https://pkgs.superlogical.com/rex/nix/snapshot.tar.gz";
+      inputs.nixpkgs.follows = "unstable";
+    };
   };
 
   outputs =
@@ -37,6 +41,7 @@
       nix-darwin,
       nixbot,
       nixos-hardware,
+      rex,
       unstable,
       ...
     }:
@@ -101,7 +106,12 @@
         utm = nixosSystem ./hosts/utm/configuration.nix;
         altra = nixosSystem (
           importApply ./hosts/altra/configuration.nix {
-            inherit nixos-hardware homeManagerModule nixbot;
+            inherit
+              nixos-hardware
+              homeManagerModule
+              nixbot
+              rex
+              ;
           }
         );
         arianvp-me = nixosSystem ./hosts/arianvp.me/configuration.nix;
