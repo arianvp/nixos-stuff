@@ -23,6 +23,7 @@ in
       default = [
         4
         7
+        11
         12
       ];
       description = "The PCRs to print.";
@@ -32,7 +33,11 @@ in
   config.systemd.services.log-boot-state = {
     description = "Print the boot measurements and the kernel's security state";
     wantedBy = [ "multi-user.target" ];
-    after = [ "tpm2.target" ];
+    after = [
+      "tpm2.target"
+      # Measures the "ready" boot phase, the last one before shutdown.
+      "systemd-pcrphase.service"
+    ];
     serviceConfig = {
       Type = "oneshot";
       ExecStart = [

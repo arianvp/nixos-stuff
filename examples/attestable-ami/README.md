@@ -15,6 +15,8 @@ thing. Most of them have nothing to do with AWS:
 - `modules/single-uki.nix`: an image module, registered as
   `image.modules.attestable-ami`, that adds an ESP holding a single UKI that
   the firmware boots directly, and measures into PCR4.
+- `modules/measured-boot.nix`: measures the boot phases into PCR11, after
+  the UKI's sections, and predicts PCR11 with `systemd-measure`.
 - `modules/boot-state.nix`: prints the measured PCRs and the kernel's security
   state to the console.
 
@@ -22,7 +24,8 @@ And the AWS specifics:
 
 - `modules/ec2.nix`: serial console and EBS settings.
 - `modules/nitrotpm.nix`: `system.build.pcrs`, the PCR values NitroTPM will
-  report, computed by `nitro-tpm-pcr-compute` from the UKI.
+  report once the system is up: PCR4, PCR7 and PCR12 computed by
+  `nitro-tpm-pcr-compute` from the UKI, and PCR11.
 - `create-ami.nix`: uploads the image with coldsnap and registers it with
   NitroTPM support.
 
@@ -54,6 +57,10 @@ PCR12 must be bound as well: with Secure Boot off, systemd-stub accepts a
 command line from the boot entry and measures it into PCR12
 ([GHSA-xrv8-2pf5-f3q7](https://github.com/aws/nitrotpm-attestation-samples/security/advisories/GHSA-xrv8-2pf5-f3q7)).
 All zeros means nothing was overridden.
+
+PCR11 additionally pins the boot phase: its predicted value only holds once
+the system reached `ready`, so a service that decrypts under a policy bound to
+it has to run after `systemd-pcrphase.service`.
 
 The serial console (`aws ec2 get-console-output`) shows the PCRs the instance
 actually measured, for comparison with the key policy.
