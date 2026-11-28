@@ -4,6 +4,7 @@
   imports = [
     ./modules/appliance.nix
     ./modules/boot-state.nix
+    ./modules/lockdown.nix
     ./modules/ec2.nix
     ./modules/nitrotpm.nix
   ];
@@ -20,6 +21,8 @@
     "virtio_pci"
     "virtio_blk"
   ];
+
+  security.lockdown = "confidentiality";
 
   # NitroTPM measures into the SHA-384 bank.
   services.log-boot-state.pcrBank = "sha384";

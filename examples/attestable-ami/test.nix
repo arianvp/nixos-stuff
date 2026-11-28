@@ -54,5 +54,9 @@ in
               machine.wait_for_console_text(
                   rf"(?i)pcr-sha384/{pcr}:{expected[f'PCR{pcr}']}", timeout=timedelta(minutes=2)
               )
+
+      # Getting this far means the initrd loaded dm_verity under lockdown.
+      with subtest("The kernel is locked down"):
+          machine.wait_for_console_text(r"lockdown:.*\[confidentiality\]")
     '';
 }
