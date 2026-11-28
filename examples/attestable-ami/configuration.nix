@@ -9,6 +9,7 @@
     ./modules/ec2.nix
     ./modules/imds.nix
     ./modules/kms-decrypt.nix
+    ./modules/tls-identity.nix
     ./modules/nitrotpm.nix
   ];
 
