@@ -1,5 +1,5 @@
 {
-  description = "An attestable EC2 AMI whose NitroTPM measurements are known at build time";
+  description = "Attestable EC2 AMIs and Nitro Sandboxes whose measurements are known at build time";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable-small";
 
@@ -11,11 +11,22 @@
       inherit (self.nixosConfigurations.appliance.config.system.build.images) attestable-ami;
     in
     {
-      nixosConfigurations.appliance = nixpkgs.lib.nixosSystem {
-        modules = [
-          ./configuration.nix
-          { nixpkgs.hostPlatform = system; }
-        ];
+      nixosConfigurations = {
+        appliance = nixpkgs.lib.nixosSystem {
+          modules = [
+            ./configuration.nix
+            {
+              nixpkgs.hostPlatform = system;
+              _module.args.guest = self.nixosConfigurations.sandbox-guest;
+            }
+          ];
+        };
+        sandbox-guest = nixpkgs.lib.nixosSystem {
+          modules = [
+            ./sandbox/guest.nix
+            { nixpkgs.hostPlatform = system; }
+          ];
+        };
       };
 
       packages.${system} = {
@@ -25,11 +36,17 @@
         predict-pcr12 = pkgs.callPackage ./predict-pcr12.nix { };
       };
 
-      checks.${system}.measured-boot = pkgs.testers.runNixOSTest {
-        imports = [ ./test.nix ];
-        _module.args = {
-          appliance = self.nixosConfigurations.appliance;
-          inherit (self.packages.${system}) predict-pcr12;
+      checks.${system} = {
+        measured-boot = pkgs.testers.runNixOSTest {
+          imports = [ ./test.nix ];
+          _module.args = {
+            appliance = self.nixosConfigurations.appliance;
+            inherit (self.packages.${system}) predict-pcr12;
+          };
+        };
+        sandbox = pkgs.testers.runNixOSTest {
+          imports = [ ./sandbox/test.nix ];
+          _module.args.guest = self.nixosConfigurations.sandbox-guest;
         };
       };
     };
