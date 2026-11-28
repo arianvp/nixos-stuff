@@ -32,8 +32,9 @@ in
             "tests/blackbox"
           ];
           disabledTests = prevAttrs.disabledTests ++ [
-            # Creates an awscrt S3 client, which needs the system trust store
-            "test_upper_bound_matches_what_awscrt_accepts"
+            # Create an awscrt S3 client, which needs the system trust store
+            "test_awscrt_accepts_max_retries"
+            "test_awscrt_accepts_retry_mode"
           ];
         }
       )
