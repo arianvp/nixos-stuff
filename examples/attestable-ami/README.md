@@ -60,6 +60,15 @@ $ nix run .#create-ami       # upload with coldsnap, register with NitroTPM; pri
 The serial console (`aws ec2 get-console-output`) shows the PCRs the instance
 actually measured, for comparison with the key policy.
 
+`nix run .#e2e` tests the examples end to end on EC2 with the AWS credentials
+in the environment: it creates a KMS key that only the image can decrypt
+with, uploads the image, and checks that the instance measures the predicted
+PCRs, that KMS releases a secret and a TLS key to it but not to the same image
+with other user data, and, where the flake has them, that Secure Boot refuses
+any other UKI and that a parent spawns a Nitro Sandbox. It removes everything
+it created again, except for the key, which KMS deletes after 7 days.
+`KEEP=1` keeps everything for inspection.
+
 ## Bringing a secret
 
 The user data isn't part of the image, so whoever launches the AMI chooses it.

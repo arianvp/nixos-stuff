@@ -23,6 +23,10 @@
         inherit (attestable-ami.passthru.config.system.build) pcrs;
         create-ami = pkgs.callPackage ./create-ami.nix { image = attestable-ami; };
         predict-pcr12 = pkgs.callPackage ./predict-pcr12.nix { };
+        e2e = pkgs.callPackage ./e2e.nix {
+          appliance = self.nixosConfigurations.appliance;
+          inherit (self.packages.${system}) predict-pcr12;
+        };
       };
 
       checks.${system}.measured-boot = pkgs.testers.runNixOSTest {
